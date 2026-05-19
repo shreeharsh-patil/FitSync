@@ -1,26 +1,35 @@
-import NextAuth from "next-auth"
-import authConfig from "./auth.config"
-import { NextResponse } from "next/server"
+import NextAuth from "next-auth";
+import authConfig from "./auth.config";
+import { NextResponse } from "next/server";
 
-const { auth } = NextAuth(authConfig)
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
-  const isLoggedIn = !!req.auth
-  const isDashboardRoute = req.nextUrl.pathname.startsWith("/dashboard") || 
-                           req.nextUrl.pathname.startsWith("/workout") ||
-                           req.nextUrl.pathname.startsWith("/nutrition") ||
-                           req.nextUrl.pathname.startsWith("/progress") ||
-                           req.nextUrl.pathname.startsWith("/community") ||
-                           req.nextUrl.pathname.startsWith("/ai-coach") ||
-                           req.nextUrl.pathname.startsWith("/settings")
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
 
-  if (isDashboardRoute && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl))
+  const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
+  const isPublicRoute = ["/", "/blog"].includes(nextUrl.pathname);
+  const isAuthRoute = ["/login", "/signup"].includes(nextUrl.pathname);
+
+  if (isApiAuthRoute) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next()
-})
+  if (isAuthRoute) {
+    if (isLoggedIn) {
+      return NextResponse.redirect(new URL("/dashboard", nextUrl));
+    }
+    return NextResponse.next();
+  }
+
+  if (!isLoggedIn && !isPublicRoute) {
+    return NextResponse.redirect(new URL("/login", nextUrl));
+  }
+
+  return NextResponse.next();
+});
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-}
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+};

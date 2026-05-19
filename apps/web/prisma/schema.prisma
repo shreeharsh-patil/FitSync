@@ -143,6 +143,21 @@ model Workout {
 
   user        User       @relation(fields: [userId], references: [id])
   workoutLogs WorkoutLog[]
+  exercises   WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id         String   @id @default(uuid())
+  workoutId  String
+  exerciseId String
+  sets       Int
+  reps       String
+  restSec    Int
+  order      Int
+  createdAt  DateTime @default(now())
+
+  workout    Workout  @relation(fields: [workoutId], references: [id])
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
 }
 
 model WorkoutLog {
@@ -175,6 +190,7 @@ model Exercise {
   isCustom     Boolean          @default(false)
   createdBy    String?
   createdAt    DateTime         @default(now())
+  workoutExercises WorkoutExercise[]
 }
 
 model NutritionLog {
