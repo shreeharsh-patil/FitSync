@@ -1,0 +1,314 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  TRAINER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ExerciseCategory {
+  STRENGTH
+  CARDIO
+  FLEXIBILITY
+  BALANCE
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String?   @unique
+  emailVerified   DateTime?
+  image           String?
+  passwordHash    String?
+  name            String?
+  username        String?    @unique
+  avatarUrl       String?
+  role            Role      @default(USER)
+  height          Float?
+  weight          Float?
+  fitnessGoal     String?
+  activityLevel   String?
+  dateOfBirth     DateTime?
+  bio             String?
+  isPublic        Boolean   @default(true)
+  stripeCustomerId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+
+  workouts        Workout[]
+  workoutLogs     WorkoutLog[]
+  nutritionLogs   NutritionLog[]
+  progressEntries ProgressEntry[]
+  posts           Post[]
+  comments        Comment[]
+  blogPosts       BlogPost[]
+  notifications   Notification[]
+  achievements    Achievement[]
+  subscriptions   Subscription[]
+  challenges      ChallengeParticipant[]
+  
+  followers       Follows[] @relation("following")
+  following       Follows[] @relation("follower")
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Follows {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User @relation("follower", fields: [followerId], references: [id])
+  following   User @relation("following", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+}
+
+model Workout {
+  id          String     @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  difficulty  Difficulty
+  daysPerWeek Int
+  isPublic    Boolean    @default(false)
+  tags        String[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id])
+  workoutLogs WorkoutLog[]
+}
+
+model WorkoutLog {
+  id             String   @id @default(uuid())
+  userId         String
+  workoutId      String?
+  logDate        DateTime
+  startTime      DateTime
+  endTime        DateTime?
+  durationMins   Int?
+  caloriesBurned Int?
+  notes          String?
+  exercises      Json     // Array of {exerciseId, sets[{reps,weight,restSec}]}
+  createdAt      DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id])
+  workout        Workout? @relation(fields: [workoutId], references: [id])
+}
+
+model Exercise {
+  id           String           @id @default(uuid())
+  name         String           @unique
+  category     ExerciseCategory
+  muscleGroups String[]
+  equipment    String[]
+  instructions String
+  videoUrl     String?
+  gifUrl       String?
+  difficulty   Difficulty
+  isCustom     Boolean          @default(false)
+  createdBy    String?
+  createdAt    DateTime         @default(now())
+}
+
+model NutritionLog {
+  id            String   @id @default(uuid())
+  userId        String
+  logDate       DateTime
+  mealType      MealType
+  foodItems     Json     // Array of {foodId, name, qty, unit, calories, protein, carbs, fat}
+  totalCalories Float
+  waterMl       Int      @default(0)
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+}
+
+model ProgressEntry {
+  id           String   @id @default(uuid())
+  userId       String
+  logDate      DateTime
+  weight       Float?
+  bodyFatPct   Float?
+  measurements Json?    // {chest, waist, hips, arms, thighs}
+  photoUrl     String?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model BlogPost {
+  id              String     @id @default(uuid())
+  authorId        String
+  title           String
+  slug            String     @unique
+  excerpt         String
+  content         String
+  featuredImageUrl String?
+  category        String
+  tags            String[]
+  metaTitle       String?
+  metaDescription String?
+  status          PostStatus @default(DRAFT)
+  publishedAt     DateTime?
+  viewCount       Int        @default(0)
+  readingTimeMins Int?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  author          User       @relation(fields: [authorId], references: [id])
+}
+
+model Post {
+  id            String    @id @default(uuid())
+  userId        String
+  content       String
+  mediaUrls     String[]
+  likesCount    Int       @default(0)
+  commentsCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id])
+  comments      Comment[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  parentId  String?
+  content   String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  parent    Comment? @relation("CommentToComment", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentToComment")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  data      Json
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Challenge {
+  id               String   @id @default(uuid())
+  title            String
+  startDate        DateTime
+  endDate          DateTime
+  rules            Json
+  participantCount Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  participants     ChallengeParticipant[]
+}
+
+model ChallengeParticipant {
+  challengeId String
+  userId      String
+  progress    Json
+  rank        Int?
+  joinedAt    DateTime @default(now())
+
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@id([challengeId, userId])
+}
+
+model Achievement {
+  id        String   @id @default(uuid())
+  userId    String
+  badgeType String
+  earnedAt  DateTime @default(now())
+  metadata  Json?
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Subscription {
+  id               String   @id @default(uuid())
+  userId           String
+  plan             String
+  status           String
+  stripeSubId      String?
+  currentPeriodEnd DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id])
+}
