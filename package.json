@@ -1,0 +1,27 @@
+{
+  "name": "fitsync",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm run dev --workspace=web",
+    "build": "npm run build --workspace=web",
+    "start": "npm run start --workspace=web",
+    "lint": "npm run lint --workspace=web"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shreeharsh-patil/FitSync.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/shreeharsh-patil/FitSync/issues"
+  },
+  "homepage": "https://github.com/shreeharsh-patil/FitSync#readme"
+}
