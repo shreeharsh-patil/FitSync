@@ -12,10 +12,12 @@ export default function WorkoutPage() {
           <h1 className="text-4xl font-bold font-heading tracking-tight">Workouts</h1>
           <p className="text-muted-foreground mt-2">Build, track, and optimize your training routines.</p>
         </div>
-        <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold gap-2">
-          <Plus className="h-4 w-4" />
-          Create New Plan
-        </Button>
+        <Link href="/workout/builder">
+          <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold gap-2">
+            <Plus className="h-4 w-4" />
+            Create New Plan
+          </Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
