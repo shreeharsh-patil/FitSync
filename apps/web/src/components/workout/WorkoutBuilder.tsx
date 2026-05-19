@@ -59,9 +59,9 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  const addExercise = (exercise: any) => {
+  const addExercise = (exercise: { id: string; name: string }) => {
     const newEx: SelectedExercise = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       exerciseId: exercise.id,
       name: exercise.name,
       sets: 3,
