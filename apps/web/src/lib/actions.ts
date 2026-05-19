@@ -145,7 +145,23 @@ export async function searchExercises(query: string) {
   }
 }
 
-export async function createWorkout(userId: string, data: any) {
+import { Difficulty, MealType } from "@prisma/client";
+
+export async function createWorkout(
+  userId: string,
+  data: {
+    name: string;
+    difficulty: Difficulty;
+    daysPerWeek: number;
+    exercises: {
+      exerciseId: string;
+      sets: number;
+      reps: string;
+      rest: number;
+      order: number;
+    }[];
+  },
+) {
   try {
     const workout = await db.workout.create({
       data: {
@@ -154,11 +170,11 @@ export async function createWorkout(userId: string, data: any) {
         difficulty: data.difficulty,
         daysPerWeek: data.daysPerWeek,
         exercises: {
-          create: data.exercises.map((ex: any) => ({
+          create: data.exercises.map((ex) => ({
             exerciseId: ex.exerciseId,
             sets: ex.sets,
             reps: ex.reps,
-            rest: ex.rest,
+            restSec: ex.rest,
             order: ex.order,
           })),
         },
@@ -216,7 +232,16 @@ export async function getNutritionLogs(userId: string, date: Date) {
   }
 }
 
-export async function logMeal(userId: string, data: any) {
+export async function logMeal(
+  userId: string,
+  data: {
+    mealType: MealType;
+    foodItems: any;
+    totalCalories: number;
+    waterMl?: number;
+    notes?: string;
+  },
+) {
   try {
     const log = await db.nutritionLog.create({
       data: {
@@ -251,7 +276,16 @@ export async function getProgressEntries(userId: string) {
   }
 }
 
-export async function createProgressEntry(userId: string, data: any) {
+export async function createProgressEntry(
+  userId: string,
+  data: {
+    weight?: number;
+    bodyFatPct?: number;
+    measurements?: any;
+    photoUrl?: string;
+    notes?: string;
+  },
+) {
   try {
     const entry = await db.progressEntry.create({
       data: {

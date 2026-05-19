@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { searchExercises, createWorkout } from "@/lib/actions";
 import { useRouter } from "next/navigation";
+import { Difficulty } from "@prisma/client";
 
 interface WorkoutBuilderProps {
   userId: string;
@@ -36,11 +37,15 @@ interface SelectedExercise {
 export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [difficulty, setDifficulty] = useState("BEGINNER");
+  const [difficulty, setDifficulty] = useState<Difficulty>("BEGINNER");
   const [daysPerWeek, setDaysPerWeek] = useState(4);
-  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
+  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>(
+    [],
+  );
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -171,7 +176,9 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
                   </label>
                   <select 
                     value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
+                    onChange={(e) =>
+                      setDifficulty(e.target.value as Difficulty)
+                    }
                     className="w-full h-14 bg-white/5 border-white/5 rounded-2xl px-4 text-sm font-bold appearance-none hover:bg-white/10 transition-colors"
                   >
                     <option value="BEGINNER">Beginner</option>
