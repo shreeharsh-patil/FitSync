@@ -1,37 +1,48 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Activity, Mail, Lock } from "lucide-react"
+import { Activity, Mail, Lock, User } from "lucide-react"
 import { signIn } from "@/auth"
+import { register } from "@/lib/actions"
 import Link from "next/link"
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
       {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[120px]" />
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[120px]" />
       
       <Card className="w-full max-w-md glass border-white/10 shadow-2xl overflow-hidden relative z-10">
         <div className="p-8 space-y-8">
           <div className="flex flex-col items-center text-center space-y-4">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-secondary to-primary p-[1px]">
-              <div className="h-full w-full rounded-2xl bg-background flex items-center justify-center text-secondary">
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-accent to-primary p-[1px]">
+              <div className="h-full w-full rounded-2xl bg-background flex items-center justify-center text-accent">
                 <Activity className="h-10 w-10" />
               </div>
             </div>
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold font-heading tracking-tight">Welcome Back</h1>
-              <p className="text-muted-foreground text-sm">Sync your body. Sync your life.</p>
+              <h1 className="text-3xl font-bold font-heading tracking-tight">Create Account</h1>
+              <p className="text-muted-foreground text-sm">Join the 500K+ athletes syncing their life.</p>
             </div>
           </div>
 
           <form action={async (formData) => {
             "use server"
-            const email = formData.get("email") as string
-            const password = formData.get("password") as string
-            await signIn("credentials", { email, password, redirectTo: "/dashboard" })
+            await register(formData)
           }} className="space-y-4">
+            <div className="space-y-2">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  name="name"
+                  type="text" 
+                  placeholder="Full Name" 
+                  className="pl-10 h-12 bg-background/50 border-border/40 focus:border-secondary/40 transition-all"
+                  required
+                />
+              </div>
+            </div>
             <div className="space-y-2">
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -50,17 +61,14 @@ export default function LoginPage() {
                 <Input 
                   name="password"
                   type="password" 
-                  placeholder="Password" 
+                  placeholder="Password (min. 6 characters)" 
                   className="pl-10 h-12 bg-background/50 border-border/40 focus:border-secondary/40 transition-all"
                   required
                 />
               </div>
-              <div className="text-right">
-                <Link href="#" className="text-xs text-secondary hover:underline font-medium">Forgot password?</Link>
-              </div>
             </div>
-            <Button className="w-full h-12 bg-secondary hover:bg-secondary/90 text-primary font-bold text-lg shadow-lg shadow-secondary/20 transition-all active:scale-[0.98]">
-              Sign In
+            <Button className="w-full h-12 bg-accent hover:bg-accent/90 text-white font-bold text-lg shadow-lg shadow-accent/20 transition-all active:scale-[0.98]">
+              Get Started Free
             </Button>
           </form>
 
@@ -69,7 +77,7 @@ export default function LoginPage() {
               <span className="w-full border-t border-border/40"></span>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">Or sign up with</span>
             </div>
           </div>
 
@@ -114,13 +122,13 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link href="/signup" className="text-secondary hover:underline font-bold">Sign up</Link>
+            Already have an account?{" "}
+            <Link href="/login" className="text-accent hover:underline font-bold">Sign in</Link>
           </p>
         </div>
-        <div className="bg-secondary/5 p-4 text-center border-t border-white/5">
+        <div className="bg-accent/5 p-4 text-center border-t border-white/5">
           <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-            Secure · Encrypted · Enterprise Grade
+            No credit card required · Cancel anytime
           </p>
         </div>
       </Card>
