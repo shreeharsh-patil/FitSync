@@ -64,53 +64,55 @@ export default function BlogPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Navigation (Reuse from Landing) */}
-      <header className="px-6 lg:px-12 h-20 flex items-center border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-xl z-50">
-        <Link className="flex items-center justify-center group" href="/">
-          <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
-            <Activity className="h-6 w-6" />
-          </div>
-          <span className="ml-3 text-2xl font-bold font-heading tracking-tighter">
-            FitSync
-          </span>
-        </Link>
-        <nav className="ml-auto hidden md:flex gap-8">
-          <Link
-            className="text-sm font-bold uppercase tracking-widest text-secondary"
-            href="/blog"
-          >
-            Blog
+      <header className="w-full border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-xl z-50">
+        <div className="container mx-auto px-6 lg:px-12 h-20 flex items-center">
+          <Link className="flex items-center justify-center group" href="/">
+            <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+              <Activity className="h-6 w-6" />
+            </div>
+            <span className="ml-3 text-2xl font-bold font-heading tracking-tighter">
+              FitSync
+            </span>
           </Link>
-          <Link
-            className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="/#features"
-          >
-            Features
-          </Link>
-          <Link
-            className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="/#pricing"
-          >
-            Pricing
-          </Link>
-        </nav>
-        <div className="ml-auto md:ml-8 flex gap-4">
-          <Link href="/login">
-            <Button
-              variant="ghost"
-              className="font-bold uppercase tracking-widest text-xs"
+          <nav className="ml-auto hidden md:flex gap-8">
+            <Link
+              className="text-sm font-bold uppercase tracking-widest text-secondary"
+              href="/blog"
             >
-              Login
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold uppercase tracking-widest text-xs px-6">
-              Join Now
-            </Button>
-          </Link>
+              Blog
+            </Link>
+            <Link
+              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
+              href="/#features"
+            >
+              Features
+            </Link>
+            <Link
+              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
+              href="/#pricing"
+            >
+              Pricing
+            </Link>
+          </nav>
+          <div className="ml-auto md:ml-8 flex gap-4">
+            <Link href="/login">
+              <Button
+                variant="ghost"
+                className="font-bold uppercase tracking-widest text-xs"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold uppercase tracking-widest text-xs px-6">
+                Join Now
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main className="flex-1 container px-4 md:px-6 py-12 md:py-24 space-y-16">
+      <main className="flex-1 container mx-auto px-4 md:px-6 py-12 md:py-24 space-y-16">
         {/* Blog Header */}
         <div className="flex flex-col items-center text-center space-y-6 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-bold uppercase tracking-[0.2em]">
@@ -176,7 +178,7 @@ export default function BlogPage() {
 
       {/* Footer (Reuse) */}
       <footer className="w-full py-12 border-t border-white/5">
-        <div className="container px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-3">
             <Activity className="h-6 w-6 text-secondary" />
             <span className="text-xl font-bold font-heading tracking-tighter">
@@ -189,19 +191,19 @@ export default function BlogPage() {
           <nav className="flex gap-8">
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="#"
+              href="/terms"
             >
               Terms
             </Link>
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="#"
+              href="/privacy"
             >
               Privacy
             </Link>
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="#"
+              href="/security"
             >
               Security
             </Link>

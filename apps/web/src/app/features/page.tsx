@@ -74,49 +74,51 @@ export default function FeaturesPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-hidden selection:bg-secondary selection:text-primary">
       {/* Navigation */}
-      <header className="px-6 lg:px-12 h-20 flex items-center border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-xl z-50">
-        <Link className="flex items-center justify-center group" href="/">
-          <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
-            <Activity className="h-6 w-6" />
-          </div>
-          <span className="ml-3 text-2xl font-bold font-heading tracking-tighter">
-            FitSync
-          </span>
-        </Link>
-        <nav className="ml-auto hidden md:flex gap-8">
-          <Link
-            className="text-sm font-bold uppercase tracking-widest text-secondary"
-            href="/features"
-          >
-            Features
+      <header className="w-full border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-xl z-50">
+        <div className="container mx-auto px-6 lg:px-12 h-20 flex items-center">
+          <Link className="flex items-center justify-center group" href="/">
+            <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+              <Activity className="h-6 w-6" />
+            </div>
+            <span className="ml-3 text-2xl font-bold font-heading tracking-tighter">
+              FitSync
+            </span>
           </Link>
-          <Link
-            className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="/pricing"
-          >
-            Pricing
-          </Link>
-          <Link
-            className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="/blog"
-          >
-            Blog
-          </Link>
-        </nav>
-        <div className="ml-auto md:ml-8 flex gap-4">
-          <Link href="/login">
-            <Button
-              variant="ghost"
-              className="font-bold uppercase tracking-widest text-xs"
+          <nav className="ml-auto hidden md:flex gap-8">
+            <Link
+              className="text-sm font-bold uppercase tracking-widest text-secondary"
+              href="/features"
             >
-              Login
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold uppercase tracking-widest text-xs px-6">
-              Join Now
-            </Button>
-          </Link>
+              Features
+            </Link>
+            <Link
+              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
+              href="/pricing"
+            >
+              Pricing
+            </Link>
+            <Link
+              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
+              href="/blog"
+            >
+              Blog
+            </Link>
+          </nav>
+          <div className="ml-auto md:ml-8 flex gap-4">
+            <Link href="/login">
+              <Button
+                variant="ghost"
+                className="font-bold uppercase tracking-widest text-xs"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold uppercase tracking-widest text-xs px-6">
+                Join Now
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -256,13 +258,13 @@ export default function FeaturesPage() {
             © 2026 FitSync Platform. Built for the modern athlete.
           </p>
           <nav className="flex gap-8">
-            <Link className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors" href="#">
+            <Link className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors" href="/terms">
               Terms
             </Link>
-            <Link className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors" href="#">
+            <Link className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors" href="/privacy">
               Privacy
             </Link>
-            <Link className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors" href="#">
+            <Link className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors" href="/security">
               Security
             </Link>
           </nav>
