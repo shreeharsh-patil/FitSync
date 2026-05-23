@@ -465,4 +465,90 @@ export async function unfollowUser(followerId: string, followingId: string) {
   }
 }
 
+export async function updateUserSettings(
+  userId: string,
+  data: { name?: string; username?: string; bio?: string; isPublic?: boolean }
+) {
+  try {
+    if (data.username) {
+      const existing = await db.user.findUnique({
+        where: { username: data.username.toLowerCase() },
+      });
+      if (existing && existing.id !== userId) {
+        return { error: "Username is already taken" };
+      }
+    }
+
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        name: data.name,
+        username: data.username ? data.username.toLowerCase() : undefined,
+        bio: data.bio,
+        isPublic: data.isPublic,
+      },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+    revalidatePath("/profile");
+    return { success: "Account information updated successfully!" };
+  } catch (error) {
+    console.error("Update settings error:", error);
+    return { error: "Failed to update account preferences" };
+  }
+}
+
+export async function updateUserPassword(
+  userId: string,
+  data: { currentPassword?: string; newPassword?: string }
+) {
+  try {
+    if (!data.currentPassword || !data.newPassword) {
+      return { error: "Current and new password are required" };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.passwordHash) {
+      return { error: "User account not configured with credentials login" };
+    }
+
+    const passwordsMatch = await bcrypt.compare(data.currentPassword, user.passwordHash);
+    if (!passwordsMatch) {
+      return { error: "Incorrect current password" };
+    }
+
+    if (data.newPassword.length < 6) {
+      return { error: "New password must be at least 6 characters" };
+    }
+
+    const hashed = await bcrypt.hash(data.newPassword, 12);
+    await db.user.update({
+      where: { id: userId },
+      data: { passwordHash: hashed },
+    });
+
+    return { success: "Password updated successfully!" };
+  } catch (error) {
+    console.error("Password update error:", error);
+    return { error: "Failed to update password security credentials" };
+  }
+}
+
+export async function deleteUserAccount(userId: string) {
+  try {
+    await db.user.delete({
+      where: { id: userId },
+    });
+    return { success: "Account deleted successfully." };
+  } catch (error) {
+    console.error("Account deletion error:", error);
+    return { error: "Failed to delete account" };
+  }
+}
+
+
 
