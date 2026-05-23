@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Search, Calendar, Clock, Share2, Bookmark } from "lucide-react";
+import { Search, Calendar, Clock, Share2, Bookmark, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
@@ -309,4 +309,3 @@ function BlogCard({
 }
 
 import { cn } from "@/lib/utils";
-import { Activity } from "lucide-react";

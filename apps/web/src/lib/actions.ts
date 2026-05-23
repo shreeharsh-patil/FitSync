@@ -316,3 +316,51 @@ export async function createProgressEntry(
     return { error: "Failed to log progress" };
   }
 }
+
+export async function logWorkoutSession(
+  userId: string,
+  data: {
+    workoutId?: string;
+    durationMins: number;
+    caloriesBurned: number;
+    notes?: string;
+    exercises: any;
+  }
+) {
+  try {
+    const log = await db.workoutLog.create({
+      data: {
+        userId,
+        workoutId: data.workoutId,
+        logDate: new Date(),
+        startTime: new Date(Date.now() - data.durationMins * 60000),
+        endTime: new Date(),
+        durationMins: data.durationMins,
+        caloriesBurned: data.caloriesBurned,
+        notes: data.notes,
+        exercises: data.exercises,
+      },
+    });
+
+    revalidatePath("/workout");
+    revalidatePath("/dashboard");
+    return { success: "Workout logged", id: log.id };
+  } catch (error) {
+    console.error("Log workout session error:", error);
+    return { error: "Failed to log workout session" };
+  }
+}
+
+export async function askGrokCoach(
+  userMessage: string,
+  history: { role: "user" | "assistant"; content: string }[]
+) {
+  try {
+    const { askAICoach } = await import("@/lib/openai");
+    const reply = await askAICoach(userMessage, history);
+    return { success: true, reply };
+  } catch (error) {
+    console.error("Grok Coach Action Error:", error);
+    return { success: false, error: "AI Coach was unable to connect." };
+  }
+}
