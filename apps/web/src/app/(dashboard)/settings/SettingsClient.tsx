@@ -21,7 +21,7 @@ import {
   Sparkles,
   Activity,
   X,
-  Lock,
+  Lock, LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { updateUserSettings, updateUserPassword, deleteUserAccount } from "@/lib/actions";
@@ -321,7 +321,15 @@ export function SettingsClient({ user }: SettingsClientProps) {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/5 flex justify-end">
+              <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                <Button
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  variant="ghost"
+                  className="text-red-400 hover:text-red-500 hover:bg-red-500/10 font-bold px-6 h-12 rounded-xl text-xs gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </Button>
                 <Button 
                   onClick={handleSaveAccountInfo}
                   disabled={isSavingAccount}
