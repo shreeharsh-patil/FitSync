@@ -13,49 +13,51 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-hidden selection:bg-secondary selection:text-primary">
       {/* Navigation */}
-      <header className="px-6 lg:px-12 h-20 flex items-center border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-xl z-50">
-        <Link className="flex items-center justify-center group" href="/">
-          <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
-            <Activity className="h-6 w-6" />
-          </div>
-          <span className="ml-3 text-2xl font-bold font-heading tracking-tighter">
-            FitSync
-          </span>
-        </Link>
-        <nav className="ml-auto hidden md:flex gap-8">
-          <Link
-            className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="/features"
-          >
-            Features
+      <header className="w-full border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-xl z-50">
+        <div className="container mx-auto px-6 lg:px-12 h-20 flex items-center">
+          <Link className="flex items-center justify-center group" href="/">
+            <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+              <Activity className="h-6 w-6" />
+            </div>
+            <span className="ml-3 text-2xl font-bold font-heading tracking-tighter">
+              FitSync
+            </span>
           </Link>
-          <Link
-            className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="/pricing"
-          >
-            Pricing
-          </Link>
-          <Link
-            className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="/blog"
-          >
-            Blog
-          </Link>
-        </nav>
-        <div className="ml-auto md:ml-8 flex gap-4">
-          <Link href="/login">
-            <Button
-              variant="ghost"
-              className="font-bold uppercase tracking-widest text-xs"
+          <nav className="ml-auto hidden md:flex gap-8">
+            <Link
+              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
+              href="/features"
             >
-              Login
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold uppercase tracking-widest text-xs px-6">
-              Join Now
-            </Button>
-          </Link>
+              Features
+            </Link>
+            <Link
+              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
+              href="/pricing"
+            >
+              Pricing
+            </Link>
+            <Link
+              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
+              href="/blog"
+            >
+              Blog
+            </Link>
+          </nav>
+          <div className="ml-auto md:ml-8 flex gap-4">
+            <Link href="/login">
+              <Button
+                variant="ghost"
+                className="font-bold uppercase tracking-widest text-xs"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold uppercase tracking-widest text-xs px-6">
+                Join Now
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -63,7 +65,7 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="w-full py-20 md:py-32 lg:py-48 flex flex-col items-center justify-center relative">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,var(--secondary)_0%,transparent_70%)] opacity-[0.03] pointer-events-none" />
-          <div className="container px-4 md:px-6 flex flex-col items-center text-center space-y-12 relative z-10">
+          <div className="container mx-auto px-4 md:px-6 flex flex-col items-center text-center space-y-12 relative z-10">
             <div className="space-y-6 max-w-4xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-bold uppercase tracking-[0.2em] animate-fade-in">
                 <Zap className="h-3 w-3 fill-secondary" />
@@ -126,7 +128,7 @@ export default function LandingPage() {
           className="w-full py-24 md:py-32 relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-muted/20 -skew-y-3 origin-right scale-110" />
-          <div className="container px-4 md:px-6 relative z-10">
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-20">
               <h2 className="text-4xl font-bold tracking-tight sm:text-6xl font-heading">
                 Engineered for{" "}
@@ -164,7 +166,7 @@ export default function LandingPage() {
 
         {/* CTA Section */}
         <section className="w-full py-24 md:py-32 border-t border-white/5 bg-gradient-to-b from-background to-primary/10">
-          <div className="container px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="glass p-12 md:p-24 rounded-[3rem] border-white/10 flex flex-col items-center justify-center space-y-8 text-center relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative z-10 space-y-4">
@@ -194,7 +196,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="w-full py-12 border-t border-white/5">
-        <div className="container px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-3">
             <Activity className="h-6 w-6 text-secondary" />
             <span className="text-xl font-bold font-heading tracking-tighter">
@@ -207,19 +209,19 @@ export default function LandingPage() {
           <nav className="flex gap-8">
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="#"
+              href="/terms"
             >
               Terms
             </Link>
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="#"
+              href="/privacy"
             >
               Privacy
             </Link>
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="#"
+              href="/security"
             >
               Security
             </Link>
@@ -240,7 +242,7 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="glass p-8 rounded-[2rem] border-white/5 flex flex-col items-start text-left space-y-6 transition-all hover:bg-white/5 hover:border-white/10 hover:-translate-y-2 group cursor-default">
+    <div className="glass p-8 rounded-[2rem] border-white/5 flex flex-col items-center text-center space-y-6 transition-all hover:bg-white/5 hover:border-white/10 hover:-translate-y-2 group cursor-default">
       <div className="h-16 w-16 rounded-2xl bg-background/50 flex items-center justify-center border border-white/5 group-hover:border-secondary/20 transition-colors shadow-inner">
         {icon}
       </div>
