@@ -2,12 +2,20 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { CommunityFeedClient } from "./CommunityFeedClient";
 import { Users } from "lucide-react";
+import db from "@/lib/db";
 
 export default async function CommunityPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
     redirect("/login");
+  }
+
+  let user = null;
+  if (session?.user?.id) {
+    user = await db.user.findUnique({
+      where: { id: session.user.id },
+    });
   }
 
   return (
@@ -24,7 +32,8 @@ export default async function CommunityPage() {
         </div>
       </div>
 
-      <CommunityFeedClient />
+      <CommunityFeedClient user={user} />
     </div>
   );
 }
+

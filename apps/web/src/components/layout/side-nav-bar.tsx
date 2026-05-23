@@ -72,7 +72,7 @@ export function SideNavBar({ user }: { user?: any }) {
             Main Menu
           </p>
           {navItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+            const isActive = pathname?.startsWith(item.href) || false;
             return (
               <Link
                 key={item.name}
@@ -137,7 +137,7 @@ export function SideNavBar({ user }: { user?: any }) {
       {/* 2. Mobile Responsive Bottom Navigation Bar (Hidden on desktop) */}
       <div className="flex lg:hidden fixed bottom-0 left-0 right-0 bg-slate-950/85 backdrop-blur-xl border-t border-white/5 h-20 items-center justify-around px-4 z-40 pb-safe">
         {mobileNavItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = pathname?.startsWith(item.href) || false;
           return (
             <Link
               key={item.name}

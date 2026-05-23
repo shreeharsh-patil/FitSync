@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
   MessageSquare,
   ChevronRight,
 } from "lucide-react";
+import { io } from "socket.io-client";
 
 interface Comment {
   author: string;
@@ -40,7 +41,22 @@ interface PostItem {
   isLikedByUser: boolean;
 }
 
-export function CommunityFeedClient() {
+interface CommunityFeedClientProps {
+  user?: any;
+}
+
+export function CommunityFeedClient({ user }: CommunityFeedClientProps) {
+  const displayName = user?.name || "Alex Rivers";
+  const avatarInitials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "AR";
+  const userGoal = user?.fitnessGoal
+    ? `${user.fitnessGoal.charAt(0).toUpperCase() + user.fitnessGoal.slice(1).toLowerCase()} Athlete`
+    : "Premium Athlete";
+
   const [posts, setPosts] = useState<PostItem[]>([
     {
       id: "1",
@@ -88,15 +104,77 @@ export function CommunityFeedClient() {
     core: false,
   });
 
+  const socketRef = useRef<any>(null);
+
+  // Initialize Socket.io connection and listeners
+  useEffect(() => {
+    fetch("/api/socket").finally(() => {
+      const socket = io({
+        path: "/api/socket",
+      });
+
+      socketRef.current = socket;
+
+      socket.on("connect", () => {
+        console.log("WebSocket connected to real-time feed server!");
+      });
+
+      socket.on("post-received", (post: PostItem) => {
+        setPosts((prev) => {
+          if (prev.some((p) => p.id === post.id)) return prev;
+          return [post, ...prev];
+        });
+      });
+
+      socket.on("like-updated", (data: { postId: string; likesCount: number }) => {
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (p.id === data.postId) {
+              return {
+                ...p,
+                likesCount: data.likesCount,
+              };
+            }
+            return p;
+          })
+        );
+      });
+
+      socket.on("comment-received", (data: { postId: string; comment: Comment }) => {
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (p.id === data.postId) {
+              if (p.comments.some((c) => c.content === data.comment.content && c.author === data.comment.author)) {
+                return p;
+              }
+              return {
+                ...p,
+                commentsCount: p.commentsCount + 1,
+                comments: [...p.comments, data.comment],
+              };
+            }
+            return p;
+          })
+        );
+      });
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
   const handleComposePost = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostContent.trim()) return;
 
     const newPost: PostItem = {
       id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
-      author: "Alex Rivers",
-      role: "Premium Athlete",
-      avatar: "A",
+      author: displayName,
+      role: userGoal,
+      avatar: avatarInitials,
       time: "Just now",
       content: newPostContent,
       likesCount: 0,
@@ -107,6 +185,11 @@ export function CommunityFeedClient() {
 
     setPosts((prev) => [newPost, ...prev]);
     setNewPostContent("");
+
+    // Emit real-time post creation event
+    if (socketRef.current) {
+      socketRef.current.emit("new-post", newPost);
+    }
   };
 
   const handleLikeToggle = (postId: string) => {
@@ -114,10 +197,20 @@ export function CommunityFeedClient() {
       prev.map((p) => {
         if (p.id === postId) {
           const isLiked = !p.isLikedByUser;
+          const nextCount = isLiked ? p.likesCount + 1 : p.likesCount - 1;
+
+          // Emit real-time like update event
+          if (socketRef.current) {
+            socketRef.current.emit("toggle-like", {
+              postId,
+              likesCount: nextCount,
+            });
+          }
+
           return {
             ...p,
             isLikedByUser: isLiked,
-            likesCount: isLiked ? p.likesCount + 1 : p.likesCount - 1,
+            likesCount: nextCount,
           };
         }
         return p;
@@ -136,21 +229,28 @@ export function CommunityFeedClient() {
     const text = newCommentText[postId] || "";
     if (!text.trim()) return;
 
+    const newComment: Comment = {
+      author: displayName,
+      avatar: avatarInitials,
+      content: text,
+      time: "Just now",
+    };
+
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id === postId) {
+          // Emit real-time comment creation event
+          if (socketRef.current) {
+            socketRef.current.emit("new-comment", {
+              postId,
+              comment: newComment,
+            });
+          }
+
           return {
             ...p,
             commentsCount: p.commentsCount + 1,
-            comments: [
-              ...p.comments,
-              {
-                author: "Alex Rivers",
-                avatar: "A",
-                content: text,
-                time: "Just now",
-              },
-            ],
+            comments: [...p.comments, newComment],
           };
         }
         return p;
