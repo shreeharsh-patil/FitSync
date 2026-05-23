@@ -15,7 +15,8 @@ import {
   Image as ImageIcon,
   Sparkles,
   MessageSquare,
-  ChevronRight,
+  ChevronRight, X,
+  X,
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { followUser, unfollowUser } from "@/lib/actions";
@@ -76,6 +77,16 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
         await followUser(user.id, targetUserId);
       }
     }
+
+    // Emit real-time follow WebSocket event
+    if (socketRef.current) {
+      socketRef.current.emit("user-follow", {
+        followerId: user?.id || "mock-follower-id",
+        followerName: displayName,
+        followingId: targetUserId,
+        isFollowing: !isCurrentlyFollowing,
+      });
+    }
   };
 
   const [posts, setPosts] = useState<PostItem[]>([
@@ -124,6 +135,10 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
     shred: true,
     core: false,
   });
+
+  // Real-time Follow Notification states
+  const [followNotification, setFollowNotification] = useState("");
+  const [showNotificationToast, setShowNotificationToast] = useState(false);
 
   const socketRef = useRef<any>(null);
 
@@ -177,6 +192,16 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
             return p;
           })
         );
+      });
+
+      // Listen for dynamic real-time athlete connections
+      socket.on("user-follow-received", (data: { followerId: string; followerName: string; followingId: string; isFollowing: boolean }) => {
+        console.log("Real-time follow event received:", data);
+        if (data.followingId === user?.id && data.isFollowing) {
+          setFollowNotification(`${data.followerName} just started following your training protocol! 🚀⚡`);
+          setShowNotificationToast(true);
+          setTimeout(() => setShowNotificationToast(false), 4500);
+        }
       });
     });
 
@@ -293,7 +318,28 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+      {/* Real-time Follow Notification Toast */}
+      {showNotificationToast && (
+        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-6 fade-in duration-300 max-w-sm">
+          <Card className="p-4 bg-slate-950/90 backdrop-blur-xl border border-secondary/40 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.25)] flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-secondary/20 flex shrink-0 items-center justify-center text-secondary border border-secondary/30">
+              <Sparkles className="h-5 w-5 animate-pulse" />
+            </div>
+            <div className="text-left flex-1 min-w-0">
+              <p className="text-[9px] font-bold text-secondary uppercase tracking-widest leading-none">Athlete Connection</p>
+              <p className="text-xs font-semibold text-white mt-1.5 leading-normal">{followNotification}</p>
+            </div>
+            <button 
+              onClick={() => setShowNotificationToast(false)}
+              className="text-muted-foreground hover:text-white shrink-0 ml-1 p-0.5 rounded-full hover:bg-white/5"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Card>
+        </div>
+      )}
+
       {/* Main Feed */}
       <div className="lg:col-span-2 space-y-6">
         {/* Post Composer */}
