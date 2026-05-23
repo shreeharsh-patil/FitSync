@@ -209,19 +209,19 @@ export default function LandingPage() {
           <nav className="flex gap-8">
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/terms"
+              href="/legal?tab=terms"
             >
               Terms
             </Link>
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/privacy"
+              href="/legal?tab=privacy"
             >
               Privacy
             </Link>
             <Link
               className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/security"
+              href="/legal?tab=security"
             >
               Security
             </Link>
