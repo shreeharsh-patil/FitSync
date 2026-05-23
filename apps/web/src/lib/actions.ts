@@ -364,3 +364,70 @@ export async function askGrokCoach(
     return { success: false, error: "AI Coach was unable to connect." };
   }
 }
+
+export async function getUserActivityAndStreak(userId: string) {
+  try {
+    const logs = await db.workoutLog.findMany({
+      where: { userId },
+      select: { logDate: true },
+      orderBy: { logDate: "desc" },
+    });
+
+    const uniqueDates = Array.from(
+      new Set(
+        logs.map((log) => {
+          const date = new Date(log.logDate);
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          return `${yyyy}-${mm}-${dd}`;
+        })
+      )
+    ).sort((a, b) => b.localeCompare(a));
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yyyyY = yesterday.getFullYear();
+    const mmY = String(yesterday.getMonth() + 1).padStart(2, "0");
+    const ddY = String(yesterday.getDate()).padStart(2, "0");
+    const yesterdayStr = `${yyyyY}-${mmY}-${ddY}`;
+
+    let streak = 0;
+    const latestLogDate = uniqueDates[0];
+
+    if (latestLogDate === todayStr || latestLogDate === yesterdayStr) {
+      let expectedDate = new Date(latestLogDate === todayStr ? today : yesterday);
+      for (const dateStr of uniqueDates) {
+        const yStr = expectedDate.getFullYear();
+        const mStr = String(expectedDate.getMonth() + 1).padStart(2, "0");
+        const dStr = String(expectedDate.getDate()).padStart(2, "0");
+        const currentExpectedStr = `${yStr}-${mStr}-${dStr}`;
+
+        if (dateStr === currentExpectedStr) {
+          streak++;
+          expectedDate.setDate(expectedDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+    }
+
+    return {
+      streak,
+      activeDates: uniqueDates,
+    };
+  } catch (error) {
+    console.error("GetUserActivityAndStreak Error:", error);
+    return {
+      streak: 0,
+      activeDates: [],
+    };
+  }
+}
+

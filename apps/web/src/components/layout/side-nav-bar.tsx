@@ -38,8 +38,19 @@ const mobileNavItems = [
   { name: "Coach", href: "/ai-coach", icon: MessageSquare },
 ];
 
-export function SideNavBar() {
+export function SideNavBar({ user }: { user?: any }) {
   const pathname = usePathname();
+
+  const displayName = user?.name || "Athlete";
+  const userInitials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "AT";
+  const fitnessGoalText = user?.fitnessGoal
+    ? `${user.fitnessGoal.charAt(0).toUpperCase() + user.fitnessGoal.slice(1).toLowerCase()} Plan`
+    : "Active Athlete";
 
   return (
     <>
@@ -101,12 +112,12 @@ export function SideNavBar() {
               </div>
               <div className="flex items-center gap-3 relative z-10">
                 <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary text-xs shadow-lg shadow-secondary/20">
-                  AR
+                  {userInitials}
                 </div>
                 <div className="flex flex-col overflow-hidden">
-                  <span className="text-sm font-bold truncate text-white">Alex Rivers</span>
+                  <span className="text-sm font-bold truncate text-white">{displayName}</span>
                   <span className="text-[10px] text-secondary font-bold uppercase tracking-widest">
-                    Premium Plan
+                    {fitnessGoalText}
                   </span>
                 </div>
               </div>

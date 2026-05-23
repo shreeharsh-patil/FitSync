@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import db from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "./DashboardClient";
+import { getUserActivityAndStreak } from "@/lib/actions";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -25,9 +26,17 @@ export default async function DashboardPage() {
   });
   const activeWorkoutId = userWorkouts[0]?.id;
 
+  // Query user's activity streak details dynamically
+  const streakDetails = await getUserActivityAndStreak(session.user.id);
+
   return (
     <div className="p-4 sm:p-8 space-y-8 sm:space-y-12">
-      <DashboardClient user={user} activeWorkoutId={activeWorkoutId} />
+      <DashboardClient 
+        user={user} 
+        activeWorkoutId={activeWorkoutId} 
+        streakDetails={streakDetails}
+      />
     </div>
   );
 }
+
