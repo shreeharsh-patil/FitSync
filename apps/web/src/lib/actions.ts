@@ -431,3 +431,38 @@ export async function getUserActivityAndStreak(userId: string) {
   }
 }
 
+export async function followUser(followerId: string, followingId: string) {
+  try {
+    await db.follows.create({
+      data: {
+        followerId,
+        followingId,
+      },
+    });
+    revalidatePath("/community");
+    return { success: true };
+  } catch (error) {
+    console.error("Follow user error:", error);
+    return { success: false, error: "Failed to follow user" };
+  }
+}
+
+export async function unfollowUser(followerId: string, followingId: string) {
+  try {
+    await db.follows.delete({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    revalidatePath("/community");
+    return { success: true };
+  } catch (error) {
+    console.error("Unfollow user error:", error);
+    return { success: false, error: "Failed to unfollow user" };
+  }
+}
+
+

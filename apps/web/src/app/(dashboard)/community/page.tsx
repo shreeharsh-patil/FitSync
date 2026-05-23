@@ -12,10 +12,30 @@ export default async function CommunityPage() {
   }
 
   let user = null;
+  let otherUsers: any[] = [];
+  let initialFollowingIds: string[] = [];
+
   if (session?.user?.id) {
     user = await db.user.findUnique({
       where: { id: session.user.id },
     });
+
+    const otherUsersRaw = await db.user.findMany({
+      where: { id: { not: session.user.id } },
+      take: 5,
+    });
+
+    otherUsers = otherUsersRaw.map(u => ({
+      id: u.id,
+      name: u.name || "Athlete",
+      role: u.fitnessGoal ? `${u.fitnessGoal.charAt(0).toUpperCase() + u.fitnessGoal.slice(1).toLowerCase()} Athlete` : "Standard Athlete",
+      avatar: (u.name || "Athlete").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
+    }));
+
+    const follows = await db.follows.findMany({
+      where: { followerId: session.user.id }
+    });
+    initialFollowingIds = follows.map(f => f.followingId);
   }
 
   return (
@@ -32,7 +52,11 @@ export default async function CommunityPage() {
         </div>
       </div>
 
-      <CommunityFeedClient user={user} />
+      <CommunityFeedClient 
+        user={user} 
+        otherUsers={otherUsers}
+        initialFollowingIds={initialFollowingIds}
+      />
     </div>
   );
 }

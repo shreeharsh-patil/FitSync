@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { io } from "socket.io-client";
+import { followUser, unfollowUser } from "@/lib/actions";
 
 interface Comment {
   author: string;
@@ -43,9 +44,11 @@ interface PostItem {
 
 interface CommunityFeedClientProps {
   user?: any;
+  otherUsers?: { id: string; name: string; role: string; avatar: string }[];
+  initialFollowingIds?: string[];
 }
 
-export function CommunityFeedClient({ user }: CommunityFeedClientProps) {
+export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds = [] }: CommunityFeedClientProps) {
   const displayName = user?.name || "Alex Rivers";
   const avatarInitials = displayName
     .split(" ")
@@ -56,6 +59,24 @@ export function CommunityFeedClient({ user }: CommunityFeedClientProps) {
   const userGoal = user?.fitnessGoal
     ? `${user.fitnessGoal.charAt(0).toUpperCase() + user.fitnessGoal.slice(1).toLowerCase()} Athlete`
     : "Premium Athlete";
+
+  const [followingIds, setFollowingIds] = useState<string[]>(initialFollowingIds || []);
+
+  const handleFollowToggle = async (targetUserId: string, isMock = false) => {
+    const isCurrentlyFollowing = followingIds.includes(targetUserId);
+
+    if (isCurrentlyFollowing) {
+      setFollowingIds((prev) => prev.filter((id) => id !== targetUserId));
+      if (!isMock && user?.id) {
+        await unfollowUser(user.id, targetUserId);
+      }
+    } else {
+      setFollowingIds((prev) => [...prev, targetUserId]);
+      if (!isMock && user?.id) {
+        await followUser(user.id, targetUserId);
+      }
+    }
+  };
 
   const [posts, setPosts] = useState<PostItem[]>([
     {
@@ -493,9 +514,46 @@ export function CommunityFeedClient({ user }: CommunityFeedClientProps) {
         <Card className="p-6 glass border-white/5 rounded-[2.5rem] space-y-6">
           <h2 className="font-bold font-heading text-lg text-white">Suggested Athletes</h2>
           <div className="space-y-4">
-            <SuggestedAthlete name="Elena Rossi" role="Sports Psychologist" avatar="E" />
-            <SuggestedAthlete name="Dr. Sarah Chen" role="Sports Scientist" avatar="S" />
-            <SuggestedAthlete name="Chef Julian" role="FitSync Culinary" avatar="J" />
+            {otherUsers.length > 0 ? (
+              otherUsers.map((ath) => (
+                <SuggestedAthlete
+                  key={ath.id}
+                  id={ath.id}
+                  name={ath.name}
+                  role={ath.role}
+                  avatar={ath.avatar}
+                  isFollowing={followingIds.includes(ath.id)}
+                  onToggle={() => handleFollowToggle(ath.id, false)}
+                />
+              ))
+            ) : (
+              <>
+                <SuggestedAthlete
+                  id="mock-elena"
+                  name="Elena Rossi"
+                  role="Sports Psychologist"
+                  avatar="E"
+                  isFollowing={followingIds.includes("mock-elena")}
+                  onToggle={() => handleFollowToggle("mock-elena", true)}
+                />
+                <SuggestedAthlete
+                  id="mock-sarah"
+                  name="Dr. Sarah Chen"
+                  role="Sports Scientist"
+                  avatar="S"
+                  isFollowing={followingIds.includes("mock-sarah")}
+                  onToggle={() => handleFollowToggle("mock-sarah", true)}
+                />
+                <SuggestedAthlete
+                  id="mock-julian"
+                  name="Chef Julian"
+                  role="FitSync Culinary"
+                  avatar="J"
+                  isFollowing={followingIds.includes("mock-julian")}
+                  onToggle={() => handleFollowToggle("mock-julian", true)}
+                />
+              </>
+            )}
           </div>
         </Card>
       </div>
@@ -503,9 +561,21 @@ export function CommunityFeedClient({ user }: CommunityFeedClientProps) {
   );
 }
 
-function SuggestedAthlete({ name, role, avatar }: { name: string; role: string; avatar: string }) {
-  const [following, setFollowing] = useState(false);
-
+function SuggestedAthlete({
+  id,
+  name,
+  role,
+  avatar,
+  isFollowing,
+  onToggle,
+}: {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  isFollowing: boolean;
+  onToggle: () => void;
+}) {
   return (
     <div className="flex items-center justify-between group">
       <div className="flex items-center gap-3">
@@ -518,14 +588,14 @@ function SuggestedAthlete({ name, role, avatar }: { name: string; role: string; 
         </div>
       </div>
       <Button
-        onClick={() => setFollowing(!following)}
-        variant={following ? "outline" : "secondary"}
+        onClick={onToggle}
+        variant={isFollowing ? "outline" : "secondary"}
         size="sm"
         className={`h-8 text-xs font-bold rounded-xl transition-all ${
-          following ? "border-white/10 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-500" : ""
+          isFollowing ? "border-white/10 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-500" : ""
         }`}
       >
-        {following ? "Following" : "Follow"}
+        {isFollowing ? "Following" : "Follow"}
       </Button>
     </div>
   );
