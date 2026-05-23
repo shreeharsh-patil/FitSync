@@ -64,6 +64,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
       socket.broadcast.emit("comment-received", data);
     });
 
+    // Listen for real-time follow events
+    socket.on("user-follow", (data) => {
+      console.log("Real-time follow event:", data);
+      // Broadcast follow details to everyone else
+      socket.broadcast.emit("user-follow-received", data);
+    });
+
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);
     });
