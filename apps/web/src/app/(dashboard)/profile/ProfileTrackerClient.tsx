@@ -264,11 +264,11 @@ export function ProfileTrackerClient({ user }: ProfileTrackerClientProps) {
                     onChange={(e) => setFitnessGoal(e.target.value)}
                     className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-secondary/40"
                   >
-                    <option value="WEIGHT_LOSS">Weight Loss</option>
-                    <option value="MUSCLE_GAIN">Muscle Gain</option>
-                    <option value="ENDURANCE">Endurance</option>
-                    <option value="FLEXIBILITY">Flexibility</option>
-                    <option value="GENERAL">General Fitness</option>
+                    <option value="WEIGHT_LOSS" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Weight Loss</option>
+                    <option value="MUSCLE_GAIN" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Muscle Gain</option>
+                    <option value="ENDURANCE" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Endurance</option>
+                    <option value="FLEXIBILITY" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Flexibility</option>
+                    <option value="GENERAL" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>General Fitness</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -280,10 +280,10 @@ export function ProfileTrackerClient({ user }: ProfileTrackerClientProps) {
                     onChange={(e) => setActivityLevel(e.target.value)}
                     className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-secondary/40"
                   >
-                    <option value="SEDENTARY">Sedentary</option>
-                    <option value="LIGHTLY_ACTIVE">Lightly Active</option>
-                    <option value="MODERATELY_ACTIVE">Moderately Active</option>
-                    <option value="VERY_ACTIVE">Very Active</option>
+                    <option value="SEDENTARY" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Sedentary</option>
+                    <option value="LIGHTLY_ACTIVE" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Lightly Active</option>
+                    <option value="MODERATELY_ACTIVE" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Moderately Active</option>
+                    <option value="VERY_ACTIVE" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Very Active</option>
                   </select>
                 </div>
               </div>

@@ -287,10 +287,10 @@ export function NutritionTrackerClient({ initialLogs, userId }: NutritionTracker
                   onChange={(e) => setMealType(e.target.value as MealType)}
                   className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-secondary/40"
                 >
-                  <option value="BREAKFAST">Breakfast</option>
-                  <option value="LUNCH">Lunch</option>
-                  <option value="DINNER">Dinner</option>
-                  <option value="SNACK">Snack</option>
+                  <option value="BREAKFAST" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Breakfast</option>
+                  <option value="LUNCH" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Lunch</option>
+                  <option value="DINNER" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Dinner</option>
+                  <option value="SNACK" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Snack</option>
                 </select>
               </div>
 

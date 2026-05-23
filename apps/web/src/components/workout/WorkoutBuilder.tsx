@@ -66,7 +66,7 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
 
   const addExercise = (exercise: { id: string; name: string }) => {
     const newEx: SelectedExercise = {
-      id: crypto.randomUUID(),
+      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
       exerciseId: exercise.id,
       name: exercise.name,
       sets: 3,
@@ -179,11 +179,11 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
                     onChange={(e) =>
                       setDifficulty(e.target.value as Difficulty)
                     }
-                    className="w-full h-14 bg-white/5 border-white/5 rounded-2xl px-4 text-sm font-bold appearance-none hover:bg-white/10 transition-colors"
+                    className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl px-4 text-sm font-bold appearance-none hover:bg-white/10 transition-colors text-white"
                   >
-                    <option value="BEGINNER">Beginner</option>
-                    <option value="INTERMEDIATE">Intermediate</option>
-                    <option value="ADVANCED">Advanced</option>
+                    <option value="BEGINNER" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Beginner</option>
+                    <option value="INTERMEDIATE" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Intermediate</option>
+                    <option value="ADVANCED" className="bg-[#0f172a] text-white" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Advanced</option>
                   </select>
                 </div>
                 <div className="space-y-2">

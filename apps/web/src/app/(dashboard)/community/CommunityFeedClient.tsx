@@ -93,7 +93,7 @@ export function CommunityFeedClient() {
     if (!newPostContent.trim()) return;
 
     const newPost: PostItem = {
-      id: crypto.randomUUID(),
+      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
       author: "Alex Rivers",
       role: "Premium Athlete",
       avatar: "A",
