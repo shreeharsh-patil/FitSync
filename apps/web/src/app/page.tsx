@@ -25,13 +25,13 @@ export default function LandingPage() {
         <nav className="ml-auto hidden md:flex gap-8">
           <Link
             className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="#features"
+            href="/features"
           >
             Features
           </Link>
           <Link
             className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-            href="#pricing"
+            href="/pricing"
           >
             Pricing
           </Link>
@@ -90,7 +90,7 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="#features">
+              <Link href="/features">
                 <Button
                   size="lg"
                   variant="outline"

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { auth } from "@/auth";
 import db from "@/lib/db";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -33,6 +34,13 @@ export default async function DashboardPage() {
   }
 
   const firstName = user.name?.split(" ")[0] || "Athlete";
+
+  // Query user's workouts to find active routine
+  const userWorkouts = await db.workout.findMany({
+    where: { userId: session.user.id },
+    take: 1,
+  });
+  const activeWorkoutId = userWorkouts[0]?.id;
 
   return (
     <div className="p-8 space-y-12">
@@ -164,13 +172,15 @@ export default async function DashboardPage() {
                 Your training volume is peaking. Consider a deload week to
                 optimize recovery.
               </p>
-              <Button
-                variant="link"
-                className="text-secondary font-bold p-0 flex items-center gap-2 group-hover:translate-x-1 transition-transform"
-              >
-                View Full Report
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+              <Link href="/progress" className="inline-block">
+                <Button
+                  variant="link"
+                  className="text-secondary font-bold p-0 flex items-center gap-2 group-hover:translate-x-1 transition-transform"
+                >
+                  View Full Report
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
         </Card>
@@ -207,10 +217,21 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-14 rounded-2xl text-lg shadow-xl shadow-secondary/10 group">
-                Enter Live Session
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              {activeWorkoutId ? (
+                <Link href={`/workout/${activeWorkoutId}`} className="block w-full">
+                  <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-14 rounded-2xl text-lg shadow-xl shadow-secondary/10 group">
+                    Enter Live Session
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/workout/builder" className="block w-full">
+                  <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-14 rounded-2xl text-lg shadow-xl shadow-secondary/10 group">
+                    Create Workout Plan
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              )}
             </Card>
           </div>
 
@@ -227,12 +248,14 @@ export default async function DashboardPage() {
                 You are 15% more likely to hit your targets when you train
                 before 10 AM. Your sleep data suggests tomorrow is a peak day.
               </p>
-              <Button
-                variant="link"
-                className="p-0 h-auto text-accent font-bold uppercase tracking-widest text-[10px] hover:text-accent/80 transition-colors"
-              >
-                Explore Recovery Protocols
-              </Button>
+              <Link href="/ai-coach" className="inline-block">
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-accent font-bold uppercase tracking-widest text-[10px] hover:text-accent/80 transition-colors"
+                >
+                  Explore Recovery Protocols
+                </Button>
+              </Link>
             </div>
           </Card>
         </div>
