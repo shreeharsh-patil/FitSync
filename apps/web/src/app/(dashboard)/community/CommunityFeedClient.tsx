@@ -15,7 +15,7 @@ import {
   Image as ImageIcon,
   Sparkles,
   MessageSquare,
-  ChevronRight, X,
+  ChevronRight,
   X,
 } from "lucide-react";
 import { io } from "socket.io-client";
