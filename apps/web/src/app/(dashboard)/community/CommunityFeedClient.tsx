@@ -279,7 +279,7 @@ export function CommunityFeedClient({ user }: CommunityFeedClientProps) {
         <Card className="p-6 glass border-white/5 rounded-[2rem]">
           <form onSubmit={handleComposePost} className="flex gap-4">
             <div className="h-12 w-12 rounded-full bg-secondary flex shrink-0 items-center justify-center font-bold text-primary shadow-lg shadow-secondary/15">
-              AR
+              {avatarInitials}
             </div>
             <div className="flex-1 space-y-4">
               <Input
@@ -403,7 +403,7 @@ export function CommunityFeedClient({ user }: CommunityFeedClientProps) {
                 {/* Comment Input Composer */}
                 <div className="flex gap-3">
                   <div className="h-8 w-8 rounded-full bg-secondary flex shrink-0 items-center justify-center font-bold text-primary text-[10px]">
-                    AR
+                    {avatarInitials}
                   </div>
                   <div className="flex-1 flex gap-2">
                     <Input
