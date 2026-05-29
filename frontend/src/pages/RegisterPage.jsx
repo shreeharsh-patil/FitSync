@@ -40,7 +40,7 @@ export default function RegisterPage({ onViewChange }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface p-4 relative overflow-hidden text-on-surface">
+    <div className="min-h-screen w-full flex items-center justify-center bg-surface p-4 relative overflow-hidden text-on-surface">
       {/* Background Decorative Elements */}
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-fixed/5 rounded-full blur-[120px]" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary-container/5 rounded-full blur-[120px]" />
