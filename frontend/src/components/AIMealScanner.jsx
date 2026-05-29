@@ -360,7 +360,7 @@ export default function AIMealScanner({ onLogNutrition }) {
         ...selectedMeal,
         name: customMealName
       };
-      onLogNutrition(finalMeal.calories);
+      onLogNutrition(finalMeal);
     }
     
     setMode('success');

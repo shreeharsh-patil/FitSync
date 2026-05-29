@@ -7,6 +7,11 @@ import WatchSimulator from './components/WatchSimulator';
 import AICoachChat from './components/AICoachChat';
 import AIMealScanner from './components/AIMealScanner';
 import WorkoutBuilder from './components/WorkoutBuilder';
+import NutritionHub from './components/NutritionHub';
+import CommunityFeed from './components/CommunityFeed';
+import AIWorkoutGenerator from './components/AIWorkoutGenerator';
+import WeightTracker from './components/WeightTracker';
+import AchievementsPanel from './components/AchievementsPanel';
 
 function App() {
   // --- Navigation & Core Views ---
@@ -20,10 +25,70 @@ function App() {
   // AI Tools & Scanners
   const [showMealScanner, setShowMealScanner] = useState(false);
   const [showWorkoutBuilder, setShowWorkoutBuilder] = useState(false);
+  const [showAIWorkoutGenerator, setShowAIWorkoutGenerator] = useState(false);
+  const [showWeightTrackerModal, setShowWeightTrackerModal] = useState(false);
+  const [hasChattedWithAI, setHasChattedWithAI] = useState(false);
+  const [socialPosts, setSocialPosts] = useState([
+    {
+      id: 1,
+      author: "Sarah Miller",
+      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0",
+      time: "2 hours ago",
+      tag: "Cardio",
+      content: "Smashed my morning tempo run around the reservoir! Cadence felt amazing and managed to shave off 12 seconds from my best mile pace. Progressive overload is paying off! 🏃‍♀️✨",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-",
+      reactions: { fire: 14, strong: 8, clap: 6 },
+      userReacted: { fire: false, strong: false, clap: false },
+      comments: [
+        { id: 1, author: "John Doe", text: "Incredible pace, Sarah! What shoes are you running in?", time: "1h ago" },
+        { id: 2, author: "Coach Marcus", text: "Form is looking extremely stable. Keep up the high cadence work.", time: "45m ago" }
+      ],
+      showComments: false
+    },
+    {
+      id: 2,
+      author: "John Doe",
+      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuEtWq0z7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8",
+      time: "5 hours ago",
+      tag: "Strength",
+      content: "Hit a new Personal Record on bench press today: 110kg for 3 clean reps! Rest periods were longer, but the power output felt solid. Fueled by high protein meals all week! 💪🏋️‍♂️",
+      image: "",
+      reactions: { fire: 9, strong: 18, clap: 4 },
+      userReacted: { fire: false, strong: false, clap: false },
+      comments: [
+        { id: 1, author: "Sarah Miller", text: "Massive lift John! Clean reps too!", time: "4h ago" }
+      ],
+      showComments: false
+    }
+  ]);
   const [routinesList, setRoutinesList] = useState([
     { name: 'Bench Press', routine: 'Chest & Triceps', repinfo: '4 Sets x 8 Reps' },
     { name: 'Incline Dumbbell Flys', routine: 'Chest Focus', repinfo: '3 Sets x 12 Reps' },
     { name: 'Dips (Weighted)', routine: 'Triceps & Lower Chest', repinfo: '3 Sets x 8 Reps' }
+  ]);
+  const [loggedMeals, setLoggedMeals] = useState([
+    {
+      id: 1,
+      name: "Avocado Toast with Egg",
+      calories: 380,
+      protein: 16,
+      carbs: 42,
+      fats: 18,
+      type: "Breakfast",
+      time: "08:15 AM",
+      img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-"
+    },
+    {
+      id: 2,
+      name: "Grilled Chicken Salad",
+      calories: 520,
+      protein: 42,
+      carbs: 22,
+      fats: 28,
+      type: "Lunch",
+      time: "01:30 PM",
+      img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-"
+    }
   ]);
   
   const [selectedDayNum, setSelectedDayNum] = useState(14); // Wed 14 default
@@ -37,6 +102,23 @@ function App() {
   const triggerToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleShareToFeed = (content) => {
+    const newPost = {
+      id: socialPosts.length + 1,
+      author: userProfile.name,
+      avatar: userProfile.avatar,
+      time: "Just now",
+      tag: "Milestone",
+      content: content,
+      image: "",
+      reactions: { fire: 0, strong: 0, clap: 0 },
+      userReacted: { fire: false, strong: false, clap: false },
+      comments: [],
+      showComments: false
+    };
+    setSocialPosts(prev => [newPost, ...prev]);
   };
 
   // --- User Profile & Goals ---
@@ -63,7 +145,7 @@ function App() {
     glassesLog: 6 // 6 of 8 glasses
   });
 
-  const [calorieIntake, setCalorieIntake] = useState(1840);
+  const [calorieIntake, setCalorieIntake] = useState(900);
   const [activeCalorieGoal, setActiveCalorieGoal] = useState(700);
 
   // Hourly burn graph heights
@@ -636,6 +718,19 @@ function App() {
             <span className="font-body-md text-sm">Social Feed</span>
           </button>
 
+          {/* Nutrition Hub */}
+          <button 
+            onClick={() => { setCurrentTab('nutrition'); setActiveWorkoutSubView(null); }}
+            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
+              currentTab === 'nutrition' 
+                ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
+                : 'text-on-surface-variant hover:bg-surface-variant/30'
+            }`}
+          >
+            <span className="material-symbols-outlined">restaurant</span>
+            <span className="font-body-md text-sm">Nutrition Hub</span>
+          </button>
+
           {/* Preferences (Settings) */}
           <button 
             onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}
@@ -694,6 +789,21 @@ function App() {
             fitness_center
           </span>
           <span className="font-label-sm text-[10px]">Workouts</span>
+        </button>
+
+        {/* Nutrition */}
+        <button 
+          onClick={() => { setCurrentTab('nutrition'); setActiveWorkoutSubView(null); }}
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+            currentTab === 'nutrition' 
+              ? 'text-primary bg-primary/10 rounded-xl font-bold' 
+              : 'text-on-surface-variant hover:text-primary'
+          }`}
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'nutrition' ? 1 : 0}` }}>
+            restaurant
+          </span>
+          <span className="font-label-sm text-[10px]">Nutrition</span>
         </button>
 
         {/* Activity/Analytics */}
@@ -767,13 +877,14 @@ function App() {
               </div>
             )}
             <div>
-              <h2 className="font-display-sm text-md md:text-xl lg:text-display-sm text-primary font-bold leading-tight truncate">
+              <h2 className="font-display-sm text-lg md:text-xl lg:text-2xl text-primary font-bold">
                 {activeWorkoutSubView === 'running' ? 'Running Analytics' : (
                   <>
                     {currentTab === 'home' && (dashboardMode === 'performance' ? 'Coaching Hub' : 'Wellness Composition')}
                     {currentTab === 'activity' && 'Analytics & Metrics'}
                     {currentTab === 'workouts' && 'Workouts Hub'}
-                    {currentTab === 'community' && 'Social Hub'}
+                    {currentTab === 'nutrition' && 'Nutrition & Hydration'}
+                    {currentTab === 'community' && 'Social Feed'}
                     {currentTab === 'settings' && 'User Preferences'}
                   </>
                 )}
@@ -856,7 +967,11 @@ function App() {
           <div className="flex flex-col gap-lg animate-fade-in">
             {/* Interactive Coaching Chat Component */}
             {dashboardMode === 'performance' && (
-              <AICoachChat userProfile={userProfile} activeLog={activeLog} />
+              <AICoachChat 
+                userProfile={userProfile} 
+                activeLog={activeLog} 
+                onChatted={() => setHasChattedWithAI(true)} 
+              />
             )}
 
             {/* PERFORMANCE MODE: Quick Summary Dashboard */}
@@ -1188,9 +1303,16 @@ function App() {
                     </div>
                   </div>
 
-                  <div className="mt-xs p-2 bg-white/5 rounded-lg border border-white/5 text-center text-[10px]">
+                  <div className="mt-xs p-2 bg-white/5 rounded-lg border border-white/5 text-center text-[10px] flex flex-col gap-xs">
                     <p className="text-on-surface">Healthy range: 18.5 - 24.9 BMI</p>
                     <p className="text-primary-fixed font-bold">Your ratio is in the optimal range!</p>
+                    <button 
+                      onClick={() => setShowWeightTrackerModal(true)}
+                      className="w-full mt-xs py-1.5 bg-secondary-container/20 text-secondary-fixed-dim hover:bg-secondary-container hover:text-on-secondary-container font-bold border border-secondary-fixed-dim/30 rounded-lg active:scale-95 transition-all text-[10px] flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">scale</span>
+                      Track Weight Trends & Logs
+                    </button>
                   </div>
                 </section>
 
@@ -1430,7 +1552,7 @@ function App() {
                 </div>
 
                 {/* Achievements logs grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-md mb-lg">
                   {prLogs.map(log => (
                     <div key={log.id} className={`glass-card p-md rounded-xl flex items-center gap-md hover:scale-[1.01] transition-transform border-l-4 ${
                       log.type === 'pr' ? 'border-l-primary-fixed' : 'border-l-secondary-fixed'
@@ -1449,6 +1571,14 @@ function App() {
                     </div>
                   ))}
                 </div>
+
+                {/* Dynamic Achievements & Badges Panel */}
+                <AchievementsPanel 
+                  activeLog={activeLog}
+                  hasChattedWithAI={hasChattedWithAI}
+                  triggerToast={triggerToast}
+                  onShareToFeed={handleShareToFeed}
+                />
 
               </div>
 
@@ -1770,7 +1900,13 @@ function App() {
                   <div className="glass-card p-lg rounded-2xl">
                     <div className="flex justify-between items-center mb-lg">
                       <h3 className="font-headline-lg text-xs md:text-sm text-primary font-bold uppercase tracking-wider">Routines Planner</h3>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5">
+                        <button 
+                          onClick={() => setShowAIWorkoutGenerator(true)}
+                          className="text-[10px] bg-gradient-to-r from-primary-fixed to-secondary-container text-on-primary-fixed px-2.5 py-1 rounded-full font-bold cursor-pointer hover:scale-105 transition-transform"
+                        >
+                          🪄 AI Generator
+                        </button>
                         <button 
                           onClick={() => setShowWorkoutBuilder(true)}
                           className="text-[10px] bg-secondary-container text-on-secondary-container px-2.5 py-1 rounded-full font-bold cursor-pointer"
@@ -1850,74 +1986,104 @@ function App() {
         )}
 
         {/* ============================================================== */}
+        {/* VIEW: NUTRITION & HYDRATION HUB */}
+        {/* ============================================================== */}
+        {currentTab === 'nutrition' && (
+          <NutritionHub 
+            calorieIntake={calorieIntake}
+            setCalorieIntake={setCalorieIntake}
+            hydrationLogs={hydrationLogs}
+            addHydration={addHydration}
+            setShowMealScanner={setShowMealScanner}
+            userProfile={userProfile}
+            loggedMeals={loggedMeals}
+            triggerToast={triggerToast}
+          />
+        )}
+
+        {/* ============================================================== */}
         {/* VIEW: COMMUNITY (SOCIAL) */}
         {/* ============================================================== */}
         {currentTab === 'community' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg items-start animate-fade-in">
-            {/* Friends Leaderboard */}
-            <div className="glass-card p-lg rounded-2xl">
-              <h3 className="font-headline-lg text-md md:text-lg text-primary mb-md">Leaderboard Challenges</h3>
-              <div className="flex flex-col gap-sm">
-                {[
-                  { rank: 1, name: 'Sarah Miller', score: '14,232 steps', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0' },
-                  { rank: 2, name: `${userProfile.name} (You)`, score: `${activeLog.steps.toLocaleString()} steps`, active: true, avatar: userProfile.avatar },
-                  { rank: 3, name: 'John Doe', score: '9,432 steps', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuEtWq0z7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8' }
-                ].map((friend, idx) => (
-                  <div 
-                    key={idx}
-                    className={`flex items-center justify-between p-sm rounded-xl border transition-all ${
-                      friend.active 
-                        ? 'bg-primary-container/10 border-primary-fixed/30 shadow-md' 
-                        : 'bg-surface-container-high/40 border-white/5 hover:border-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-sm">
-                      <span className={`w-5 font-headline-lg font-bold text-center ${friend.rank === 1 ? 'text-primary-fixed' : 'text-on-surface-variant'}`}>
-                        {friend.rank}
-                      </span>
-                      <img src={friend.avatar} alt="User avatar" className="w-8 h-8 rounded-full object-cover shrink-0" />
-                      <div>
-                        <div className="font-label-md text-xs text-primary font-bold">{friend.name}</div>
-                        <div className="text-[10px] text-on-surface-variant">{friend.score}</div>
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={() => triggerToast(friend.active ? 'Score shared!' : 'Cheered buddy!')}
-                      className="text-[10px] bg-surface-variant hover:bg-white/10 border border-white/15 px-3 py-1 rounded-full text-on-surface-variant hover:text-white cursor-pointer active:scale-95 transition-transform"
-                    >
-                      {friend.active ? 'Share' : 'Cheer'}
-                    </button>
-                  </div>
-                ))}
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg items-start animate-fade-in">
+            {/* Left Column: Community Feed */}
+            <div className="col-span-12 lg:col-span-8">
+              <CommunityFeed 
+                userProfile={userProfile}
+                activeLog={activeLog}
+                triggerToast={triggerToast}
+                posts={socialPosts}
+                setPosts={setSocialPosts}
+              />
             </div>
 
-            {/* Weekend Challenge */}
-            <div className="bg-gradient-to-br from-surface-container/80 to-surface-container-high/80 backdrop-blur-xl border border-white/10 p-lg rounded-2xl shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-secondary-fixed/5 rounded-full blur-[40px] pointer-events-none -mr-12 -mt-12"></div>
-              
-              <div className="flex items-center gap-xs mb-sm">
-                <span className="material-symbols-outlined text-secondary-fixed text-sm">groups</span>
-                <span className="font-label-sm text-[10px] text-secondary-fixed uppercase tracking-wider font-bold">Team Challenge</span>
-              </div>
-              <h3 className="font-headline-lg text-sm md:text-lg text-primary font-bold mb-1">Weekend Hydration Warriors</h3>
-              <p className="text-xs text-on-surface-variant mb-md leading-relaxed">Drink 8 glasses of water daily from Fri-Sun. Team goal: 80% completion.</p>
-              
-              <div className="flex justify-between text-xs mb-2 font-semibold">
-                <span className="text-on-surface-variant">Team Completion Rate</span>
-                <span className="text-secondary-fixed">68% Finished</span>
-              </div>
-              <div className="w-full bg-surface-variant h-1.5 rounded-full overflow-hidden mb-lg">
-                <div className="bg-secondary-fixed h-full rounded-full w-[68%]" />
+            {/* Right Column: Sidebar challenges */}
+            <div className="col-span-12 lg:col-span-4 flex flex-col gap-lg">
+              {/* Friends Leaderboard */}
+              <div className="glass-card p-lg rounded-2xl">
+                <h3 className="font-headline-lg text-md md:text-lg text-primary mb-md">Leaderboard Challenges</h3>
+                <div className="flex flex-col gap-sm">
+                  {[
+                    { rank: 1, name: 'Sarah Miller', score: '14,232 steps', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0' },
+                    { rank: 2, name: `${userProfile.name} (You)`, score: `${activeLog.steps.toLocaleString()} steps`, active: true, avatar: userProfile.avatar },
+                    { rank: 3, name: 'John Doe', score: '9,432 steps', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuEtWq0z7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8' }
+                  ].map((friend, idx) => (
+                    <div 
+                      key={idx}
+                      className={`flex items-center justify-between p-sm rounded-xl border transition-all ${
+                        friend.active 
+                          ? 'bg-primary-container/10 border-primary-fixed/30 shadow-md' 
+                          : 'bg-surface-container-high/40 border-white/5 hover:border-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-sm">
+                        <span className={`w-5 font-headline-lg font-bold text-center ${friend.rank === 1 ? 'text-primary-fixed' : 'text-on-surface-variant'}`}>
+                          {friend.rank}
+                        </span>
+                        <img src={friend.avatar} alt="User avatar" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                        <div>
+                          <div className="font-label-md text-xs text-primary font-bold">{friend.name}</div>
+                          <div className="text-[10px] text-on-surface-variant">{friend.score}</div>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={() => triggerToast(friend.active ? 'Score shared!' : 'Cheered buddy!')}
+                        className="text-[10px] bg-surface-variant hover:bg-white/10 border border-white/15 px-3 py-1 rounded-full text-on-surface-variant hover:text-white cursor-pointer active:scale-95 transition-transform"
+                      >
+                        {friend.active ? 'Share' : 'Cheer'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <button 
-                onClick={() => triggerToast('Weekend challenge board loaded')}
-                className="w-full py-2 bg-secondary-fixed text-on-secondary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-xs cursor-pointer"
-              >
-                View Challenge Board
-              </button>
+              {/* Weekend Challenge */}
+              <div className="bg-gradient-to-br from-surface-container/80 to-surface-container-high/80 backdrop-blur-xl border border-white/10 p-lg rounded-2xl shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-secondary-fixed/5 rounded-full blur-[40px] pointer-events-none -mr-12 -mt-12"></div>
+                
+                <div className="flex items-center gap-xs mb-sm">
+                  <span className="material-symbols-outlined text-secondary-fixed text-sm">groups</span>
+                  <span className="font-label-sm text-[10px] text-secondary-fixed uppercase tracking-wider font-bold">Team Challenge</span>
+                </div>
+                <h3 className="font-headline-lg text-sm md:text-lg text-primary font-bold mb-1">Weekend Hydration Warriors</h3>
+                <p className="text-xs text-on-surface-variant mb-md leading-relaxed">Drink 8 glasses of water daily from Fri-Sun. Team goal: 80% completion.</p>
+                
+                <div className="flex justify-between text-xs mb-2 font-semibold">
+                  <span className="text-on-surface-variant">Team Completion Rate</span>
+                  <span className="text-secondary-fixed">68% Finished</span>
+                </div>
+                <div className="w-full bg-surface-variant h-1.5 rounded-full overflow-hidden mb-lg">
+                  <div className="bg-secondary-fixed h-full rounded-full w-[68%]" />
+                </div>
+
+                <button 
+                  onClick={() => triggerToast('Weekend challenge board loaded')}
+                  className="w-full py-2 bg-secondary-fixed text-on-secondary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-xs cursor-pointer"
+                >
+                  View Challenge Board
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -2056,9 +2222,23 @@ function App() {
               <span className="material-symbols-outlined text-lg">close</span>
             </button>
             <AIMealScanner 
-              onLogNutrition={(calories) => {
-                setCalorieIntake(prev => prev + calories);
-                triggerToast(`🥗 Logged Food Scan: +${calories} kcal`);
+              onLogNutrition={(meal) => {
+                setCalorieIntake(prev => prev + meal.calories);
+                
+                const newLoggedMeal = {
+                  id: loggedMeals.length + 1,
+                  name: meal.name,
+                  calories: meal.calories,
+                  protein: meal.protein,
+                  carbs: meal.carbs,
+                  fats: meal.fats,
+                  type: meal.type || "Snack",
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  img: meal.img || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-'
+                };
+                
+                setLoggedMeals(prev => [newLoggedMeal, ...prev]);
+                triggerToast(`🥗 Logged AI Meal Scan: ${meal.name} (+${meal.calories} kcal)`);
                 setTimeout(() => setShowMealScanner(false), 2000);
               }} 
             />
@@ -2089,6 +2269,54 @@ function App() {
                 triggerToast(`🏋️‍♂️ Custom routine '${routineName}' created!`);
                 setTimeout(() => setShowWorkoutBuilder(false), 1500);
               }} 
+            />
+          </div>
+        </div>
+      )}
+
+      {/* AI Workout Generator Modal Dialog */}
+      {showAIWorkoutGenerator && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-2xl my-8">
+            <button 
+              onClick={() => setShowAIWorkoutGenerator(false)}
+              className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+            <AIWorkoutGenerator 
+              onSaveRoutine={(routineName, exercisesList) => {
+                setRoutinesList(prev => [
+                  { 
+                    name: routineName, 
+                    routine: 'AI Optimized', 
+                    repinfo: `${exercisesList.length} Exercises`
+                  },
+                  ...prev
+                ]);
+                triggerToast(`🏋️‍♂️ AI routine '${routineName}' saved!`);
+                setTimeout(() => setShowAIWorkoutGenerator(false), 1500);
+              }}
+              triggerToast={triggerToast}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Weight Tracker Modal Dialog */}
+      {showWeightTrackerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-xl my-8">
+            <button 
+              onClick={() => setShowWeightTrackerModal(false)}
+              className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+            <WeightTracker 
+              userProfile={userProfile}
+              setUserProfile={setUserProfile}
+              triggerToast={triggerToast}
             />
           </div>
         </div>

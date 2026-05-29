@@ -161,7 +161,7 @@ const parseInlineFormatting = (text) => {
   return parts.length > 0 ? parts : text;
 };
 
-export default function AICoachChat({ userProfile, activeLog }) {
+export default function AICoachChat({ userProfile, activeLog, onChatted }) {
   const [messages, setMessages] = useState([
     {
       id: "welcome",
@@ -191,6 +191,7 @@ How can I help you today? You can type your question or select one of the recove
   const handleSend = (textToSend = inputValue) => {
     const trimmedText = textToSend.trim();
     if (!trimmedText) return;
+    if (onChatted) onChatted();
 
     // 1. Add user message
     const userMsgId = `user-${Date.now()}`;
