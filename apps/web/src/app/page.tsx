@@ -108,6 +108,23 @@ export default function LandingPage() {
               </Link>
             </motion.div>
 
+            {/* Hero Image / Screen Showcase */}
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+              className="w-full max-w-5xl mt-8 relative group/hero-img"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-secondary to-accent opacity-20 blur-[80px] rounded-[3rem] group-hover/hero-img:opacity-30 transition-opacity duration-700 pointer-events-none" />
+              <div className="relative glass border-white/10 rounded-[2.5rem] p-2 overflow-hidden shadow-3xl">
+                <img
+                  src="/hero-dashboard.png"
+                  alt="FitSync Performance Dashboard"
+                  className="w-full h-auto rounded-[2rem] border border-white/5 object-cover"
+                />
+              </div>
+            </motion.div>
+
             {/* Social Proof */}
             <motion.div 
               initial={{ opacity: 0 }}
@@ -202,6 +219,111 @@ export default function LandingPage() {
                 description="Stay motivated with an advanced gamification system and community challenges."
               />
             </div>
+          </div>
+        </section>
+
+        {/* Live Preview / alternating showcase */}
+        <section className="w-full py-32 md:py-48 relative overflow-hidden bg-slate-950/20">
+          <div className="container mx-auto px-4 md:px-6 space-y-32">
+            
+            {/* Part 1: Performance */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="space-y-6"
+              >
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-bold uppercase tracking-widest">
+                  <Activity className="h-3.5 w-3.5" />
+                  Ecosystem Tracking
+                </div>
+                <h3 className="text-4xl sm:text-6xl font-bold font-heading text-white leading-tight">
+                  Biometric Metric <br />
+                  <span className="text-accent">Synchronization</span>
+                </h3>
+                <p className="text-muted-foreground text-lg leading-relaxed font-medium">
+                  Experience real-time performance tracking integrated across all platforms. Capture velocity index, workout heart-rate zone distributions, and automatic set increments inside one unified hub.
+                </p>
+                <ul className="space-y-3 text-sm text-muted-foreground font-medium">
+                  <li className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-accent" />
+                    Real-time biosensor wearable synchronization
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-accent" />
+                    Progressive overload volume calculation algorithms
+                  </li>
+                </ul>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-accent/20 blur-[60px] rounded-[3rem] opacity-30 group-hover:opacity-50 transition-opacity pointer-events-none" />
+                <div className="relative glass border-white/5 rounded-[3rem] p-2 overflow-hidden shadow-2xl">
+                  <img
+                    src="/performance-showcase.png"
+                    alt="Ecosystem Tracking"
+                    className="w-full h-auto rounded-[2.5rem] border border-white/5 object-cover"
+                  />
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Part 2: Nutrition */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="lg:order-2 space-y-6"
+              >
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-bold uppercase tracking-widest">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  AI Nutrition Engine
+                </div>
+                <h3 className="text-4xl sm:text-6xl font-bold font-heading text-white leading-tight">
+                  Intelligent Photo-Metric <br />
+                  <span className="text-secondary">Meal Scanning</span>
+                </h3>
+                <p className="text-muted-foreground text-lg leading-relaxed font-medium">
+                  Simply point your device camera to log macro distributions instantly. Our AI parses meal components, estimates volumes, and compiles precise protein/carb targets tailored to your day's protocol.
+                </p>
+                <ul className="space-y-3 text-sm text-muted-foreground font-medium">
+                  <li className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-secondary" />
+                    Photo-metric computer vision food recognition
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-secondary" />
+                    24/7 AI Grok Coach dietary suggestions
+                  </li>
+                </ul>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="lg:order-1 relative group"
+              >
+                <div className="absolute inset-0 bg-secondary/20 blur-[60px] rounded-[3rem] opacity-30 group-hover:opacity-50 transition-opacity pointer-events-none" />
+                <div className="relative glass border-white/5 rounded-[3rem] p-2 overflow-hidden shadow-2xl">
+                  <img
+                    src="/nutrition-showcase.png"
+                    alt="AI Nutrition Engine"
+                    className="w-full h-auto rounded-[2.5rem] border border-white/5 object-cover"
+                  />
+                </div>
+              </motion.div>
+            </div>
+
           </div>
         </section>
 
