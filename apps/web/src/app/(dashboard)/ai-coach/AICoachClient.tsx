@@ -83,7 +83,7 @@ export function AICoachClient() {
   };
 
   return (
-    <Card className="flex-1 glass border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col relative h-[550px] shadow-2xl">
+    <Card className="flex-1 glass border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col relative shadow-2xl min-h-[500px]">
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/5 via-transparent to-accent/5 opacity-50 pointer-events-none" />
 
       {/* Messages Area */}

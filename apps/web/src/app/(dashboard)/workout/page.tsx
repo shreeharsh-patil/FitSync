@@ -17,8 +17,8 @@ export default async function WorkoutPage() {
   const workouts = await getWorkouts(session.user.id);
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex justify-between items-end">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <h1 className="text-4xl font-bold font-heading tracking-tight">
             Workouts

@@ -11,7 +11,7 @@ export default async function AICoachPage() {
   }
 
   return (
-    <div className="p-8 h-[calc(100vh-2rem)] flex flex-col space-y-6 max-w-5xl mx-auto">
+    <div className="h-[calc(100vh-8rem)] flex flex-col space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-end shrink-0">
         <div>
           <h1 className="text-4xl font-bold font-heading tracking-tight flex items-center gap-3">

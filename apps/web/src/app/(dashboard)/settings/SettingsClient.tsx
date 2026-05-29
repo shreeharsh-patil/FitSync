@@ -164,7 +164,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-8 sm:space-y-12">
+    <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12">
       {/* Toast Alert popup banner */}
       {showAlert && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-6 fade-in duration-300 max-w-sm">

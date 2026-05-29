@@ -3,7 +3,6 @@
 
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -83,6 +82,15 @@
   --font-headline-lg-mobile: "Space Grotesk", sans-serif;
   --font-body-lg: "Hanken Grotesk", sans-serif;
   --font-display-lg: "Space Grotesk", sans-serif;
+
+  /* Custom Spacing for Login */
+  --spacing-container-padding: 2rem;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-base: 2rem;
+  --spacing-lg: 3rem;
+  --spacing-xl: 4rem;
 }
 
 :root {

@@ -8,58 +8,12 @@ import {
   Trophy,
   Smartphone,
 } from "lucide-react";
+import { Header } from "@/components/layout/Header";
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-hidden selection:bg-secondary selection:text-primary">
-      {/* Navigation */}
-      <header className="w-full border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-xl z-50">
-        <div className="container mx-auto px-6 lg:px-12 h-20 flex items-center">
-          <Link className="flex items-center justify-center group" href="/">
-            <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
-              <Activity className="h-6 w-6" />
-            </div>
-            <span className="ml-3 text-2xl font-bold font-heading tracking-tighter">
-              FitSync
-            </span>
-          </Link>
-          <nav className="ml-auto hidden md:flex gap-8">
-            <Link
-              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/features"
-            >
-              Features
-            </Link>
-            <Link
-              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/pricing"
-            >
-              Pricing
-            </Link>
-            <Link
-              className="text-sm font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/blog"
-            >
-              Blog
-            </Link>
-          </nav>
-          <div className="ml-auto md:ml-8 flex gap-4">
-            <Link href="/login">
-              <Button
-                variant="ghost"
-                className="font-bold uppercase tracking-widest text-xs"
-              >
-                Login
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button className="bg-secondary hover:bg-secondary/90 text-primary font-bold uppercase tracking-widest text-xs px-6">
-                Join Now
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="flex-1">
         {/* Hero Section */}

@@ -19,7 +19,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8">
       <div>
         <h1 className="text-4xl font-bold font-heading tracking-tight">
           Athlete Profile

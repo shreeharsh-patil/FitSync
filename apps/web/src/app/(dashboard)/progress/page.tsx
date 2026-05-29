@@ -13,7 +13,7 @@ export default async function ProgressPage() {
   const entries = await getProgressEntries(session.user.id);
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-8">
       <div>
         <h1 className="text-4xl font-bold font-heading tracking-tight">
           Progress Tracking
