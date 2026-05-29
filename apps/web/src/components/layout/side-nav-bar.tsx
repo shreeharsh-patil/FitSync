@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronRight,
   UserCircle,
+  Award,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { motion } from "framer-motion";
@@ -25,6 +26,7 @@ const navItems = [
   { name: "Workout", href: "/workout", icon: Dumbbell },
   { name: "Nutrition", href: "/nutrition", icon: Utensils },
   { name: "Progress", href: "/progress", icon: LineChart },
+  { name: "Achievements", href: "/achievements", icon: Award },
   { name: "Community", href: "/community", icon: Users },
   { name: "AI Coach", href: "/ai-coach", icon: MessageSquare },
   { name: "Settings", href: "/settings", icon: Settings },
