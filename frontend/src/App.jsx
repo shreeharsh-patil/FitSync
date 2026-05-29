@@ -3,7 +3,7 @@ import './App.css';
 
 function App() {
   // --- Navigation & Core Views ---
-  const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'workouts' | 'community' | 'settings' | 'activity' (mobile tab)
+  const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'activity' | 'workouts' | 'community' | 'settings'
   const [activeWorkoutSubView, setActiveWorkoutSubView] = useState(null); // null | 'running'
   
   // Dashboard Section Mode selector: switch between Performance details and Wellness status
@@ -208,6 +208,38 @@ function App() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [workoutActive, workoutPaused]);
+
+  // Stopwatch Helper Functions
+  const startWorkout = () => {
+    setWorkoutActive(true);
+    setWorkoutPaused(false);
+    setTimerSeconds(0);
+    triggerToast("⏱️ Workout session started!");
+  };
+
+  const pauseWorkout = () => {
+    setWorkoutPaused(prev => !prev);
+    triggerToast(!workoutPaused ? "⏱️ Timer paused" : "⏱️ Timer resumed");
+  };
+
+  const stopWorkout = () => {
+    const elapsedMins = Math.round(timerSeconds / 60) || 1;
+    updateActiveLog(log => ({
+      ...log,
+      activeMin: log.activeMin + elapsedMins,
+      calories: log.calories + (elapsedMins * 6)
+    }));
+    setWorkoutActive(false);
+    setWorkoutPaused(false);
+    setTimerSeconds(0);
+    triggerToast(`🏋️‍♂️ Workout completed! Logged ${elapsedMins} mins.`);
+  };
+
+  const formatTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // --- PR & Strength Achievements State ---
   const [prLogs, setPrLogs] = useState([
@@ -516,9 +548,9 @@ function App() {
       )}
 
       {/* ============================================================== */}
-      {/* DESKTOP VIEWPORT: PERSISTENT SIDEBAR DRAWER + CANVAS */}
+      {/* PERSISTENT SIDEBAR DRAWER (Desktop viewport >= 1024px) */}
       {/* ============================================================== */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest border-r border-white/5 shadow-2xl hidden md:flex flex-col p-lg gap-sm z-40">
+      <aside className="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest border-r border-white/5 shadow-2xl hidden lg:flex flex-col p-lg gap-sm z-40">
         <div className="mb-8 flex flex-col items-start">
           <h1 className="font-display-lg text-display-lg text-primary-fixed leading-none">FitSync</h1>
           <p className="text-on-surface-variant font-label-md">Elite Member</p>
@@ -536,6 +568,19 @@ function App() {
           >
             <span className="material-symbols-outlined">dashboard</span>
             <span className="font-body-md text-sm">Dashboard</span>
+          </button>
+
+          {/* Detailed Analytics */}
+          <button 
+            onClick={() => { setCurrentTab('activity'); setActiveWorkoutSubView(null); }}
+            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
+              currentTab === 'activity' 
+                ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
+                : 'text-on-surface-variant hover:bg-surface-variant/30'
+            }`}
+          >
+            <span className="material-symbols-outlined">insights</span>
+            <span className="font-body-md text-sm">Analytics</span>
           </button>
 
           {/* Workouts */}
@@ -590,48 +635,134 @@ function App() {
         </div>
       </aside>
 
-      {/* --- DESKTOP CANVAS BODY CONTENT --- */}
-      <main className="hidden md:block flex-grow ml-64 p-lg max-w-7xl mx-auto min-h-screen">
+      {/* ============================================================== */}
+      {/* MOBILE/TABLET BOTTOM NAVIGATION BAR (Viewport < 1024px) */}
+      {/* ============================================================== */}
+      <nav className="fixed bottom-0 left-0 w-full rounded-t-xl z-40 bg-surface/90 backdrop-blur-xl border-t border-white/5 shadow-[0_-4px_20px_rgba(171,214,0,0.15)] flex justify-around items-center h-20 pb-safe px-base lg:hidden">
+        {/* Home */}
+        <button 
+          onClick={() => { setCurrentTab('home'); setActiveWorkoutSubView(null); }}
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+            currentTab === 'home' 
+              ? 'text-primary bg-primary/10 rounded-xl font-bold' 
+              : 'text-on-surface-variant hover:text-primary'
+          }`}
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'home' ? 1 : 0}` }}>
+            dashboard
+          </span>
+          <span className="font-label-sm text-[10px]">Home</span>
+        </button>
+
+        {/* Workouts */}
+        <button 
+          onClick={() => { setCurrentTab('workouts'); }}
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+            currentTab === 'workouts' 
+              ? 'text-primary bg-primary/10 rounded-xl font-bold' 
+              : 'text-on-surface-variant hover:text-primary'
+          }`}
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'workouts' ? 1 : 0}` }}>
+            fitness_center
+          </span>
+          <span className="font-label-sm text-[10px]">Workouts</span>
+        </button>
+
+        {/* Activity/Analytics */}
+        <button 
+          onClick={() => { setCurrentTab('activity'); setActiveWorkoutSubView(null); }}
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+            currentTab === 'activity' 
+              ? 'text-primary bg-primary/10 rounded-xl font-bold' 
+              : 'text-on-surface-variant hover:text-primary'
+          }`}
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'activity' ? 1 : 0}` }}>
+            insights
+          </span>
+          <span className="font-label-sm text-[10px]">Analytics</span>
+        </button>
+
+        {/* Community */}
+        <button 
+          onClick={() => { setCurrentTab('community'); setActiveWorkoutSubView(null); }}
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+            currentTab === 'community' 
+              ? 'text-primary bg-primary/10 rounded-xl font-bold' 
+              : 'text-on-surface-variant hover:text-primary'
+          }`}
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'community' ? 1 : 0}` }}>
+            group
+          </span>
+          <span className="font-label-sm text-[10px]">Social</span>
+        </button>
+
+        {/* Settings */}
+        <button 
+          onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+            currentTab === 'settings' 
+              ? 'text-primary bg-primary/10 rounded-xl font-bold' 
+              : 'text-on-surface-variant hover:text-primary'
+          }`}
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'settings' ? 1 : 0}` }}>
+            settings
+          </span>
+          <span className="font-label-sm text-[10px]">Settings</span>
+        </button>
+      </nav>
+
+      {/* ============================================================== */}
+      {/* MAIN CANVAS BODY CONTAINER */}
+      {/* ============================================================== */}
+      <main className="flex-grow lg:ml-64 min-h-screen px-4 py-6 md:p-6 lg:p-10 pt-24 lg:pt-10 pb-32 lg:pb-10 max-w-7xl mx-auto flex flex-col gap-lg">
         
-        {/* Desktop Top Header */}
-        <header className="flex items-center justify-between mb-xl">
-          <div>
-            {activeWorkoutSubView === 'running' ? (
-              <div>
-                <nav className="flex items-center gap-xs text-on-surface-variant mb-xs cursor-pointer">
-                  <span className="text-label-sm font-label-sm hover:underline" onClick={() => setActiveWorkoutSubView(null)}>Workouts</span>
-                  <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-                  <span className="text-label-sm font-label-sm text-primary-fixed">Running</span>
-                </nav>
-                <h2 className="font-display-sm text-display-sm font-bold text-primary-fixed">Running Performance</h2>
-              </div>
-            ) : (
-              <div>
-                <h2 className="font-display-sm text-display-sm text-primary">
-                  {currentTab === 'home' && (dashboardMode === 'performance' ? 'Activity Details' : 'FitSync Wellness Status')}
-                  {currentTab === 'workouts' && 'Workouts Hub'}
-                  {currentTab === 'community' && 'Social Hub & Challenges'}
-                  {currentTab === 'settings' && 'Profile & Goal Preferences'}
-                </h2>
-                <p className="text-on-surface-variant font-body-md text-sm">
-                  {currentTab === 'home' && (dashboardMode === 'performance' ? 'Performance tracking & health analytics' : 'Metabolic indices, hydration metrics, and BMI composition')}
-                  {currentTab === 'workouts' && 'Track routines or log exercise sessions in real-time'}
-                  {currentTab === 'community' && 'Compete in community challenges and cheer fit buddies'}
-                  {currentTab === 'settings' && 'Update weight targets, display profile, and parameters'}
-                </p>
+        {/* --- Unified Header Block --- */}
+        <header className="fixed top-0 left-0 w-full h-16 bg-surface/90 backdrop-blur-md z-30 flex items-center justify-between px-md border-b border-white/5 shadow-sm lg:relative lg:top-auto lg:left-auto lg:w-auto lg:h-auto lg:bg-transparent lg:backdrop-blur-none lg:border-none lg:shadow-none lg:p-0 lg:mb-sm">
+          <div className="flex items-center gap-sm">
+            {activeWorkoutSubView && (
+              <button 
+                onClick={() => setActiveWorkoutSubView(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-primary hover:bg-white/10 transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-md">arrow_back</span>
+              </button>
+            )}
+            {!activeWorkoutSubView && (
+              <div 
+                onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}
+                className="w-8 h-8 rounded-full overflow-hidden bg-surface-variant ring-1 ring-white/20 lg:hidden cursor-pointer shrink-0"
+              >
+                <img src={userProfile.avatar} alt="Profile" className="w-full h-full object-cover" />
               </div>
             )}
+            <div>
+              <h2 className="font-display-sm text-md md:text-xl lg:text-display-sm text-primary font-bold leading-tight truncate">
+                {activeWorkoutSubView === 'running' ? 'Running Analytics' : (
+                  <>
+                    {currentTab === 'home' && (dashboardMode === 'performance' ? 'Coaching Hub' : 'Wellness Composition')}
+                    {currentTab === 'activity' && 'Analytics & Metrics'}
+                    {currentTab === 'workouts' && 'Workouts Hub'}
+                    {currentTab === 'community' && 'Social Hub'}
+                    {currentTab === 'settings' && 'User Preferences'}
+                  </>
+                )}
+              </h2>
+            </div>
           </div>
 
-          <div className="flex items-center gap-md">
-            {/* Dashboard Mode Switcher (Wellness vs Performance) */}
+          <div className="flex items-center gap-xs md:gap-md">
+            {/* Home Dashboard Mode Switcher */}
             {currentTab === 'home' && !activeWorkoutSubView && (
-              <div className="flex bg-surface-container p-1 rounded-xl border border-white/5">
+              <div className="flex bg-surface-container p-0.5 rounded-xl border border-white/5">
                 <button 
                   onClick={() => setDashboardMode('performance')}
-                  className={`px-md py-1.5 font-label-md text-xs rounded-lg transition-all ${
+                  className={`px-2.5 py-1 font-label-md text-[10px] md:text-xs rounded-lg transition-all ${
                     dashboardMode === 'performance' 
-                      ? 'bg-surface-variant text-primary-fixed shadow-sm' 
+                      ? 'bg-surface-variant text-primary-fixed font-bold shadow-sm' 
                       : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
@@ -639,39 +770,18 @@ function App() {
                 </button>
                 <button 
                   onClick={() => setDashboardMode('wellness')}
-                  className={`px-md py-1.5 font-label-md text-xs rounded-lg transition-all ${
+                  className={`px-2.5 py-1 font-label-md text-[10px] md:text-xs rounded-lg transition-all ${
                     dashboardMode === 'wellness' 
-                      ? 'bg-surface-variant text-primary-fixed shadow-sm' 
+                      ? 'bg-surface-variant text-primary-fixed font-bold shadow-sm' 
                       : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
-                  Wellness Status
+                  Wellness
                 </button>
               </div>
             )}
 
-            {/* Day / Week / Month selector */}
-            <div className="flex bg-surface-container p-1 rounded-xl border border-white/5">
-              <button 
-                onClick={() => triggerToast('Daily records loaded')}
-                className="px-md py-1.5 font-label-md text-xs rounded-lg text-primary-fixed bg-surface-variant shadow-sm"
-              >
-                Day
-              </button>
-              <button 
-                className="px-md py-1.5 font-label-md text-xs rounded-lg text-on-surface-variant hover:text-on-surface"
-              >
-                Week
-              </button>
-              <button 
-                onClick={() => triggerToast('Monthly trends details loaded')}
-                className="px-md py-1.5 font-label-md text-xs rounded-lg text-on-surface-variant hover:text-on-surface"
-              >
-                Month
-              </button>
-            </div>
-
-            {/* Notification bell */}
+            {/* Notification Bell */}
             <div className="relative">
               <button 
                 onClick={() => {
@@ -680,28 +790,27 @@ function App() {
                     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
                   }
                 }}
-                className="w-12 h-12 flex items-center justify-center rounded-xl glass-card hover:bg-white/5 transition-all"
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-variant/30 hover:bg-white/5 transition-all border border-white/5 active:scale-95"
               >
-                <span className="material-symbols-outlined text-primary-fixed">notifications</span>
+                <span className="material-symbols-outlined text-primary-fixed text-lg">notifications</span>
                 {notifications.some(n => !n.read) && (
-                  <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-error animate-pulse"></span>
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error animate-pulse"></span>
                 )}
               </button>
 
-              {/* Notification Overlay List */}
               {showNotificationDrawer && (
-                <div className="absolute right-0 mt-2 w-80 bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 py-2 animate-fade-in">
-                  <div className="px-4 py-2 border-b border-white/5 flex justify-between items-center">
-                    <span className="font-label-md text-xs text-primary font-bold uppercase tracking-wider">Alerts Log</span>
+                <div className="absolute right-0 mt-2 w-72 bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 py-2 animate-fade-in">
+                  <div className="px-4 py-1.5 border-b border-white/5 flex justify-between items-center">
+                    <span className="text-xs text-primary font-bold uppercase tracking-wider">Alerts Log</span>
                     <button className="text-[10px] text-secondary-fixed hover:underline" onClick={() => setNotifications([])}>Clear</button>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
+                  <div className="max-h-56 overflow-y-auto">
                     {notifications.length === 0 ? (
                       <div className="p-4 text-center text-xs text-on-surface-variant">No alerts registered.</div>
                     ) : (
                       notifications.map(item => (
-                        <div key={item.id} className="px-4 py-2.5 border-b border-white/5 hover:bg-white/5 text-left">
-                          <p className="text-[10px] text-on-surface-variant text-right mb-0.5">{item.time}</p>
+                        <div key={item.id} className="px-4 py-2 border-b border-white/5 text-left">
+                          <p className="text-[9px] text-on-surface-variant text-right mb-0.5">{item.time}</p>
                           <p className="text-xs text-primary leading-normal">{item.text}</p>
                         </div>
                       ))
@@ -713,28 +822,384 @@ function App() {
           </div>
         </header>
 
+        {/* ============================================================== */}
         {/* VIEW: HOME DASHBOARD */}
+        {/* ============================================================== */}
         {currentTab === 'home' && (
-          <>
-            {/* Desktop Horizontal Calendar */}
-            <section className="mb-xl">
-              <div className="flex justify-between items-center gap-md overflow-x-auto pb-4 no-scrollbar">
+          <div className="flex flex-col gap-lg animate-fade-in">
+            {/* Coaching Tip Banner */}
+            {dashboardMode === 'performance' && (
+              <section className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md relative overflow-hidden shadow-lg">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary-fixed/5 rounded-full blur-[40px] pointer-events-none -mr-8 -mt-8"></div>
+                <div className="flex items-center gap-xs mb-xs">
+                  <span className="material-symbols-outlined text-secondary-fixed text-lg">auto_awesome</span>
+                  <h2 className="font-label-sm text-[10px] md:text-xs text-secondary-fixed uppercase tracking-widest font-bold">Coaching Tip</h2>
+                </div>
+                <p className="font-body-md text-xs md:text-sm text-on-surface-variant leading-relaxed">
+                  Hi {userProfile.name.split(' ')[0]}! Steps are at <span className="text-primary-fixed font-bold">{activeLog.steps.toLocaleString()}</span> today. 
+                  {activeLog.steps >= 10000 ? ' Target exceeded, great resilience!' : ` Walk ${(userProfile.goals.steps - activeLog.steps).toLocaleString()} more steps to hit goal.`}
+                  {' '}Sleep of {activeLog.sleep} hrs provides adequate repair.
+                </p>
+              </section>
+            )}
+
+            {/* PERFORMANCE MODE: Quick Summary Dashboard */}
+            {dashboardMode === 'performance' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md lg:gap-lg">
+                
+                {/* Steps Tracker Card */}
+                <div className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between mb-sm">
+                      <div className="flex items-center gap-xs">
+                        <span className="material-symbols-outlined text-primary-fixed text-sm">directions_walk</span>
+                        <h3 className="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">Steps Progress</h3>
+                      </div>
+                      <span className="text-[10px] text-primary-fixed font-bold">{stepsPercent}%</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-md my-sm">
+                      <div>
+                        <div className="font-stat-value text-2xl font-bold text-primary">{activeLog.steps.toLocaleString()}</div>
+                        <p className="text-[10px] text-on-surface-variant mt-0.5">Goal: {userProfile.goals.steps.toLocaleString()}</p>
+                      </div>
+                      
+                      <div className="w-12 h-12 relative flex items-center justify-center shrink-0">
+                        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                          <circle cx="18" cy="18" r="16" fill="none" stroke="#c3f400" strokeWidth="3" strokeDasharray="100" strokeDashoffset={100 - stepsPercent} strokeLinecap="round" />
+                        </svg>
+                        <span className="material-symbols-outlined text-primary-fixed text-md">flag</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 border-t border-white/5 pt-sm mt-xs">
+                    <button onClick={() => addSteps(1000)} className="flex-1 py-1 text-[10px] bg-primary-fixed text-on-primary-fixed font-bold rounded-lg shadow active:scale-95 transition-transform">+1k Steps</button>
+                    <button onClick={() => addSteps(-1000)} className="flex-1 py-1 text-[10px] bg-white/5 text-on-surface-variant border border-white/10 rounded-lg active:scale-95 transition-transform">-1k</button>
+                  </div>
+                </div>
+
+                {/* Workout Stopwatch Card */}
+                <div className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+                  <div>
+                    <div className="flex items-center gap-xs mb-xs">
+                      <span className="material-symbols-outlined text-primary-fixed text-sm">timer</span>
+                      <h3 className="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">Workout Timer</h3>
+                    </div>
+
+                    <div className="py-sm my-xs text-center">
+                      {workoutActive ? (
+                        <div className="flex flex-col items-center">
+                          <span className="font-mono text-2xl text-primary font-bold tracking-widest">{formatTimer(timerSeconds)}</span>
+                          <span className="text-[9px] text-error font-bold flex items-center gap-0.5 mt-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span> Live Recording
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-on-surface-variant py-2">Stopwatch ready to track active session.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 border-t border-white/5 pt-sm mt-xs">
+                    {!workoutActive ? (
+                      <button onClick={startWorkout} className="w-full py-1 text-[10px] bg-primary-fixed text-on-primary-fixed font-bold rounded-lg flex items-center justify-center gap-0.5 active:scale-95 transition-transform">
+                        <span className="material-symbols-outlined text-xs">play_arrow</span> Start Workout
+                      </button>
+                    ) : (
+                      <>
+                        <button onClick={pauseWorkout} className="flex-grow py-1 text-[10px] bg-white/5 text-primary-fixed border border-white/10 font-semibold rounded-lg active:scale-95 transition-transform">
+                          {workoutPaused ? 'Resume' : 'Pause'}
+                        </button>
+                        <button onClick={stopWorkout} className="py-1 px-3 text-[10px] bg-error/20 text-error border border-error/30 font-bold rounded-lg active:scale-95 transition-transform">
+                          End
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Heart Rate Sensor Card */}
+                <div className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+                  <div>
+                    <div className="flex items-center gap-xs mb-sm">
+                      <span className="material-symbols-outlined text-error text-sm animate-pulse">favorite</span>
+                      <h3 className="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">Live Heart Rate</h3>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-md my-sm">
+                      <div>
+                        <div className="font-stat-value text-2xl font-bold text-primary leading-none">{liveHeartRate}</div>
+                        <p className="text-[10px] text-on-surface-variant mt-1.5">beats per minute</p>
+                      </div>
+                      
+                      {/* Premium Scrolling ECG svg */}
+                      <svg className="w-16 h-8 text-error/40 shrink-0" viewBox="0 0 100 30" fill="none">
+                        <path 
+                          className="animate-ecg"
+                          d="M0,15 L20,15 L25,5 L30,25 L35,0 L40,30 L45,10 L50,15 L100,15" 
+                          stroke="currentColor" 
+                          strokeWidth="2" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="text-[9px] text-on-surface-variant border-t border-white/5 pt-sm mt-xs flex justify-between items-center">
+                    <span>Active Fluctuation: On</span>
+                    <span className="text-secondary-fixed">Live Sensor Sim</span>
+                  </div>
+                </div>
+
+                {/* Hydration Tracker Quick Card */}
+                <div className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+                  <div>
+                    <div className="flex items-center gap-xs mb-sm">
+                      <span className="material-symbols-outlined text-cyan-400 text-sm">water_drop</span>
+                      <h3 className="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">Hydration Tracker</h3>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-md my-sm">
+                      <div>
+                        <div className="font-stat-value text-2xl font-bold text-primary leading-none">
+                          {getWaterDisplayValue(activeLog.water)}
+                        </div>
+                        <p className="text-[10px] text-on-surface-variant mt-1.5">glasses logged today</p>
+                      </div>
+                      
+                      <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-400/20 flex items-center justify-center text-cyan-400 shrink-0 animate-bounce">
+                        <span className="material-symbols-outlined text-lg">local_drink</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => addHydration(1)}
+                    className="w-full py-1 text-[10px] bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 font-bold border border-cyan-400/30 rounded-lg active:scale-95 transition-transform"
+                  >
+                    + Log 1 Glass (250ml)
+                  </button>
+                </div>
+
+              </div>
+            )}
+
+            {/* WELLNESS STATUS MODE: Advanced Diagnostics Panel */}
+            {dashboardMode === 'wellness' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md lg:gap-lg">
+                
+                {/* Energy Burned Section */}
+                <section className="glass-surface rounded-xl p-md flex flex-col justify-between">
+                  <div className="flex justify-between items-start mb-md">
+                    <div>
+                      <p className="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider">Energy Burned</p>
+                      <div className="flex items-baseline gap-xs">
+                        <span className="font-stat-value text-3xl font-bold text-primary-fixed glow-lime">512</span>
+                        <span className="font-label-md text-xs text-on-surface-variant">kcal</span>
+                      </div>
+                    </div>
+                    
+                    <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
+                      <svg className="w-full h-full -rotate-90">
+                        <circle className="text-white/10" cx="28" cy="28" fill="transparent" r="24" stroke="currentColor" strokeWidth="5"></circle>
+                        <circle className="text-primary-fixed glow-lime transition-all duration-1000" cx="28" cy="28" fill="transparent" r="24" stroke="currentColor" strokeDasharray="150.8" strokeDashoffset="40.7" strokeLinecap="round" strokeWidth="5"></circle>
+                      </svg>
+                      <span className="absolute font-label-sm text-[10px] text-primary font-bold">73%</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-sm mb-md">
+                    <div className="bg-white/5 rounded-lg p-sm border border-white/5">
+                      <p className="font-label-sm text-[9px] text-on-surface-variant mb-xs">Active Burn</p>
+                      <p className="font-headline-lg-mobile text-xs font-bold text-primary">312 <span className="text-[9px] opacity-60">kcal</span></p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-sm border border-white/5">
+                      <p className="font-label-sm text-[9px] text-on-surface-variant mb-xs">Resting Metabolic</p>
+                      <p className="font-headline-lg-mobile text-xs font-bold text-primary">200 <span className="text-[9px] opacity-60">kcal</span></p>
+                    </div>
+                  </div>
+
+                  {/* Sparkline Bar Chart */}
+                  <div className="h-16 flex items-end justify-between gap-0.5 mb-md bg-background/45 p-1.5 rounded-lg border border-white/5">
+                    {hourlyBurnData.map((h, i) => (
+                      <div 
+                        key={i} 
+                        style={{ height: `${h}%` }}
+                        className="w-full bg-primary-fixed/20 rounded-t-xs hover:bg-primary-fixed transition-colors cursor-pointer"
+                      ></div>
+                    ))}
+                  </div>
+
+                  {/* Calorie food input */}
+                  <div className="border-t border-white/10 pt-sm flex justify-between items-center gap-xs">
+                    <div className="text-[10px]">
+                      <p className="text-on-surface-variant">Intake: <span className="text-primary font-bold">{calorieIntake} kcal</span></p>
+                      <p className="text-primary-fixed font-bold">Net: +{calorieIntake - 512} kcal</p>
+                    </div>
+                    <input 
+                      type="number" placeholder="+ kcal"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = parseInt(e.target.value) || 0;
+                          if (val > 0) {
+                            setCalorieIntake(prev => prev + val);
+                            triggerToast(`🥗 Logged Food Intake: +${val} kcal`);
+                            e.target.value = '';
+                          }
+                        }
+                      }}
+                      className="w-16 bg-background/80 border border-white/10 rounded-md px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-primary-fixed text-primary text-center"
+                    />
+                  </div>
+                </section>
+
+                {/* Hydration Tracker Details */}
+                <section className="glass-surface rounded-xl p-md flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-base mb-sm">
+                      <span className="material-symbols-outlined text-secondary-fixed-dim" style={{ fontVariationSettings: "'FILL' 1" }}>water_drop</span>
+                      <p className="font-label-md text-xs text-secondary-fixed-dim uppercase tracking-wider font-bold">Hydration</p>
+                    </div>
+
+                    <div className="flex items-end justify-between mb-md">
+                      <div className="space-y-xs">
+                        <div className="flex items-baseline gap-xs">
+                          <span className="font-stat-value text-2xl font-bold text-primary">{(hydrationLogs.glassesLog * 0.25).toFixed(2)}</span>
+                          <span className="font-label-md text-xs text-on-surface-variant">Liters</span>
+                        </div>
+                        <p className="text-[10px] text-on-surface-variant">{hydrationLogs.glassesLog}/8 glasses completed</p>
+                      </div>
+                      <div className="bg-secondary-fixed-dim/20 px-2 py-0.5 rounded-full border border-secondary-fixed-dim/30">
+                        <p className="text-[9px] text-secondary-fixed-dim">{8 - hydrationLogs.glassesLog} more to go</p>
+                      </div>
+                    </div>
+
+                    {/* Interactive segments bar */}
+                    <div className="flex gap-1 justify-between mb-md">
+                      {Array.from({ length: 8 }).map((_, idx) => {
+                        const active = idx < hydrationLogs.glassesLog;
+                        return (
+                          <button 
+                            key={idx}
+                            onClick={() => toggleWaterSegment(idx)}
+                            className={`flex-1 h-2 rounded-full transition-all outline-none ${
+                              active ? 'bg-secondary-fixed-dim glow-cyan' : 'bg-white/15 hover:bg-white/35'
+                            }`}
+                          ></button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-lg p-2 border border-white/5 flex justify-between items-center text-[10px]">
+                    <div className="flex items-center gap-xs text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[12px]">history</span>
+                      <span>Last: {hydrationLogs.lastLogTime}</span>
+                    </div>
+                    <div className="flex items-center gap-xs text-secondary-fixed-dim font-bold">
+                      <span className="material-symbols-outlined text-[12px]">alarm</span>
+                      <span>Next: {hydrationLogs.nextReminderTime}</span>
+                    </div>
+                  </div>
+                </section>
+
+                {/* BMI composition slider range */}
+                <section className="glass-surface rounded-xl p-md flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-center mb-sm">
+                      <div className="flex items-center gap-base">
+                        <span className="material-symbols-outlined text-tertiary-fixed-dim">monitor_weight</span>
+                        <p className="font-label-md text-xs text-on-surface-variant uppercase tracking-wider font-bold">Body Composition</p>
+                      </div>
+                      <div className="flex items-center gap-xs text-error font-semibold">
+                        <span className="material-symbols-outlined text-[14px]">trending_down</span>
+                        <span className="text-[10px]">0.3 pts</span>
+                      </div>
+                    </div>
+
+                    <div className="text-center mb-md">
+                      <p className="font-stat-value text-3xl text-primary font-bold mb-xs">{calculatedBmi}</p>
+                      <div className="inline-flex items-center gap-xs px-2.5 py-0.5 bg-primary-fixed/10 border border-primary-fixed/20 rounded-full text-[10px]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary-fixed animate-ping"></span>
+                        <p className="font-label-sm text-primary-fixed font-bold">Status: {getBmiStatus(calculatedBmi)}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-xs mb-md text-center">
+                      <div>
+                        <p className="text-[9px] text-on-surface-variant">Height</p>
+                        <p className="text-xs font-bold text-primary">{userProfile.height}<span className="text-[9px] opacity-60">cm</span></p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-on-surface-variant">Weight</p>
+                        <p className="text-xs font-bold text-primary">{userProfile.weight}<span className="text-[9px] opacity-60">kg</span></p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-on-surface-variant">Target</p>
+                        <p className="text-xs font-bold text-secondary-fixed-dim">{userProfile.targetBmi}</p>
+                      </div>
+                    </div>
+
+                    {/* Scale tracker visual slider */}
+                    <div className="relative pt-4 pb-2">
+                      <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-secondary-fixed-dim via-primary-fixed to-tertiary-fixed-dim"></div>
+                      <div 
+                        style={{ left: `${getBmiMarkerPercent(calculatedBmi)}%` }}
+                        className="absolute top-0.5 flex flex-col items-center transition-all duration-700 ease-out"
+                      >
+                        <div className="w-3.5 h-3.5 rounded-full bg-primary border-2 border-background shadow-lg"></div>
+                        <div className="w-[1.5px] h-3 bg-primary/45"></div>
+                      </div>
+                      
+                      <div className="flex justify-between mt-1 text-[8px] text-on-surface-variant font-bold uppercase">
+                        <span>Under</span>
+                        <span>Normal</span>
+                        <span>Over</span>
+                        <span>Obese</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-xs p-2 bg-white/5 rounded-lg border border-white/5 text-center text-[10px]">
+                    <p className="text-on-surface">Healthy range: 18.5 - 24.9 BMI</p>
+                    <p className="text-primary-fixed font-bold">Your ratio is in the optimal range!</p>
+                  </div>
+                </section>
+
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* VIEW: DETAILED ANALYTICS (ACTIVITY) */}
+        {/* ============================================================== */}
+        {currentTab === 'activity' && (
+          <div className="flex flex-col gap-lg animate-fade-in">
+            
+            {/* Weekly calendar slider selector */}
+            <section className="mb-xs">
+              <div className="flex justify-between items-center gap-sm overflow-x-auto pb-3 no-scrollbar">
                 {weeklyLogs.map(log => {
                   const active = log.dayNum === selectedDayNum;
                   return (
                     <div 
                       key={log.dayNum}
                       onClick={() => setSelectedDayNum(log.dayNum)}
-                      className={`flex flex-col items-center min-w-[90px] p-md glass-card rounded-xl cursor-pointer hover:border-primary-fixed/30 hover:opacity-100 transition-all ${
+                      className={`flex flex-col items-center min-w-[70px] md:min-w-[90px] p-sm md:p-md glass-card rounded-xl cursor-pointer hover:border-primary-fixed/30 hover:opacity-100 transition-all shrink-0 ${
                         active 
                           ? 'border-primary-fixed bg-surface-variant/40 accent-glow-lime opacity-100 scale-105' 
                           : 'opacity-60'
                       }`}
                     >
-                      <span className={`font-label-sm text-xs mb-xs ${active ? 'text-primary-fixed font-bold' : 'text-on-surface-variant'}`}>
+                      <span className={`font-label-sm text-[10px] md:text-xs mb-xs ${active ? 'text-primary-fixed font-bold' : 'text-on-surface-variant'}`}>
                         {log.dayName}
                       </span>
-                      <span className={`font-headline-lg text-2xl ${active ? 'text-primary-fixed font-bold' : 'text-primary'}`}>
+                      <span className={`font-headline-lg text-lg md:text-2xl ${active ? 'text-primary-fixed font-bold' : 'text-primary'}`}>
                         {log.dayNum}
                       </span>
                     </div>
@@ -743,463 +1208,265 @@ function App() {
               </div>
             </section>
 
-            {/* PERFORMANCE MODE: Bento Grid Layout */}
-            {dashboardMode === 'performance' && (
-              <div className="grid grid-cols-12 gap-lg items-start">
+            {/* Bento Grid layout: adapts column grid columns dynamically */}
+            <div className="grid grid-cols-12 gap-lg items-start">
+              
+              {/* Left column (col-span-12 lg:col-span-4) - Cardio & Recovery */}
+              <div className="col-span-12 lg:col-span-4 flex flex-col gap-lg">
                 
-                {/* LEFT COLUMN: Cardio & Recovery (4 cols) */}
-                <section className="col-span-12 lg:col-span-4 space-y-lg">
-                  {/* Cardio Card */}
-                  <div className="glass-card p-lg rounded-2xl flex flex-col justify-between hover:border-white/20 transition-all">
-                    <div className="flex justify-between items-center mb-lg">
-                      <h3 className="font-label-sm text-xs text-on-surface-variant uppercase tracking-widest">Cardio Performance</h3>
-                      <span className="material-symbols-outlined text-secondary-fixed-dim">directions_run</span>
+                {/* Cardio Details Card */}
+                <div className="glass-card p-lg rounded-2xl flex flex-col justify-between hover:border-white/20 transition-all">
+                  <div className="flex justify-between items-center mb-lg">
+                    <h3 className="font-label-sm text-xs text-on-surface-variant uppercase tracking-widest">Cardio Details</h3>
+                    <span className="material-symbols-outlined text-secondary-fixed-dim">directions_run</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center justify-center py-sm">
+                    <div className="relative w-40 h-40 mb-lg">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="80" cy="80" fill="none" r="70" stroke="rgba(255,255,255,0.05)" strokeWidth="8"></circle>
+                        <circle 
+                          className="drop-shadow-[0_0_8px_rgba(171,214,0,0.5)] transition-all duration-700" 
+                          cx="80" cy="80" fill="none" r="70" 
+                          stroke="#c3f400" 
+                          strokeDasharray="439.8" 
+                          strokeDashoffset={439.8 - (439.8 * (stepsPercent / 100))} 
+                          strokeLinecap="round" strokeWidth="8"
+                        ></circle>
+                      </svg>
+                      
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="font-stat-value text-xl text-primary font-bold">
+                          {activeLog.steps.toLocaleString()}
+                        </span>
+                        <span className="font-label-sm text-[8px] text-on-surface-variant tracking-wider font-semibold">
+                          STEPS ({stepsPercent}%)
+                        </span>
+                      </div>
                     </div>
-                    
-                    <div className="flex flex-col items-center justify-center py-base">
-                      <div className="relative w-48 h-48 mb-lg">
-                        <svg className="w-full h-full transform -rotate-90">
-                          <circle cx="96" cy="96" fill="none" r="80" stroke="rgba(255,255,255,0.05)" strokeWidth="10"></circle>
-                          <circle 
-                            className="drop-shadow-[0_0_8px_rgba(171,214,0,0.5)] transition-all duration-700" 
-                            cx="96" cy="96" fill="none" r="80" 
-                            stroke="url(#gradient-lime)" 
-                            strokeDasharray="502" 
-                            strokeDashoffset={502 - (502 * (stepsPercent / 100))} 
-                            strokeLinecap="round" strokeWidth="10"
-                          ></circle>
-                        </svg>
-                        
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="font-stat-value text-stat-value text-2xl text-primary font-bold">
-                            {activeLog.steps.toLocaleString()}
-                          </span>
-                          <span className="font-label-sm text-[10px] text-on-surface-variant tracking-wider font-semibold">
-                            STEPS ({stepsPercent}%)
-                          </span>
+
+                    <div className="grid grid-cols-2 gap-sm w-full text-center">
+                      <div className="p-md bg-surface-container/40 rounded-xl border border-white/5 relative group">
+                        <p className="font-label-sm text-[10px] text-on-surface-variant mb-xs">Distance</p>
+                        <p className="font-headline-lg text-md text-secondary-fixed-dim font-bold">{activeLog.km} <span className="text-[10px] font-normal">km</span></p>
+                        <div className="absolute inset-0 bg-surface-container flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                          <button onClick={() => addSteps(1000)} className="text-[9px] bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-bold">+1k</button>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-md w-full text-center">
-                        <div className="p-md bg-surface-container/40 rounded-xl border border-white/5 relative group">
-                          <p className="font-label-sm text-xs text-on-surface-variant mb-xs">Distance</p>
-                          <p className="font-headline-lg text-lg text-secondary-fixed-dim font-bold">{activeLog.km} <span className="text-xs font-normal">km</span></p>
-                          <div className="absolute inset-0 bg-surface-container flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
-                            <button onClick={() => addSteps(1000)} className="text-[10px] bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-bold">+1k steps</button>
-                          </div>
-                        </div>
-                        <div className="p-md bg-surface-container/40 rounded-xl border border-white/5 relative group">
-                          <p className="font-label-sm text-xs text-on-surface-variant mb-xs">Active Time</p>
-                          <p className="font-headline-lg text-lg text-primary-fixed font-bold">{activeLog.activeMin} <span className="text-xs font-normal">min</span></p>
-                          <div className="absolute inset-0 bg-surface-container flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
-                            <button onClick={() => setCurrentTab('workouts')} className="text-[10px] bg-secondary-fixed text-on-secondary-fixed px-2.5 py-0.5 rounded font-bold">Start Timer</button>
-                          </div>
+                      <div className="p-md bg-surface-container/40 rounded-xl border border-white/5 relative group">
+                        <p className="font-label-sm text-[10px] text-on-surface-variant mb-xs">Active Time</p>
+                        <p className="font-headline-lg text-md text-primary-fixed font-bold">{activeLog.activeMin} <span className="text-[10px] font-normal">min</span></p>
+                        <div className="absolute inset-0 bg-surface-container flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                          <button onClick={() => setCurrentTab('workouts')} className="text-[9px] bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded font-bold">Timer</button>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Body Recovery Card */}
-                  <div className="glass-card p-lg rounded-2xl hover:border-white/20 transition-all">
-                    <h3 className="font-label-sm text-xs text-on-surface-variant uppercase tracking-widest mb-lg">Body Recovery</h3>
-                    
-                    <div className="space-y-md">
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <p className="font-label-sm text-xs text-on-surface-variant mb-0.5">Recovery Score</p>
-                          <p className="font-stat-value text-stat-value text-2xl text-primary font-bold">{activeLog.recovery}%</p>
-                        </div>
-                        <div className="flex gap-1.5 h-12 items-end">
-                          <div className="w-2.5 bg-primary-fixed/20 h-6 rounded-full"></div>
-                          <div className="w-2.5 bg-primary-fixed/40 h-8 rounded-full"></div>
-                          <div className="w-2.5 bg-primary-fixed h-11 rounded-full accent-glow-lime animate-pulse"></div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-sm pt-md border-t border-white/5 text-center">
-                        <div className="hover:bg-white/5 py-1.5 rounded transition-colors">
-                          <span className="material-symbols-outlined text-secondary-fixed-dim text-lg">bedtime</span>
-                          <p className="font-label-sm text-xs mt-1 font-semibold text-primary">{activeLog.sleep}h</p>
-                          <span className="text-[9px] text-on-surface-variant uppercase font-semibold">Sleep</span>
-                        </div>
-                        <div className="hover:bg-white/5 py-1.5 rounded transition-colors">
-                          <span className="material-symbols-outlined text-error text-lg">favorite</span>
-                          <p className="font-label-sm text-xs mt-1 font-semibold text-primary">{liveHeartRate} bpm</p>
-                          <span className="text-[9px] text-on-surface-variant uppercase font-semibold">HR</span>
-                        </div>
-                        <div className="hover:bg-white/5 py-1.5 rounded transition-colors cursor-pointer group relative" onClick={() => addHydration(0.25)}>
-                          <span className="material-symbols-outlined text-cyan-400 text-lg">water_drop</span>
-                          <p className="font-label-sm text-xs mt-1 font-semibold text-primary">
-                            {getWaterDisplayValue(activeLog.water)}
-                          </p>
-                          <span className="text-[9px] text-on-surface-variant uppercase font-semibold group-hover:hidden">Water</span>
-                          <span className="text-[9px] text-cyan-300 font-bold hidden group-hover:block">+250ml</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Strength & PR details (8 cols) */}
-                <section className="col-span-12 lg:col-span-8 space-y-lg">
-                  <div className="glass-card p-lg rounded-2xl hover:border-white/20 transition-all">
-                    <div className="flex justify-between items-center mb-xl">
-                      <div className="flex items-center gap-sm">
-                        <span className="material-symbols-outlined text-primary-fixed">fitness_center</span>
-                        <h3 className="font-label-sm text-xs text-on-surface-variant uppercase tracking-widest">Strength Training</h3>
-                      </div>
-                      <div className="flex gap-2">
-                        <span className="px-3 py-1 bg-primary-container/10 text-primary-fixed text-xs font-bold rounded-full">
-                          {activeLog.workout.toUpperCase()}
-                        </span>
-                        <span className="px-3 py-1 bg-surface-variant text-on-surface-variant text-xs font-bold rounded-full">
-                          SESSION #24
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-lg mb-xl">
-                      <div className="flex flex-col items-center md:items-start p-3 bg-surface-container-low/60 rounded-xl border border-white/5">
-                        <span className="font-label-sm text-xs text-on-surface-variant mb-1">Workout Exercises</span>
-                        <span className="font-stat-value text-stat-value text-2xl text-primary font-bold">
-                          {activeLog.sets > 0 ? '06' : '00'}
-                        </span>
-                        <div className="w-full h-1 bg-surface-container mt-3 rounded-full overflow-hidden">
-                          <div className="bg-primary-fixed h-full w-full"></div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-center md:items-start p-3 bg-surface-container-low/60 rounded-xl border border-white/5 relative group">
-                        <span className="font-label-sm text-xs text-on-surface-variant mb-1">Total Sets</span>
-                        <span className="font-stat-value text-stat-value text-2xl text-primary font-bold">{activeLog.sets}</span>
-                        <div className="w-full h-1 bg-surface-container mt-3 rounded-full overflow-hidden">
-                          <div className="bg-secondary-fixed-dim h-full" style={{ width: `${Math.min(100, (activeLog.sets/20)*100)}%` }}></div>
-                        </div>
-                        <button onClick={() => setShowLogWorkoutModal(true)} className="absolute inset-0 bg-surface-container flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-xs text-secondary-fixed font-bold">
-                          + Add Set
-                        </button>
-                      </div>
-
-                      <div className="flex flex-col items-center md:items-start p-3 bg-surface-container-low/60 rounded-xl border border-white/5">
-                        <span className="font-label-sm text-xs text-on-surface-variant mb-1">Total Reps</span>
-                        <span className="font-stat-value text-stat-value text-2xl text-primary font-bold">{activeLog.reps}</span>
-                        <div className="w-full h-1 bg-surface-container mt-3 rounded-full overflow-hidden">
-                          <div className="bg-tertiary-fixed-dim h-full" style={{ width: `${Math.min(100, (activeLog.reps/200)*100)}%` }}></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
+                {/* Body Recovery Card */}
+                <div className="glass-card p-lg rounded-2xl hover:border-white/20 transition-all">
+                  <h3 className="font-label-sm text-xs text-on-surface-variant uppercase tracking-widest mb-lg">Body Recovery</h3>
+                  
+                  <div className="space-y-md">
+                    <div className="flex justify-between items-end">
                       <div>
-                        <h4 className="font-label-md text-sm text-on-surface font-semibold mb-lg">Muscle Intensity</h4>
-                        <div className="space-y-md">
-                          <div>
-                            <div className="flex justify-between font-label-sm text-xs text-on-surface-variant mb-xs">
-                              <span>Chest</span>
-                              <span>{activeLog.chest}%</span>
-                            </div>
-                            <div className="h-2 bg-surface-container rounded-full overflow-hidden">
-                              <div className="bg-primary-fixed h-full transition-all duration-500" style={{ width: `${activeLog.chest}%` }}></div>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex justify-between font-label-sm text-xs text-on-surface-variant mb-xs">
-                              <span>Triceps</span>
-                              <span>{activeLog.triceps}%</span>
-                            </div>
-                            <div className="h-2 bg-surface-container rounded-full overflow-hidden">
-                              <div className="bg-primary-fixed h-full transition-all duration-500" style={{ width: `${activeLog.triceps}%` }}></div>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex justify-between font-label-sm text-xs text-on-surface-variant mb-xs">
-                              <span>Shoulders</span>
-                              <span>{activeLog.shoulders}%</span>
-                            </div>
-                            <div className="h-2 bg-surface-container rounded-full overflow-hidden">
-                              <div className="bg-primary-fixed h-full transition-all duration-500" style={{ width: `${activeLog.shoulders}%` }}></div>
-                            </div>
-                          </div>
-                        </div>
+                        <p className="font-label-sm text-[10px] text-on-surface-variant mb-0.5">Recovery Score</p>
+                        <p className="font-stat-value text-2xl text-primary font-bold">{activeLog.recovery}%</p>
                       </div>
+                      <div className="flex gap-1 h-10 items-end">
+                        <div className="w-2 bg-primary-fixed/20 h-5 rounded-full"></div>
+                        <div className="w-2 bg-primary-fixed/40 h-7 rounded-full"></div>
+                        <div className="w-2 bg-primary-fixed h-9 rounded-full accent-glow-lime animate-pulse"></div>
+                      </div>
+                    </div>
 
-                      {/* Weekly consistency chart */}
-                      <div className="bg-surface-container/30 rounded-xl p-md border border-white/5 flex flex-col justify-between">
-                        <h4 className="font-label-md text-xs uppercase tracking-wider text-on-surface-variant mb-sm">Weekly Consistency</h4>
-                        <div className="flex items-end justify-between h-32 gap-2.5 pt-2">
-                          {weeklyLogs.map(item => {
-                            const active = item.dayNum === selectedDayNum;
-                            const barHeight = item.sets > 0 ? `${(item.sets / 20) * 100}%` : '10%';
-                            return (
-                              <div key={item.dayNum} onClick={() => setSelectedDayNum(item.dayNum)} className="flex-grow flex flex-col items-center gap-1 group cursor-pointer">
-                                <div className="w-full bg-surface-variant/30 rounded-t-sm h-[90px] flex items-end">
-                                  <div className={`w-full rounded-t-sm transition-all duration-500 ${
-                                    active ? 'bg-primary-fixed accent-glow-lime' : 'bg-surface-variant/70 hover:bg-primary-fixed/50'
-                                  }`} style={{ height: barHeight }}></div>
-                                </div>
-                                <span className={`text-[10px] font-bold ${active ? 'text-primary-fixed' : 'text-on-surface-variant'}`}>
-                                  {item.dayName[0]}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                    <div className="grid grid-cols-3 gap-xs pt-md border-t border-white/5 text-center">
+                      <div className="hover:bg-white/5 py-1.5 rounded transition-colors">
+                        <span className="material-symbols-outlined text-secondary-fixed-dim text-md">bedtime</span>
+                        <p className="font-label-sm text-xs mt-0.5 font-bold text-primary">{activeLog.sleep}h</p>
+                        <span className="text-[8px] text-on-surface-variant uppercase font-bold">Sleep</span>
+                      </div>
+                      <div className="hover:bg-white/5 py-1.5 rounded transition-colors">
+                        <span className="material-symbols-outlined text-error text-md">favorite</span>
+                        <p className="font-label-sm text-xs mt-0.5 font-bold text-primary">{liveHeartRate} bpm</p>
+                        <span className="text-[8px] text-on-surface-variant uppercase font-bold">BPM</span>
+                      </div>
+                      <div className="hover:bg-white/5 py-1.5 rounded transition-colors cursor-pointer group relative" onClick={() => addHydration(0.25)}>
+                        <span className="material-symbols-outlined text-cyan-400 text-md">water_drop</span>
+                        <p className="font-label-sm text-xs mt-0.5 font-bold text-primary">
+                          {getWaterDisplayValue(activeLog.water)}
+                        </p>
+                        <span className="text-[8px] text-on-surface-variant uppercase font-bold group-hover:hidden text-center">Water</span>
+                        <span className="text-[8px] text-cyan-300 font-bold hidden group-hover:block">+250ml</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right column (col-span-12 lg:col-span-8) - Strength Training & PR logs */}
+              <div className="col-span-12 lg:col-span-8 flex flex-col gap-lg">
+                
+                {/* Strength training metrics card */}
+                <div className="glass-card p-lg rounded-2xl hover:border-white/20 transition-all">
+                  <div className="flex justify-between items-center mb-lg">
+                    <div className="flex items-center gap-sm">
+                      <span className="material-symbols-outlined text-primary-fixed">fitness_center</span>
+                      <h3 className="font-label-sm text-xs text-on-surface-variant uppercase tracking-widest">Strength Analytics</h3>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <span className="px-2.5 py-0.5 bg-primary-container/10 text-primary-fixed text-[10px] font-bold rounded-full">
+                        {activeLog.workout.toUpperCase()}
+                      </span>
+                      <span className="px-2.5 py-0.5 bg-surface-variant text-on-surface-variant text-[10px] font-bold rounded-full">
+                        SESSION #24
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-md mb-lg">
+                    <div className="flex flex-col p-3 bg-surface-container-low/60 rounded-xl border border-white/5">
+                      <span className="font-label-sm text-[10px] text-on-surface-variant mb-1">Exercises Focus</span>
+                      <span className="font-stat-value text-xl text-primary font-bold">
+                        {activeLog.sets > 0 ? '06' : '00'}
+                      </span>
+                      <div className="w-full h-1 bg-surface-container mt-3 rounded-full overflow-hidden">
+                        <div className="bg-primary-fixed h-full w-full"></div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col p-3 bg-surface-container-low/60 rounded-xl border border-white/5 relative group">
+                      <span className="font-label-sm text-[10px] text-on-surface-variant mb-1">Total Sets</span>
+                      <span className="font-stat-value text-xl text-primary font-bold">{activeLog.sets}</span>
+                      <div className="w-full h-1 bg-surface-container mt-3 rounded-full overflow-hidden">
+                        <div className="bg-secondary-fixed-dim h-full" style={{ width: `${Math.min(100, (activeLog.sets/20)*100)}%` }}></div>
+                      </div>
+                      <button onClick={() => setShowLogWorkoutModal(true)} className="absolute inset-0 bg-surface-container flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-[10px] text-secondary-fixed font-bold cursor-pointer">
+                        + Add Set
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col p-3 bg-surface-container-low/60 rounded-xl border border-white/5">
+                      <span className="font-label-sm text-[10px] text-on-surface-variant mb-1">Total Reps</span>
+                      <span className="font-stat-value text-xl text-primary font-bold">{activeLog.reps}</span>
+                      <div className="w-full h-1 bg-surface-container mt-3 rounded-full overflow-hidden">
+                        <div className="bg-tertiary-fixed-dim h-full" style={{ width: `${Math.min(100, (activeLog.reps/200)*100)}%` }}></div>
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
-                    {prLogs.map(log => (
-                      <div key={log.id} className={`glass-card p-lg rounded-2xl flex items-center gap-lg hover:scale-[1.02] transition-all border-l-4 ${
-                        log.type === 'pr' ? 'border-l-primary-fixed' : 'border-l-secondary-fixed'
+                    <div>
+                      <h4 className="font-label-md text-xs text-on-surface uppercase tracking-wider font-semibold mb-md">Muscle Intensities</h4>
+                      <div className="space-y-md">
+                        {[
+                          { name: 'Chest', val: activeLog.chest },
+                          { name: 'Triceps', val: activeLog.triceps },
+                          { name: 'Shoulders', val: activeLog.shoulders }
+                        ].map(muscle => (
+                          <div key={muscle.name}>
+                            <div className="flex justify-between font-label-sm text-[10px] text-on-surface-variant mb-xs">
+                              <span>{muscle.name}</span>
+                              <span>{muscle.val}%</span>
+                            </div>
+                            <div className="h-1.5 bg-surface-container rounded-full overflow-hidden">
+                              <div className="bg-primary-fixed h-full transition-all duration-500" style={{ width: `${muscle.val}%` }}></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Weekly consistency chart */}
+                    <div className="bg-surface-container/30 rounded-xl p-md border border-white/5 flex flex-col justify-between">
+                      <h4 className="font-label-md text-[10px] uppercase tracking-wider text-on-surface-variant mb-sm">Weekly Consistency</h4>
+                      <div className="flex items-end justify-between h-28 gap-2 pt-2">
+                        {weeklyLogs.map(item => {
+                          const active = item.dayNum === selectedDayNum;
+                          const barHeight = item.sets > 0 ? `${(item.sets / 20) * 100}%` : '10%';
+                          return (
+                            <div key={item.dayNum} onClick={() => setSelectedDayNum(item.dayNum)} className="flex-grow flex flex-col items-center gap-1 group cursor-pointer">
+                              <div className="w-full bg-surface-variant/35 rounded-t-sm h-[75px] flex items-end">
+                                <div className={`w-full rounded-t-sm transition-all duration-500 ${
+                                  active ? 'bg-primary-fixed accent-glow-lime' : 'bg-surface-variant/70 hover:bg-primary-fixed/50'
+                                }`} style={{ height: barHeight }}></div>
+                              </div>
+                              <span className={`text-[9px] font-bold ${active ? 'text-primary-fixed' : 'text-on-surface-variant'}`}>
+                                {item.dayName[0]}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Achievements logs grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                  {prLogs.map(log => (
+                    <div key={log.id} className={`glass-card p-md rounded-xl flex items-center gap-md hover:scale-[1.01] transition-transform border-l-4 ${
+                      log.type === 'pr' ? 'border-l-primary-fixed' : 'border-l-secondary-fixed'
+                    }`}>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+                        log.type === 'pr' ? 'bg-primary-container/20' : 'bg-secondary-container/20'
                       }`}>
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 ${
-                          log.type === 'pr' ? 'bg-primary-container/20' : 'bg-secondary-container/20'
-                        }`}>
-                          <span className={`material-symbols-outlined text-3xl ${log.type === 'pr' ? 'text-primary-fixed' : 'text-secondary-fixed-dim'}`}>
-                            {log.type === 'pr' ? 'emoji_events' : 'bolt'}
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="font-headline-lg text-md text-primary font-bold">{log.title}</h4>
-                          <p className="text-on-surface-variant text-xs mt-0.5 leading-relaxed">{log.text}</p>
-                        </div>
+                        <span className={`material-symbols-outlined text-xl ${log.type === 'pr' ? 'text-primary-fixed' : 'text-secondary-fixed-dim'}`}>
+                          {log.type === 'pr' ? 'emoji_events' : 'bolt'}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </section>
+                      <div>
+                        <h4 className="font-headline-lg text-sm text-primary font-bold">{log.title}</h4>
+                        <p className="text-on-surface-variant text-[10px] mt-0.5 leading-normal">{log.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
               </div>
-            )}
 
-            {/* WELLNESS STATUS MODE (FitSync Status details) */}
-            {dashboardMode === 'wellness' && (
-              <div className="grid grid-cols-12 gap-lg items-start animate-fade-in">
-                
-                {/* LEFT COLUMN: Calorie Intake & Burn details (6 cols) */}
-                <section className="col-span-12 lg:col-span-6 space-y-lg">
-                  <div className="glass-surface rounded-xl p-lg relative overflow-hidden flex flex-col justify-between">
-                    
-                    <div className="flex justify-between items-start mb-md">
-                      <div>
-                        <p className="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider">Energy Burned</p>
-                        <div className="flex items-baseline gap-xs">
-                          <span className="font-stat-value text-4xl font-bold text-primary-fixed glow-lime">512</span>
-                          <span className="font-label-md text-xs text-on-surface-variant">kcal</span>
-                        </div>
-                      </div>
-                      
-                      <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
-                        <svg className="w-full h-full -rotate-90">
-                          <circle className="text-white/10" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeWidth="5"></circle>
-                          <circle className="text-primary-fixed glow-lime transition-all duration-1000" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeDasharray="175.9" strokeDashoffset="47.5" strokeLinecap="round" strokeWidth="5"></circle>
-                        </svg>
-                        <span className="absolute font-label-sm text-xs text-primary font-bold">73%</span>
-                      </div>
-                    </div>
+            </div>
 
-                    <div className="grid grid-cols-2 gap-md mb-lg">
-                      <div className="bg-white/5 rounded-lg p-sm border border-white/5">
-                        <p className="font-label-sm text-xs text-on-surface-variant mb-xs">Active Burn</p>
-                        <p className="font-headline-lg-mobile text-sm font-bold text-primary">312 <span className="text-[10px] opacity-60">kcal</span></p>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-sm border border-white/5">
-                        <p className="font-label-sm text-xs text-on-surface-variant mb-xs">Resting Metabolic</p>
-                        <p className="font-headline-lg-mobile text-sm font-bold text-primary">200 <span className="text-[10px] opacity-60">kcal</span></p>
-                      </div>
-                    </div>
-
-                    {/* Hourly burn graph list */}
-                    <div className="h-20 flex items-end justify-between gap-1 mb-md bg-background/45 p-2 rounded-lg border border-white/5">
-                      {hourlyBurnData.map((h, i) => (
-                        <div 
-                          key={i} 
-                          style={{ height: `${h}%` }}
-                          className="w-full bg-primary-fixed/20 rounded-t-xs transition-all hover:bg-primary-fixed cursor-pointer"
-                        ></div>
-                      ))}
-                    </div>
-
-                    {/* Calorie food Logger input */}
-                    <div className="border-t border-white/10 pt-md flex justify-between items-center gap-sm">
-                      <div className="text-xs">
-                        <p className="text-on-surface-variant">Intake: <span className="text-primary font-bold">{calorieIntake} kcal</span></p>
-                        <p className="text-primary-fixed font-bold">Net: +{calorieIntake - 512} kcal</p>
-                      </div>
-                      <div className="flex gap-1.5 items-center">
-                        <input 
-                          type="number" placeholder="+ kcal"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              const val = parseInt(e.target.value) || 0;
-                              if (val > 0) {
-                                setCalorieIntake(prev => prev + val);
-                                triggerToast(`🥗 Logged Food Intake: +${val} kcal`);
-                                e.target.value = '';
-                              }
-                            }
-                          }}
-                          className="w-20 bg-background/80 border border-white/10 rounded-md px-2 py-1 text-xs focus:outline-none focus:border-primary-fixed text-primary text-center"
-                        />
-                      </div>
-                    </div>
-
-                  </div>
-                </section>
-
-                {/* RIGHT COLUMN: Hydration & BMI Calculators (6 cols) */}
-                <section className="col-span-12 lg:col-span-6 space-y-lg">
-                  
-                  {/* Hydration Segment indicator */}
-                  <div className="glass-surface rounded-xl p-lg">
-                    <div className="flex items-center gap-base mb-md">
-                      <span className="material-symbols-outlined text-secondary-fixed-dim" style={{ fontVariationSettings: "'FILL' 1" }}>water_drop</span>
-                      <p className="font-label-md text-xs text-secondary-fixed-dim uppercase tracking-wider font-bold">Hydration</p>
-                    </div>
-
-                    <div className="flex items-end justify-between mb-lg">
-                      <div className="space-y-xs">
-                        <div className="flex items-baseline gap-xs">
-                          <span className="font-stat-value text-3xl font-bold text-primary">{(hydrationLogs.glassesLog * 0.25).toFixed(2)}</span>
-                          <span className="font-label-md text-xs text-on-surface-variant">Liters</span>
-                        </div>
-                        <p className="font-body-md text-xs text-on-surface-variant">{hydrationLogs.glassesLog}/8 glasses completed</p>
-                      </div>
-                      <div className="bg-secondary-fixed-dim/20 px-md py-1 rounded-full border border-secondary-fixed-dim/30">
-                        <p className="font-label-sm text-xs text-secondary-fixed-dim">{8 - hydrationLogs.glassesLog} more to go</p>
-                      </div>
-                    </div>
-
-                    {/* Progress bars segment boxes */}
-                    <div className="flex gap-1.5 justify-between mb-lg">
-                      {Array.from({ length: 8 }).map((_, idx) => {
-                        const active = idx < hydrationLogs.glassesLog;
-                        return (
-                          <button 
-                            key={idx}
-                            onClick={() => toggleWaterSegment(idx)}
-                            className={`flex-1 h-3 rounded-full transition-all outline-none ${
-                              active ? 'bg-secondary-fixed-dim glow-cyan' : 'bg-white/10 hover:bg-white/20'
-                            }`}
-                          ></button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="bg-surface-container-low rounded-lg p-sm border border-white/5 flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-xs text-on-surface-variant">
-                        <span className="material-symbols-outlined text-xs">history</span>
-                        <span>Last Log: {hydrationLogs.lastLogTime}</span>
-                      </div>
-                      <div className="flex items-center gap-xs text-secondary-fixed-dim font-bold">
-                        <span className="material-symbols-outlined text-xs">alarm</span>
-                        <span>Next Target: {hydrationLogs.nextReminderTime}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Body composition scale BMI */}
-                  <div className="glass-surface rounded-xl p-lg">
-                    <div className="flex justify-between items-center mb-md">
-                      <div className="flex items-center gap-base">
-                        <span className="material-symbols-outlined text-tertiary-fixed-dim">monitor_weight</span>
-                        <p className="font-label-md text-xs text-on-surface-variant uppercase tracking-wider font-bold">Body Composition</p>
-                      </div>
-                      <div className="flex items-center gap-xs text-error font-semibold">
-                        <span className="material-symbols-outlined text-xs">trending_down</span>
-                        <span className="text-xs">0.3 pts (Weekly)</span>
-                      </div>
-                    </div>
-
-                    <div className="text-center mb-lg">
-                      <p className="font-stat-value text-4xl text-primary font-bold mb-xs">{calculatedBmi}</p>
-                      <div className="inline-flex items-center gap-xs px-md py-1 bg-primary-fixed/10 border border-primary-fixed/20 rounded-full text-xs">
-                        <span className="w-2 h-2 rounded-full bg-primary-fixed animate-ping"></span>
-                        <p className="font-label-sm text-primary-fixed font-bold">Status: {getBmiStatus(calculatedBmi)}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-base mb-lg text-center">
-                      <div>
-                        <p className="text-[10px] text-on-surface-variant font-semibold">Height (Profile)</p>
-                        <p className="font-headline-lg-mobile text-sm font-bold text-primary">{userProfile.height}<span className="text-[10px] opacity-60">cm</span></p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-on-surface-variant font-semibold">Weight (Profile)</p>
-                        <p className="font-headline-lg-mobile text-sm font-bold text-primary">{userProfile.weight}<span className="text-[10px] opacity-60">kg</span></p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-on-surface-variant font-semibold">Target BMI</p>
-                        <p className="font-headline-lg-mobile text-sm font-bold text-secondary-fixed-dim">{userProfile.targetBmi}</p>
-                      </div>
-                    </div>
-
-                    {/* Custom sliding Visual indicator marker scale */}
-                    <div className="relative pt-6 pb-2">
-                      <div className="h-2 w-full rounded-full bg-gradient-to-r from-secondary-fixed-dim via-primary-fixed to-tertiary-fixed-dim"></div>
-                      
-                      {/* Marker placement based on calculated BMI */}
-                      <div 
-                        style={{ left: `${getBmiMarkerPercent(calculatedBmi)}%` }}
-                        className="absolute top-0 flex flex-col items-center transition-all duration-700 ease-out"
-                      >
-                        <div className="w-4 h-4 rounded-full bg-primary border-2 border-background shadow-lg"></div>
-                        <div className="w-[2px] h-4 bg-primary/30"></div>
-                      </div>
-                      
-                      <div className="flex justify-between mt-xs text-[10px] text-on-surface-variant uppercase font-semibold">
-                        <span>Under</span>
-                        <span>Normal</span>
-                        <span>Over</span>
-                        <span>Obese</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-md p-sm bg-white/5 rounded-lg border border-white/5 text-center text-xs">
-                      <p className="text-on-surface">Healthy range: 18.5 - 24.9 BMI</p>
-                      <p className="text-primary-fixed font-bold">Your ratio is in the optimal range!</p>
-                    </div>
-
-                  </div>
-                </section>
-
-              </div>
-            )}
-          </>
+          </div>
         )}
 
+        {/* ============================================================== */}
         {/* VIEW: WORKOUTS HUB (OR RUNNING DETAILS) */}
+        {/* ============================================================== */}
         {currentTab === 'workouts' && (
           <div>
             {activeWorkoutSubView === 'running' ? (
-              /* ========================================= */
-              /* DESKTOP WORKOUT SUBVIEW: RUNNING DETAILS */
-              /* ========================================= */
+              
+              /* WORKOUT SUBVIEW: RUNNING DETAILS */
               <div className="space-y-lg animate-fade-in">
-                <div className="grid grid-cols-12 gap-lg">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+                  
+                  {/* Running Hero Card & Interactive Chart */}
                   <div className="col-span-12 lg:col-span-8 space-y-lg">
-                    {/* Running Hero Card */}
-                    <div className="glass-card rounded-xl p-lg flex flex-col md:flex-row items-center gap-xl relative overflow-hidden">
+                    {/* Hero Card */}
+                    <div className="glass-card rounded-xl p-lg flex flex-col sm:flex-row items-center gap-lg relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-primary-fixed/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
                       <div className="flex-1">
-                        <p className="font-label-sm text-xs text-on-surface-variant uppercase tracking-widest mb-xs">Total Miles</p>
-                        <h3 className="font-stat-value text-5xl font-bold text-primary-fixed lime-glow mb-sm">
-                          {totalMiles.toFixed(1)} <span className="text-xl font-normal text-on-surface-variant">mi</span>
+                        <p className="font-label-sm text-xs text-on-surface-variant uppercase tracking-widest mb-xs">Total Distance</p>
+                        <h3 className="font-stat-value text-4xl font-bold text-primary-fixed lime-glow mb-sm">
+                          {totalMiles.toFixed(1)} <span className="text-lg font-normal text-on-surface-variant">mi</span>
                         </h3>
                         
                         <div className="flex items-center gap-sm">
-                          <span className="px-3 py-1 bg-primary-container/20 text-primary-fixed rounded-full text-xs font-semibold">
-                            {runsList.length} runs this week
+                          <span className="px-2.5 py-0.5 bg-primary-container/25 text-primary-fixed rounded-full text-[10px] font-semibold">
+                            {runsList.length} runs logged
                           </span>
-                          <span className="text-on-surface-variant text-xs flex items-center gap-1 font-semibold">
-                            <span className="material-symbols-outlined text-[16px] text-primary-fixed">trending_up</span>
-                            +12% from last week
+                          <span className="text-on-surface-variant text-[10px] flex items-center gap-0.5 font-semibold">
+                            <span className="material-symbols-outlined text-[12px] text-primary-fixed">trending_up</span>
+                            +12% vs last week
                           </span>
                         </div>
                       </div>
 
                       {/* Small mini-bar chart */}
-                      <div className="w-full md:w-64 h-32 flex items-end gap-2 px-md">
+                      <div className="w-full sm:w-56 h-24 flex items-end gap-1.5 px-md">
                         {weeklyLogs.map((log, index) => {
                           const logMiles = log.runMiles;
                           const pct = logMiles > 0 ? `${Math.min(100, (logMiles / 12) * 100)}%` : '15%';
@@ -1210,7 +1477,7 @@ function App() {
                               style={{ height: pct }}
                               className={`flex-1 rounded-t-sm transition-all duration-300 ${
                                 isThu 
-                                  ? 'bg-primary-fixed shadow-[0_0_15px_rgba(171,214,0,0.3)]' 
+                                  ? 'bg-primary-fixed shadow-[0_0_12px_rgba(171,214,0,0.3)]' 
                                   : 'bg-surface-container-highest hover:bg-primary-fixed'
                               }`}
                             ></div>
@@ -1222,11 +1489,11 @@ function App() {
                     {/* Interactive chart miles per day */}
                     <div className="glass-card rounded-xl p-lg">
                       <div className="flex justify-between items-center mb-xl">
-                        <h4 className="font-headline-lg text-lg text-primary font-bold">Miles per Day</h4>
-                        <div className="flex gap-xs">
+                        <h4 className="font-headline-lg text-md text-primary font-bold">Daily Breakdown</h4>
+                        <div className="flex gap-1">
                           <button 
                             onClick={() => setSelectedRunningMetric('distance')}
-                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                            className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                               selectedRunningMetric === 'distance' 
                                 ? 'bg-primary-fixed text-on-primary' 
                                 : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'
@@ -1236,19 +1503,19 @@ function App() {
                           </button>
                           <button 
                             onClick={() => setSelectedRunningMetric('intensity')}
-                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                            className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                               selectedRunningMetric === 'intensity' 
                                 ? 'bg-primary-fixed text-on-primary' 
                                 : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'
                             }`}
                           >
-                            Intensity
+                            Steps Scale
                           </button>
                         </div>
                       </div>
 
-                      <div className="h-64 relative w-full flex items-end justify-between px-4 pb-8 border-b border-white/10">
-                        <div className="absolute inset-0 flex flex-col justify-between py-8 pointer-events-none">
+                      <div className="h-56 relative w-full flex items-end justify-between px-2 pb-6 border-b border-white/10">
+                        <div className="absolute inset-0 flex flex-col justify-between py-6 pointer-events-none">
                           <div className="border-t border-white/5 w-full"></div>
                           <div className="border-t border-white/5 w-full"></div>
                           <div className="border-t border-white/5 w-full"></div>
@@ -1269,13 +1536,13 @@ function App() {
                             : 'bg-secondary-fixed-dim';
 
                           return (
-                            <div key={index} className="group relative flex flex-col items-center w-12 cursor-pointer" onClick={() => setSelectedDayNum(log.dayNum)}>
-                              <span className="absolute bottom-full mb-1 text-[10px] bg-surface-container border border-white/10 text-primary-fixed px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
-                                {selectedRunningMetric === 'distance' ? `${log.runMiles} mi` : `${Math.round(log.steps/80)} bpm`}
+                            <div key={index} className="group relative flex flex-col items-center w-8 md:w-12 cursor-pointer" onClick={() => setSelectedDayNum(log.dayNum)}>
+                              <span className="absolute bottom-full mb-1 text-[8px] bg-surface-container border border-white/10 text-primary-fixed px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold shrink-0">
+                                {selectedRunningMetric === 'distance' ? `${log.runMiles} mi` : `${log.steps.toLocaleString()}`}
                               </span>
-                              <div style={{ height: barHeight }} className={`w-2.5 rounded-t-full transition-all group-hover:w-4 ${barColor}`}></div>
-                              <span className={`absolute -bottom-8 text-xs font-semibold ${active ? 'text-primary-fixed font-bold' : 'text-on-surface-variant'}`}>
-                                {log.dayName}
+                              <div style={{ height: barHeight }} className={`w-2 rounded-t-full transition-all group-hover:w-3.5 ${barColor}`}></div>
+                              <span className={`absolute -bottom-6 text-[10px] font-semibold ${active ? 'text-primary-fixed font-bold' : 'text-on-surface-variant'}`}>
+                                {log.dayName[0]}
                               </span>
                             </div>
                           );
@@ -1284,47 +1551,47 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Secondary Metrics Aside (4 cols) */}
-                  <aside className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-md items-start">
+                  {/* Secondary Metrics Aside (col-span-12 lg:col-span-4) */}
+                  <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-md items-start">
                     
-                    <div className="glass-card rounded-xl p-md col-span-1 flex flex-col justify-between">
-                      <span className="material-symbols-outlined text-secondary-fixed-dim mb-sm">pace</span>
-                      <p className="text-xs text-on-surface-variant uppercase font-semibold">Avg Pace</p>
-                      <p className="text-xl font-bold text-primary font-mono">8'12"</p>
+                    <div className="glass-card rounded-xl p-md flex flex-col justify-between">
+                      <span className="material-symbols-outlined text-secondary-fixed-dim mb-sm text-lg">pace</span>
+                      <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Avg Pace</p>
+                      <p className="text-lg font-bold text-primary font-mono">8'12"</p>
                     </div>
 
-                    <div className="glass-card rounded-xl p-md col-span-1 flex flex-col justify-between">
-                      <span className="material-symbols-outlined text-error mb-sm">favorite</span>
-                      <p className="text-xs text-on-surface-variant uppercase font-semibold">Avg HR</p>
-                      <p className="text-xl font-bold text-primary">142 <span className="text-xs text-on-surface-variant font-normal">bpm</span></p>
+                    <div className="glass-card rounded-xl p-md flex flex-col justify-between">
+                      <span className="material-symbols-outlined text-error mb-sm text-lg">favorite</span>
+                      <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Avg HR</p>
+                      <p className="text-lg font-bold text-primary">142 <span className="text-[10px] text-on-surface-variant font-normal">bpm</span></p>
                     </div>
 
-                    <div className="glass-card rounded-xl p-md col-span-1 flex flex-col justify-between">
-                      <span className="material-symbols-outlined text-secondary-container mb-sm">filter_hdr</span>
-                      <p className="text-xs text-on-surface-variant uppercase font-semibold">Elevation</p>
-                      <p className="text-xl font-bold text-primary font-mono">842 <span className="text-xs text-on-surface-variant font-normal">ft</span></p>
+                    <div className="glass-card rounded-xl p-md flex flex-col justify-between">
+                      <span className="material-symbols-outlined text-secondary-container mb-sm text-lg">filter_hdr</span>
+                      <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Elevation</p>
+                      <p className="text-lg font-bold text-primary font-mono">842 <span className="text-[10px] text-on-surface-variant font-normal">ft</span></p>
                     </div>
 
-                    <div className="glass-card rounded-xl p-md col-span-1 flex flex-col justify-between">
-                      <span className="material-symbols-outlined text-tertiary-fixed-dim mb-sm">local_fire_department</span>
-                      <p className="text-xs text-on-surface-variant uppercase font-semibold">Calories</p>
-                      <p className="text-xl font-bold text-primary font-mono">2,140</p>
+                    <div className="glass-card rounded-xl p-md flex flex-col justify-between">
+                      <span className="material-symbols-outlined text-tertiary-fixed-dim mb-sm text-lg">local_fire_department</span>
+                      <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Calories</p>
+                      <p className="text-lg font-bold text-primary font-mono">2,140</p>
                     </div>
 
                     {/* Shoe mileage card */}
-                    <div className="glass-card rounded-xl p-lg col-span-2 relative overflow-hidden group">
+                    <div className="glass-card rounded-xl p-md col-span-2 relative overflow-hidden group">
                       <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-md">
+                        <div className="flex justify-between items-start mb-sm">
                           <div>
-                            <h4 className="font-label-md text-xs text-primary-fixed uppercase tracking-wider font-bold">Shoe Mileage</h4>
-                            <p className="text-sm font-semibold text-primary">Nike Pegasus 40</p>
+                            <h4 className="font-label-md text-[10px] text-primary-fixed uppercase tracking-wider font-bold">Shoe Mileage</h4>
+                            <p className="text-xs font-semibold text-primary">Nike Pegasus 40</p>
                           </div>
-                          <span className="material-symbols-outlined text-primary-fixed">straighten</span>
+                          <span className="material-symbols-outlined text-primary-fixed text-lg">straighten</span>
                         </div>
-                        <div className="w-full bg-surface-container-highest rounded-full h-2 mb-xs">
+                        <div className="w-full bg-surface-container-highest rounded-full h-1.5 mb-xs">
                           <div className="bg-primary-fixed h-full rounded-full lime-glow" style={{ width: `${(shoeMileage/500)*100}%` }}></div>
                         </div>
-                        <div className="flex justify-between text-xs text-on-surface-variant">
+                        <div className="flex justify-between text-[10px] text-on-surface-variant">
                           <span>{shoeMileage.toFixed(0)} mi logged</span>
                           <span>500 mi limit</span>
                         </div>
@@ -1334,33 +1601,34 @@ function App() {
 
                     {/* Cadence tip */}
                     <div className="glass-card rounded-xl p-md col-span-2 flex items-center gap-md border-l-4 border-secondary-container">
-                      <div className="w-12 h-12 rounded-full bg-secondary-container/10 flex items-center justify-center text-secondary-container shrink-0">
-                        <span className="material-symbols-outlined">auto_fix_high</span>
+                      <div className="w-10 h-10 rounded-full bg-secondary-container/10 flex items-center justify-center text-secondary-container shrink-0">
+                        <span className="material-symbols-outlined text-lg">auto_fix_high</span>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-primary">Performance Tip</p>
-                        <p className="text-xs text-on-surface-variant leading-relaxed">Your cadence is up 4% this week. Focus on short strides.</p>
+                        <p className="text-[10px] font-bold text-primary">Performance Tip</p>
+                        <p className="text-[10px] text-on-surface-variant leading-relaxed">Your cadence is up 4% this week. Focus on short steps.</p>
                       </div>
                     </div>
-                  </aside>
+                  </div>
                 </div>
 
-                {/* Recent Runs Table */}
-                <section className="glass-card rounded-xl overflow-hidden">
-                  <div className="p-lg border-b border-white/5 flex justify-between items-center">
-                    <h4 className="font-headline-lg text-lg text-primary font-bold">Recent Runs</h4>
+                {/* Recent Runs section: responsive table or card list */}
+                <section className="glass-card rounded-xl overflow-hidden mt-md">
+                  <div className="p-md md:p-lg border-b border-white/5 flex justify-between items-center">
+                    <h4 className="font-headline-lg text-sm md:text-lg text-primary font-bold">Recent Runs</h4>
                     <button 
                       onClick={() => setShowLogRunModal(true)}
-                      className="text-primary-fixed font-label-md text-xs font-bold hover:underline"
+                      className="text-primary-fixed font-label-md text-xs font-bold hover:underline cursor-pointer"
                     >
                       + Log New Run
                     </button>
                   </div>
                   
-                  <div className="overflow-x-auto no-scrollbar">
+                  {/* Desktop Table View >= 768px */}
+                  <div className="hidden md:block overflow-x-auto no-scrollbar">
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="text-xs text-on-surface-variant bg-surface-container-low/50 uppercase tracking-widest">
+                        <tr className="text-[10px] text-on-surface-variant bg-surface-container-low/50 uppercase tracking-widest">
                           <th className="px-lg py-md">Date</th>
                           <th className="px-lg py-md">Route Name</th>
                           <th className="px-lg py-md">Distance</th>
@@ -1376,11 +1644,7 @@ function App() {
                             <td className="px-lg py-lg">
                               <div className="flex items-center gap-sm">
                                 <div className="w-8 h-8 rounded bg-surface-container-highest overflow-hidden border border-white/5 shrink-0">
-                                  <img 
-                                    src={run.img} 
-                                    alt="Route preview map" 
-                                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" 
-                                  />
+                                  <img src={run.img} alt="Route preview map" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
                                 </div>
                                 <span className="font-label-md text-xs text-primary font-semibold">{run.name}</span>
                               </div>
@@ -1391,7 +1655,7 @@ function App() {
                             <td className="px-lg py-lg text-right">
                               <button 
                                 onClick={() => triggerToast(`Visual route map path loaded`)}
-                                className="material-symbols-outlined text-on-surface-variant hover:text-primary-fixed text-md"
+                                className="material-symbols-outlined text-on-surface-variant hover:text-primary-fixed text-md cursor-pointer"
                               >
                                 open_in_new
                               </button>
@@ -1401,48 +1665,75 @@ function App() {
                       </tbody>
                     </table>
                   </div>
-                </section>
-              </div>
-            ) : (
-              /* ========================================= */
-              /* DESKTOP WORKOUTS HUB GENERAL VIEW */
-              /* ========================================= */
-              <div className="grid grid-cols-12 gap-lg items-start animate-fade-in">
-                
-                {/* Selector cards column */}
-                <div className="col-span-12 lg:col-span-6 space-y-lg">
-                  <div className="glass-card p-lg rounded-2xl border border-white/10">
-                    <h3 className="font-headline-lg text-lg text-primary font-bold mb-sm">Workout Disciplines</h3>
-                    <p className="text-xs text-on-surface-variant mb-xl">Select an exercise format below to review metrics history, milestone achievements, and logs.</p>
 
-                    <div className="flex flex-col gap-sm">
+                  {/* Mobile Card List View < 768px */}
+                  <div className="block md:hidden p-md space-y-sm">
+                    {runsList.map(run => (
                       <div 
-                        onClick={() => setActiveWorkoutSubView('running')}
-                        className="p-lg bg-surface-container/60 hover:bg-surface-container border border-white/5 hover:border-primary-fixed/30 rounded-xl cursor-pointer transition-all flex items-center justify-between"
+                        key={run.id} 
+                        onClick={() => triggerToast(`Details loaded for ${run.name}`)}
+                        className="p-md bg-white/5 rounded-xl flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer border border-white/5"
                       >
                         <div className="flex items-center gap-md">
-                          <div className="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-fixed">
-                            <span className="material-symbols-outlined text-3xl">directions_run</span>
+                          <div className="w-9 h-9 rounded bg-primary-container/10 flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-primary-container text-lg">directions_run</span>
                           </div>
                           <div>
-                            <h4 className="font-label-md text-sm text-primary font-bold">Running Performance</h4>
-                            <p className="text-xs text-on-surface-variant mt-0.5">{totalMiles.toFixed(1)} miles tracked this week • {runsList.length} runs</p>
+                            <p className="font-label-md text-xs text-primary font-bold">{run.name}</p>
+                            <p className="text-[9px] text-on-surface-variant">{run.date} • {run.time}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-label-md text-xs text-primary font-bold">{run.distance} mi</p>
+                          <p className="text-[9px] text-on-surface-variant font-mono">{run.duration}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+            ) : (
+              
+              /* WORKOUTS HUB GENERAL VIEW: Discipline selector & Stopwatch */
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg items-start animate-fade-in">
+                
+                {/* Selector cards column */}
+                <div className="space-y-lg">
+                  <div className="glass-card p-lg rounded-2xl border border-white/10">
+                    <h3 className="font-headline-lg text-md md:text-lg text-primary font-bold mb-xs">Workout Disciplines</h3>
+                    <p className="text-xs text-on-surface-variant mb-lg">Select an exercise format below to review metrics history, milestone achievements, and logs.</p>
+
+                    <div className="flex flex-col gap-sm">
+                      {/* Running Selector */}
+                      <div 
+                        onClick={() => setActiveWorkoutSubView('running')}
+                        className="p-md bg-surface-container/60 hover:bg-surface-container border border-white/5 hover:border-primary-fixed/30 rounded-xl cursor-pointer transition-all flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-md">
+                          <div className="w-10 h-10 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-fixed shrink-0">
+                            <span className="material-symbols-outlined text-2xl">directions_run</span>
+                          </div>
+                          <div>
+                            <h4 className="font-label-md text-xs text-primary font-bold">Running Performance</h4>
+                            <p className="text-[10px] text-on-surface-variant mt-0.5">{totalMiles.toFixed(1)} miles tracked this week • {runsList.length} runs</p>
                           </div>
                         </div>
                         <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
                       </div>
 
+                      {/* Strength Selector */}
                       <div 
                         onClick={() => { setActiveWorkoutSubView(null); setCurrentTab('home'); setDashboardMode('performance'); }}
-                        className="p-lg bg-surface-container/60 hover:bg-surface-container border border-white/5 hover:border-primary-fixed/30 rounded-xl cursor-pointer transition-all flex items-center justify-between"
+                        className="p-md bg-surface-container/60 hover:bg-surface-container border border-white/5 hover:border-primary-fixed/30 rounded-xl cursor-pointer transition-all flex items-center justify-between"
                       >
                         <div className="flex items-center gap-md">
-                          <div className="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-fixed">
-                            <span className="material-symbols-outlined text-3xl">fitness_center</span>
+                          <div className="w-10 h-10 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-fixed shrink-0">
+                            <span className="material-symbols-outlined text-2xl">fitness_center</span>
                           </div>
                           <div>
-                            <h4 className="font-label-md text-sm text-primary font-bold">Strength Session Analytics</h4>
-                            <p className="text-xs text-on-surface-variant mt-0.5">{activeLog.sets} sets logged today ({activeLog.workout})</p>
+                            <h4 className="font-label-md text-xs text-primary font-bold">Strength Training</h4>
+                            <p className="text-[10px] text-on-surface-variant mt-0.5">{activeLog.sets} sets logged today ({activeLog.workout})</p>
                           </div>
                         </div>
                         <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
@@ -1450,13 +1741,13 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Quick exercise schedule planner */}
+                  {/* Routine Planner card */}
                   <div className="glass-card p-lg rounded-2xl">
                     <div className="flex justify-between items-center mb-lg">
-                      <h3 className="font-headline-lg text-md text-primary font-bold">Strength Routines Planner</h3>
+                      <h3 className="font-headline-lg text-xs md:text-sm text-primary font-bold uppercase tracking-wider">Routines Planner</h3>
                       <button 
                         onClick={() => setShowLogWorkoutModal(true)}
-                        className="text-xs bg-primary-fixed text-on-primary-fixed px-3 py-1 rounded-full font-bold"
+                        className="text-[10px] bg-primary-fixed text-on-primary-fixed px-2.5 py-1 rounded-full font-bold cursor-pointer"
                       >
                         + Log Set
                       </button>
@@ -1464,17 +1755,17 @@ function App() {
 
                     <div className="flex flex-col gap-sm">
                       {[
-                        { name: 'Bench Press', routine: 'Chest & Triceps', repinfo: '4 Sets x 8 Reps', done: true },
-                        { name: 'Incline Dumbbell Flys', routine: 'Chest Focus', repinfo: '3 Sets x 12 Reps', done: true },
-                        { name: 'Dips (Weighted)', routine: 'Triceps & Lower Chest', repinfo: '3 Sets x 8 Reps', done: false }
+                        { name: 'Bench Press', routine: 'Chest & Triceps', repinfo: '4 Sets x 8 Reps' },
+                        { name: 'Incline Dumbbell Flys', routine: 'Chest Focus', repinfo: '3 Sets x 12 Reps' },
+                        { name: 'Dips (Weighted)', routine: 'Triceps & Lower Chest', repinfo: '3 Sets x 8 Reps' }
                       ].map((ex, idx) => (
                         <div key={idx} className="flex justify-between items-center p-sm bg-surface-container-high/40 rounded-xl border border-white/5">
                           <div>
                             <p className="font-label-md text-xs text-primary font-bold">{ex.name}</p>
-                            <p className="text-[10px] text-on-surface-variant">{ex.routine} • {ex.repinfo}</p>
+                            <p className="text-[9px] text-on-surface-variant">{ex.routine} • {ex.repinfo}</p>
                           </div>
-                          <button onClick={() => triggerToast(`Logged sets for ${ex.name}`)} className="w-8 h-8 rounded-full bg-primary-fixed/20 text-primary-fixed flex items-center justify-center">
-                            <span className="material-symbols-outlined text-xs">check</span>
+                          <button onClick={() => triggerToast(`Logged sets for ${ex.name}`)} className="w-7 h-7 rounded-full bg-primary-fixed/20 text-primary-fixed flex items-center justify-center cursor-pointer active:scale-90 transition-transform">
+                            <span className="material-symbols-outlined text-[14px]">check</span>
                           </button>
                         </div>
                       ))}
@@ -1482,39 +1773,39 @@ function App() {
                   </div>
                 </div>
 
-                {/* Workout Stopwatch Column */}
-                <div className="col-span-12 lg:col-span-6 glass-card p-lg rounded-2xl border border-white/10 flex flex-col justify-between min-h-[350px]">
+                {/* Workout Stopwatch Card */}
+                <div className="glass-card p-lg rounded-2xl border border-white/10 flex flex-col justify-between min-h-[320px]">
                   <div>
-                    <h3 className="font-headline-lg text-lg text-primary mb-1">⏱️ Live Stopwatch Timer</h3>
+                    <h3 className="font-headline-lg text-md md:text-lg text-primary mb-1">⏱️ Live Stopwatch Timer</h3>
                     <p className="text-xs text-on-surface-variant mb-lg">Track and clock your exercises in real time. Elapsed minutes automatically log into your active metrics.</p>
                   </div>
 
-                  <div className="py-xl flex flex-col items-center justify-center bg-background/50 border border-white/5 rounded-xl my-md">
+                  <div className="py-lg flex flex-col items-center justify-center bg-background/50 border border-white/5 rounded-xl my-xs">
                     {!workoutActive ? (
                       <button 
                         onClick={startWorkout}
-                        className="w-40 h-40 rounded-full bg-primary-fixed text-on-primary-fixed font-headline-lg text-stat-value shadow-2xl flex flex-col items-center justify-center hover:bg-white hover:scale-105 active:scale-95 transition-all outline-none"
+                        className="w-32 h-32 rounded-full bg-primary-fixed text-on-primary-fixed font-headline-lg text-stat-value shadow-2xl flex flex-col items-center justify-center hover:bg-white hover:scale-105 active:scale-95 transition-all outline-none cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-4xl mb-1">play_arrow</span>
-                        <span className="text-xs tracking-wider uppercase font-semibold">Start Stopwatch</span>
+                        <span className="material-symbols-outlined text-3xl mb-1">play_arrow</span>
+                        <span className="text-[9px] tracking-wider uppercase font-bold">Start</span>
                       </button>
                     ) : (
                       <div className="flex flex-col items-center">
-                        <span className="w-3 h-3 rounded-full bg-error animate-ping mb-3"></span>
-                        <h4 className="font-stat-value text-5xl font-mono text-primary font-bold tracking-widest mb-lg">
+                        <span className="w-2.5 h-2.5 rounded-full bg-error animate-ping mb-2.5"></span>
+                        <h4 className="font-stat-value text-3xl md:text-4xl font-mono text-primary font-bold tracking-widest mb-md">
                           {formatTimer(timerSeconds)}
                         </h4>
                         
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
                           <button 
                             onClick={pauseWorkout}
-                            className="px-6 py-2 bg-surface-variant border border-white/15 text-primary-fixed text-sm font-semibold rounded-full active:scale-95 hover:bg-white/5 transition-all"
+                            className="px-5 py-1.5 bg-surface-variant border border-white/15 text-primary-fixed text-xs font-semibold rounded-full active:scale-95 hover:bg-white/5 transition-all cursor-pointer"
                           >
                             {workoutPaused ? 'Resume' : 'Pause'}
                           </button>
                           <button 
                             onClick={stopWorkout}
-                            className="px-6 py-2 bg-error/20 border border-error/45 text-error text-sm font-semibold rounded-full active:scale-95 hover:bg-error/35 transition-all"
+                            className="px-5 py-1.5 bg-error/20 border border-error/45 text-error text-xs font-semibold rounded-full active:scale-95 hover:bg-error/35 transition-all cursor-pointer"
                           >
                             Complete
                           </button>
@@ -1529,12 +1820,14 @@ function App() {
           </div>
         )}
 
+        {/* ============================================================== */}
         {/* VIEW: COMMUNITY (SOCIAL) */}
+        {/* ============================================================== */}
         {currentTab === 'community' && (
-          <div className="grid grid-cols-12 gap-lg items-start animate-fade-in">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg items-start animate-fade-in">
             {/* Friends Leaderboard */}
-            <div className="col-span-12 lg:col-span-6 glass-card p-lg rounded-2xl">
-              <h3 className="font-headline-lg text-lg text-primary mb-md">Leaderboard Challenges</h3>
+            <div className="glass-card p-lg rounded-2xl">
+              <h3 className="font-headline-lg text-md md:text-lg text-primary mb-md">Leaderboard Challenges</h3>
               <div className="flex flex-col gap-sm">
                 {[
                   { rank: 1, name: 'Sarah Miller', score: '14,232 steps', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0' },
@@ -1553,16 +1846,16 @@ function App() {
                       <span className={`w-5 font-headline-lg font-bold text-center ${friend.rank === 1 ? 'text-primary-fixed' : 'text-on-surface-variant'}`}>
                         {friend.rank}
                       </span>
-                      <img src={friend.avatar} alt="User img" className="w-8 h-8 rounded-full object-cover" />
+                      <img src={friend.avatar} alt="User avatar" className="w-8 h-8 rounded-full object-cover shrink-0" />
                       <div>
                         <div className="font-label-md text-xs text-primary font-bold">{friend.name}</div>
-                        <div className="text-[11px] text-on-surface-variant">{friend.score}</div>
+                        <div className="text-[10px] text-on-surface-variant">{friend.score}</div>
                       </div>
                     </div>
 
                     <button 
-                      onClick={() => triggerToast(friend.active ? 'Score shared!' : 'Buddy cheered!')}
-                      className="text-xs bg-surface-variant hover:bg-white/10 border border-white/15 px-3 py-1 rounded-full text-on-surface-variant hover:text-white"
+                      onClick={() => triggerToast(friend.active ? 'Score shared!' : 'Cheered buddy!')}
+                      className="text-[10px] bg-surface-variant hover:bg-white/10 border border-white/15 px-3 py-1 rounded-full text-on-surface-variant hover:text-white cursor-pointer active:scale-95 transition-transform"
                     >
                       {friend.active ? 'Share' : 'Cheer'}
                     </button>
@@ -1572,44 +1865,49 @@ function App() {
             </div>
 
             {/* Weekend Challenge */}
-            <div className="col-span-12 lg:col-span-6 bg-gradient-to-br from-surface-container/80 to-surface-container-high/80 backdrop-blur-xl border border-white/10 p-lg rounded-2xl shadow-lg relative overflow-hidden">
+            <div className="bg-gradient-to-br from-surface-container/80 to-surface-container-high/80 backdrop-blur-xl border border-white/10 p-lg rounded-2xl shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-secondary-fixed/5 rounded-full blur-[40px] pointer-events-none -mr-12 -mt-12"></div>
               
               <div className="flex items-center gap-xs mb-sm">
                 <span className="material-symbols-outlined text-secondary-fixed text-sm">groups</span>
                 <span className="font-label-sm text-[10px] text-secondary-fixed uppercase tracking-wider font-bold">Team Challenge</span>
               </div>
-              <h3 className="font-headline-lg text-lg text-primary font-bold mb-1">Weekend Hydration Warriors</h3>
+              <h3 className="font-headline-lg text-sm md:text-lg text-primary font-bold mb-1">Weekend Hydration Warriors</h3>
               <p className="text-xs text-on-surface-variant mb-md leading-relaxed">Drink 8 glasses of water daily from Fri-Sun. Team goal: 80% completion.</p>
               
               <div className="flex justify-between text-xs mb-2 font-semibold">
-                <span className="text-on-surface-variant">Team Complete Rate</span>
+                <span className="text-on-surface-variant">Team Completion Rate</span>
                 <span className="text-secondary-fixed">68% Finished</span>
               </div>
-              <div className="w-full bg-surface-variant h-2 rounded-full overflow-hidden mb-lg">
+              <div className="w-full bg-surface-variant h-1.5 rounded-full overflow-hidden mb-lg">
                 <div className="bg-secondary-fixed h-full rounded-full w-[68%]" />
               </div>
 
-              <button className="w-full py-2 bg-secondary-fixed text-on-secondary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-xs">
+              <button 
+                onClick={() => triggerToast('Weekend challenge board loaded')}
+                className="w-full py-2 bg-secondary-fixed text-on-secondary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-xs cursor-pointer"
+              >
                 View Challenge Board
               </button>
             </div>
           </div>
         )}
 
+        {/* ============================================================== */}
         {/* VIEW: SETTINGS (PREFERENCES) */}
+        {/* ============================================================== */}
         {currentTab === 'settings' && (
-          <div className="max-w-2xl bg-surface-container/60 backdrop-blur-xl rounded-2xl border border-white/10 p-lg shadow-lg animate-fade-in flex flex-col gap-lg">
+          <div className="max-w-2xl mx-auto w-full bg-surface-container/60 backdrop-blur-xl rounded-2xl border border-white/10 p-md md:p-lg shadow-lg animate-fade-in flex flex-col gap-lg">
             
             <div className="border-b border-white/5 pb-md">
-              <h3 className="font-headline-lg text-lg text-primary">Elite Preferences Configurations</h3>
-              <p className="text-xs text-on-surface-variant">Configure metrics, weight and height composition tracking values.</p>
+              <h3 className="font-headline-lg text-md md:text-lg text-primary font-bold">Preferences Config</h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">Configure metrics, weight and height composition tracking values.</p>
             </div>
 
             <div className="flex flex-col gap-md">
-              <div className="grid grid-cols-2 gap-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-on-surface-variant font-semibold">Profile User Name</label>
+                  <label className="text-xs text-on-surface-variant font-semibold">Display Profile Name</label>
                   <input 
                     type="text" value={userProfile.name}
                     onChange={(e) => setUserProfile(prev => ({ ...prev, name: e.target.value }))}
@@ -1626,8 +1924,8 @@ function App() {
                 </div>
               </div>
 
-              {/* Height / Weight body compositions */}
-              <div className="grid grid-cols-3 gap-sm">
+              {/* Height / Weight indicators */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-on-surface-variant font-semibold">Height (cm)</label>
                   <input 
@@ -1655,7 +1953,7 @@ function App() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-on-surface-variant font-semibold">Avatar Image Link</label>
+                <label className="text-xs text-on-surface-variant font-semibold">Avatar Image URL</label>
                 <input 
                   type="text" value={userProfile.avatar}
                   onChange={(e) => setUserProfile(prev => ({ ...prev, avatar: e.target.value }))}
@@ -1671,17 +1969,17 @@ function App() {
                 <input 
                   type="range" min="5000" max="15000" step="500" value={userProfile.goals.steps}
                   onChange={(e) => setUserProfile(prev => ({ ...prev, goals: { ...prev.goals, steps: parseInt(e.target.value) } }))}
-                  className="w-full accent-primary-fixed h-1.5 bg-surface-variant cursor-pointer"
+                  className="w-full accent-primary-fixed h-1 bg-surface-variant cursor-pointer"
                 />
 
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-on-surface-variant font-semibold">Sleep hours Target</span>
+                  <span className="text-xs text-on-surface-variant font-semibold">Sleep Target hours</span>
                   <span className="text-sm font-bold text-secondary-fixed">{userProfile.goals.sleep} hrs</span>
                 </div>
                 <input 
                   type="range" min="6.0" max="9.5" step="0.5" value={userProfile.goals.sleep}
                   onChange={(e) => setUserProfile(prev => ({ ...prev, goals: { ...prev.goals, sleep: parseFloat(e.target.value) } }))}
-                  className="w-full accent-secondary-fixed h-1.5 bg-surface-variant cursor-pointer"
+                  className="w-full accent-secondary-fixed h-1 bg-surface-variant cursor-pointer"
                 />
               </div>
             </div>
@@ -1690,922 +1988,20 @@ function App() {
 
       </main>
 
-      {/* ============================================================== */}
-      {/* MOBILE VIEWPORT Layout: APP BAR, MAIN AREA, BOTTOM BAR */}
-      {/* ============================================================== */}
-      <div className="block md:hidden min-h-screen pb-32">
-        
-        {/* Mobile Header TopAppBar */}
-        <header className="fixed top-0 left-0 w-full bg-background/60 backdrop-blur-md z-45 flex items-center justify-between px-gutter h-16 border-b border-white/10 shadow-sm">
-          <div className="flex items-center gap-sm">
-            {activeWorkoutSubView === 'running' ? (
-              <button 
-                onClick={() => setActiveWorkoutSubView(null)}
-                className="active:scale-95 duration-200 hover:opacity-80 transition-opacity w-8 h-8 rounded-full flex items-center justify-center"
-              >
-                <span className="material-symbols-outlined text-primary">arrow_back</span>
-              </button>
-            ) : (
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-variant ring-1 ring-white/20" onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}>
-                <img src={userProfile.avatar} alt="Profile avatar" className="w-full h-full object-cover" />
-              </div>
-            )}
-            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary-fixed leading-tight tracking-tight">
-              {activeWorkoutSubView === 'running' ? 'Running' : (
-                <>
-                  {currentTab === 'home' && (dashboardMode === 'performance' ? 'Activity Coach' : 'FitSync')}
-                  {currentTab === 'activity' && 'Activity Tracker'}
-                  {currentTab === 'workouts' && 'Workouts Hub'}
-                  {currentTab === 'community' && 'Community Social'}
-                  {currentTab === 'settings' && 'User Preferences'}
-                </>
-              )}
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-sm">
-            <button 
-              onClick={() => {
-                setShowNotificationDrawer(!showNotificationDrawer);
-                if (!showNotificationDrawer) {
-                  setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                }
-              }}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-surface-variant/30 active:scale-95 transition-all relative border border-white/5"
-            >
-              <span className="material-symbols-outlined text-primary-fixed">notifications</span>
-              {notifications.some(n => !n.read) && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span>
-              )}
-            </button>
-
-            {activeWorkoutSubView === 'running' && (
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 bg-surface-container shrink-0">
-                <img src={userProfile.avatar} alt="Avatar profile small" className="w-full h-full object-cover" />
-              </div>
-            )}
-          </div>
-
-          {/* Notification dropdown for mobile */}
-          {showNotificationDrawer && (
-            <div className="absolute right-gutter top-16 w-72 bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 py-2 animate-fade-in">
-              <div className="px-4 py-1.5 border-b border-white/5 flex justify-between items-center">
-                <span className="text-xs text-primary font-bold">Alert Logs</span>
-                <button className="text-[10px] text-secondary-fixed" onClick={() => setNotifications([])}>Clear</button>
-              </div>
-              <div className="max-h-56 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-on-surface-variant">No alerts.</div>
-                ) : (
-                  notifications.map(item => (
-                    <div key={item.id} className="px-4 py-2 border-b border-white/5 text-left">
-                      <p className="text-[9px] text-on-surface-variant text-right mb-0.5">{item.time}</p>
-                      <p className="text-xs text-on-background leading-tight">{item.text}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </header>
-
-        {/* Mobile Page Canvas Content */}
-        <main className="mt-20 px-container-padding flex flex-col gap-lg max-w-2xl mx-auto">
-          
-          {/* VIEW: RUNNING SUBVIEW FOR MOBILE */}
-          {activeWorkoutSubView === 'running' && (
-            <div className="flex flex-col gap-lg animate-fade-in">
-              <section className="flex flex-col items-center py-xl text-center">
-                <p className="font-label-md text-xs text-on-surface-variant mb-xs">Total Miles</p>
-                <h2 className="font-display-lg text-4xl text-primary-container lime-glow font-bold">
-                  {totalMiles.toFixed(1)} mi
-                </h2>
-                <p className="font-label-sm text-[10px] text-on-surface-variant bg-white/5 px-sm py-xs rounded-full mt-sm">
-                  This week • {runsList.length} runs
-                </p>
-              </section>
-
-              {/* Weekly chart */}
-              <section className="glass-card rounded-xl p-lg">
-                <div className="flex items-center justify-between mb-xl">
-                  <h3 className="font-headline-lg-mobile text-sm text-primary font-bold">Weekly Activity</h3>
-                  <span className="material-symbols-outlined text-primary-fixed-dim text-md">analytics</span>
-                </div>
-
-                <div className="flex items-end justify-between h-40 gap-xs">
-                  {weeklyLogs.map((log, index) => {
-                    const pct = log.runMiles > 0 ? `${Math.min(100, (log.runMiles / 12) * 100)}%` : '5%';
-                    const isThu = log.dayName === 'THU';
-                    const barColor = isThu ? 'bg-primary-fixed-dim shadow-[0_0_15px_rgba(171,214,0,0.4)]' : 'bg-primary-fixed-dim/20';
-
-                    return (
-                      <div key={index} className="flex-1 flex flex-col items-center gap-xs cursor-pointer" onClick={() => setSelectedDayNum(log.dayNum)}>
-                        <div className="w-full bg-white/5 rounded-t-lg relative flex flex-col justify-end overflow-hidden h-[120px]">
-                          <div className={`w-full h-full ${barColor}`} style={{ height: pct }}></div>
-                        </div>
-                        <span className={`font-label-sm text-[10px] ${isThu ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>{log.dayName[0]}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-
-              {/* Detailed Metrics Grid */}
-              <section className="grid grid-cols-2 gap-md">
-                <div className="glass-card rounded-xl p-md">
-                  <div className="flex items-center gap-xs mb-xs">
-                    <span className="material-symbols-outlined text-secondary-fixed-dim text-[18px]">timer</span>
-                    <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">Avg Pace</p>
-                  </div>
-                  <p className="font-stat-value text-lg font-bold text-primary">8'42"/mi</p>
-                </div>
-
-                <div className="glass-card rounded-xl p-md">
-                  <div className="flex items-center gap-xs mb-xs">
-                    <span className="material-symbols-outlined text-secondary-fixed-dim text-[18px]">favorite</span>
-                    <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">Avg HR</p>
-                  </div>
-                  <p className="font-stat-value text-lg font-bold text-primary">152 bpm</p>
-                </div>
-
-                <div className="glass-card rounded-xl p-md">
-                  <div className="flex items-center gap-xs mb-xs">
-                    <span className="material-symbols-outlined text-secondary-fixed-dim text-[18px]">landscape</span>
-                    <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">Elevation Gain</p>
-                  </div>
-                  <p className="font-stat-value text-lg font-bold text-primary">340 ft</p>
-                </div>
-
-                <div className="glass-card rounded-xl p-md">
-                  <div className="flex items-center gap-xs mb-xs">
-                    <span className="material-symbols-outlined text-secondary-fixed-dim text-[18px]">local_fire_department</span>
-                    <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">Total Calories</p>
-                  </div>
-                  <p className="font-stat-value text-lg font-bold text-primary">2,150 kcal</p>
-                </div>
-              </section>
-
-              {/* Recent Runs List */}
-              <section className="mb-md">
-                <div className="flex items-center justify-between mb-md">
-                  <h3 className="font-headline-lg-mobile text-sm text-primary font-bold uppercase tracking-wider">Recent Runs</h3>
-                  <button onClick={() => triggerToast('Viewing running archives')} className="text-primary-container font-label-md text-xs hover:underline">See All</button>
-                </div>
-
-                <div className="space-y-sm">
-                  {runsList.map(run => (
-                    <div 
-                      key={run.id} 
-                      onClick={() => triggerToast(`Details loaded for ${run.name}`)}
-                      className="glass-card rounded-xl p-md flex items-center justify-between active:scale-[0.98] transition-transform duration-200 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-md">
-                        <div className="w-10 h-10 rounded bg-primary-container/10 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-primary-container text-xl">directions_run</span>
-                        </div>
-                        <div>
-                          <p className="font-label-md text-xs text-primary font-bold">{run.name}</p>
-                          <p className="font-label-sm text-[10px] text-on-surface-variant">{run.date} • {run.time}</p>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-label-md text-xs text-primary font-bold">{run.distance} mi</p>
-                        <p className="font-label-sm text-[10px] text-on-surface-variant font-mono">{run.duration}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-          )}
-
-          {/* VIEW: HOME VIEW FOR MOBILE (COACH OR FITSYNC STATUS) */}
-          {activeWorkoutSubView === null && currentTab === 'home' && (
-            <div className="flex flex-col gap-lg animate-fade-in">
-              {/* Mode switch header tabs */}
-              <div className="flex bg-surface-container p-1 rounded-xl border border-white/5">
-                <button 
-                  onClick={() => setDashboardMode('performance')}
-                  className={`flex-1 py-1 text-xs rounded-full font-semibold transition-all ${
-                    dashboardMode === 'performance' 
-                      ? 'bg-surface-variant text-primary-fixed shadow' 
-                      : 'text-on-surface-variant'
-                  }`}
-                >
-                  Performance Summary
-                </button>
-                <button 
-                  onClick={() => setDashboardMode('wellness')}
-                  className={`flex-1 py-1 text-xs rounded-full font-semibold transition-all ${
-                    dashboardMode === 'wellness' 
-                      ? 'bg-surface-variant text-primary-fixed shadow' 
-                      : 'text-on-surface-variant'
-                  }`}
-                >
-                  Wellness Status
-                </button>
-              </div>
-
-              {dashboardMode === 'performance' ? (
-                /* Original Performance Summary screen */
-                <>
-                  <section className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md relative overflow-hidden shadow-lg">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary-fixed/5 rounded-full blur-[40px] pointer-events-none -mr-8 -mt-8"></div>
-                    <div className="flex items-center gap-xs mb-sm">
-                      <span className="material-symbols-outlined text-secondary-fixed text-lg">auto_awesome</span>
-                      <h2 className="font-label-sm text-label-sm text-secondary-fixed uppercase tracking-widest font-bold">Coaching Tip</h2>
-                    </div>
-                    <p className="font-body-md text-xs text-on-surface-variant leading-relaxed">
-                      Hi {userProfile.name.split(' ')[0]}! Steps are at <span className="text-primary-fixed font-bold">{activeLog.steps.toLocaleString()}</span> today. 
-                      {activeLog.steps >= 10000 ? ' Target exceeded, great resilience! ' : ` Walk ${userProfile.goals.steps - activeLog.steps} more steps to hit goal. `}
-                      Sleep of {activeLog.sleep} hrs provides adequate repair.
-                    </p>
-                  </section>
-
-                  <div className="grid grid-cols-2 gap-sm">
-                    <div className="col-span-2 bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md flex items-center justify-between shadow-sm relative overflow-hidden">
-                      <div>
-                        <div className="flex items-center gap-xs mb-xs">
-                          <span className="material-symbols-outlined text-primary-fixed text-sm">directions_walk</span>
-                          <h3 className="font-label-sm text-xs text-on-surface-variant uppercase">Steps</h3>
-                        </div>
-                        <div className="font-stat-value text-xl font-bold text-primary">{activeLog.steps.toLocaleString()}</div>
-                        <div className="flex gap-1.5 mt-2">
-                          <button onClick={() => addSteps(1000)} className="text-[10px] bg-primary-fixed text-on-primary-fixed font-bold px-2 py-0.5 rounded-full shadow">+1k</button>
-                          <button onClick={() => addSteps(-1000)} className="text-[10px] bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded-full border border-white/10">-1k</button>
-                        </div>
-                      </div>
-                      <div className="w-16 h-16 rounded-full border-4 border-surface-variant relative flex items-center justify-center">
-                        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
-                          <path className="text-primary-fixed transition-all" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeDasharray={`${stepsPercent}, 100`} strokeWidth="3.5"></path>
-                        </svg>
-                        <span className="font-label-sm text-xs text-primary-fixed font-bold">{stepsPercent}%</span>
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md shadow-sm">
-                      <div className="flex items-center justify-between mb-sm">
-                        <div className="flex items-center gap-xs">
-                          <span className="material-symbols-outlined text-primary-fixed text-sm">timer</span>
-                          <h3 className="font-label-sm text-xs text-on-surface-variant uppercase">Workout Timer</h3>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between bg-surface-container-high/40 p-2.5 rounded-lg border border-white/5">
-                        {!workoutActive ? (
-                          <button onClick={startWorkout} className="w-full py-1.5 bg-primary-fixed text-on-primary-fixed font-bold text-xs rounded-full flex items-center justify-center gap-1">
-                            <span className="material-symbols-outlined text-xs">play_arrow</span> Start Activity
-                          </button>
-                        ) : (
-                          <div className="w-full flex items-center justify-between">
-                            <span className="font-mono text-sm text-primary font-bold tracking-widest">{formatTimer(timerSeconds)}</span>
-                            <div className="flex gap-1.5">
-                              <button onClick={pauseWorkout} className="bg-surface-variant text-[10px] text-primary-fixed px-2 py-0.5 rounded-full border border-white/10">{workoutPaused ? 'Res' : 'Pau'}</button>
-                              <button onClick={stopWorkout} className="bg-error/20 text-[10px] text-error px-2 py-0.5 rounded-full border border-error/30">End</button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md shadow-sm">
-                      <div className="flex items-center gap-sm">
-                        <span className="material-symbols-outlined text-error text-md animate-pulse">favorite</span>
-                        <div>
-                          <h3 className="text-[10px] text-on-surface-variant uppercase mb-0.5">Heart Rate</h3>
-                          <p className="text-lg font-stat-value font-bold text-primary leading-none">{liveHeartRate} bpm</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md shadow-sm cursor-pointer" onClick={() => addHydration(1)}>
-                      <div className="flex items-center gap-sm">
-                        <span className="material-symbols-outlined text-cyan-400 text-md">water_drop</span>
-                        <div>
-                          <h3 className="text-[10px] text-on-surface-variant uppercase mb-0.5">Hydration</h3>
-                          <p className="text-lg font-stat-value font-bold text-primary leading-none">{getWaterDisplayValue(activeLog.water)}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                </>
-              ) : (
-                /* wellness status mockup details for mobile */
-                <div className="flex flex-col gap-lg animate-fade-in">
-                  
-                  {/* Energy Burned section */}
-                  <section className="glass-surface rounded-xl p-md relative overflow-hidden">
-                    <div className="flex justify-between items-start mb-base">
-                      <div>
-                        <p className="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider">Energy Burned</p>
-                        <div className="flex items-baseline gap-xs">
-                          <span className="font-stat-value text-3xl font-bold text-primary-fixed glow-lime">512</span>
-                          <span className="font-label-md text-xs text-on-surface-variant">kcal</span>
-                        </div>
-                      </div>
-                      <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
-                        <svg className="w-full h-full -rotate-90">
-                          <circle className="text-white/10" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeWidth="6"></circle>
-                          <circle className="text-primary-fixed glow-lime transition-all duration-1000" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.9" stroke-dashoffset="47.5" stroke-linecap="round" stroke-width="6"></circle>
-                        </svg>
-                        <span className="absolute font-label-sm text-[10px] text-primary font-bold">73%</span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-md mb-lg">
-                      <div className="bg-white/5 rounded-lg p-sm border border-white/5">
-                        <p className="font-label-sm text-[10px] text-on-surface-variant mb-xs">Active</p>
-                        <p className="font-headline-lg-mobile text-xs font-bold text-primary">312 <span className="text-[10px] opacity-60">kcal</span></p>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-sm border border-white/5">
-                        <p className="font-label-sm text-[10px] text-on-surface-variant mb-xs">Resting</p>
-                        <p className="font-headline-lg-mobile text-xs font-bold text-primary">200 <span className="text-[10px] opacity-60">kcal</span></p>
-                      </div>
-                    </div>
-
-                    {/* Hourly burn graph visual */}
-                    <div className="h-20 flex items-end justify-between gap-1 mb-md bg-background/30 p-1.5 rounded border border-white/5">
-                      {hourlyBurnData.map((h, i) => (
-                        <div 
-                          key={i} 
-                          style={{ height: `${h}%` }}
-                          className={`w-full rounded-t-xs transition-all ${
-                            h === 100 ? 'bg-primary-fixed glow-lime' : 'bg-primary-fixed/20'
-                          }`}
-                        ></div>
-                      ))}
-                    </div>
-
-                    <div className="border-t border-white/10 pt-base flex justify-between items-center text-xs">
-                      <p className="text-on-surface-variant font-semibold">Intake: {calorieIntake} kcal</p>
-                      <p className="text-primary-fixed font-bold">Net: +{calorieIntake - 512} kcal</p>
-                    </div>
-                  </section>
-
-                  {/* Hydration Segment bar section */}
-                  <section className="glass-surface rounded-xl p-md">
-                    <div className="flex items-center gap-base mb-md">
-                      <span className="material-symbols-outlined text-secondary-fixed-dim text-lg">water_drop</span>
-                      <p className="font-label-md text-xs text-secondary-fixed-dim uppercase tracking-wider font-bold">Hydration</p>
-                    </div>
-
-                    <div className="flex items-end justify-between mb-lg">
-                      <div className="space-y-xs">
-                        <div className="flex items-baseline gap-xs">
-                          <span className="font-stat-value text-2xl font-bold text-primary">{(hydrationLogs.glassesLog * 0.25).toFixed(1)}</span>
-                          <span className="font-label-md text-xs text-on-surface-variant">Liters</span>
-                        </div>
-                        <p className="font-body-md text-xs text-on-surface-variant">{hydrationLogs.glassesLog}/8 glasses completed</p>
-                      </div>
-                      <div className="bg-secondary-fixed-dim/20 px-sm py-0.5 rounded-full border border-secondary-fixed-dim/30">
-                        <p className="text-[10px] text-secondary-fixed-dim">{8 - hydrationLogs.glassesLog} more glasses</p>
-                      </div>
-                    </div>
-
-                    {/* Progress visual segments */}
-                    <div className="flex gap-[3px] mb-lg h-3 bg-white/10 rounded-full overflow-hidden">
-                      {Array.from({ length: 8 }).map((_, idx) => {
-                        const active = idx < hydrationLogs.glassesLog;
-                        return (
-                          <div 
-                            key={idx} 
-                            onClick={() => toggleWaterSegment(idx)}
-                            className={`h-full cursor-pointer flex-1 ${
-                              active ? 'bg-secondary-fixed-dim glow-cyan' : 'bg-white/5'
-                            }`}
-                          ></div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="bg-surface-container-low rounded-lg p-sm border border-white/5 flex justify-between items-center text-[10px] text-on-surface-variant">
-                      <div className="flex items-center gap-xs">
-                        <span className="material-symbols-outlined text-xs">history</span>
-                        <span>Last: {hydrationLogs.lastLogTime}</span>
-                      </div>
-                      <div className="flex items-center gap-xs text-secondary-fixed-dim font-bold">
-                        <span className="material-symbols-outlined text-xs">alarm</span>
-                        <span>Next: {hydrationLogs.nextReminderTime}</span>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Body Composition BMI Section */}
-                  <section className="glass-surface rounded-xl p-md">
-                    <div className="flex justify-between items-center mb-md">
-                      <div className="flex items-center gap-base">
-                        <span className="material-symbols-outlined text-tertiary-fixed-dim">monitor_weight</span>
-                        <p className="font-label-md text-xs text-on-surface-variant uppercase font-bold">Body Composition</p>
-                      </div>
-                      <div className="flex items-center gap-xs text-error font-bold">
-                        <span className="material-symbols-outlined text-xs">trending_down</span>
-                        <span>0.3 pts</span>
-                      </div>
-                    </div>
-
-                    <div className="text-center mb-lg">
-                      <p className="font-stat-value text-4xl text-primary font-bold mb-xs">{calculatedBmi}</p>
-                      <div className="inline-flex items-center gap-xs px-md py-0.5 bg-primary-fixed/10 border border-primary-fixed/20 rounded-full text-xs">
-                        <span className="w-2 h-2 rounded-full bg-primary-fixed"></span>
-                        <p className="font-label-sm text-primary-fixed font-bold">Status: {getBmiStatus(calculatedBmi)}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-base mb-lg text-center">
-                      <div>
-                        <p className="text-[10px] text-on-surface-variant">Height</p>
-                        <p className="text-sm font-bold text-primary">{userProfile.height}<span className="text-[10px] opacity-60">cm</span></p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-on-surface-variant">Weight</p>
-                        <p className="text-sm font-bold text-primary">{userProfile.weight}<span className="text-[10px] opacity-60">kg</span></p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-on-surface-variant">Target</p>
-                        <p className="text-sm font-bold text-secondary-fixed-dim">{userProfile.targetBmi}</p>
-                      </div>
-                    </div>
-
-                    {/* Scale */}
-                    <div className="relative pt-6 pb-2">
-                      <div className="h-2 w-full rounded-full bg-gradient-to-r from-secondary-fixed-dim via-primary-fixed to-tertiary-fixed-dim"></div>
-                      <div 
-                        style={{ left: `${getBmiMarkerPercent(calculatedBmi)}%` }}
-                        className="absolute top-0 flex flex-col items-center transition-all duration-500"
-                      >
-                        <div className="w-4 h-4 rounded-full bg-primary border-2 border-background shadow-lg"></div>
-                        <div className="w-[2px] h-4 bg-primary/30"></div>
-                      </div>
-                      <div className="flex justify-between mt-xs text-[9px] text-on-surface-variant uppercase tracking-tighter font-semibold">
-                        <span>Under</span>
-                        <span>Normal</span>
-                        <span>Over</span>
-                        <span>Obese</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-md p-sm bg-white/5 rounded-lg border border-white/5 text-center text-[11px]">
-                      <p className="text-on-surface">Healthy range: 18.5 - 24.9 BMI</p>
-                      <p className="text-primary-fixed font-bold">You're doing great!</p>
-                    </div>
-                  </section>
-
-                </div>
-              )}
-
-            </div>
-          )}
-
-          {/* VIEW: WORKOUTS HUB GENERAL VIEW FOR MOBILE */}
-          {activeWorkoutSubView === null && currentTab === 'workouts' && (
-            <div className="flex flex-col gap-lg animate-fade-in">
-              <section className="glass-card rounded-xl p-md">
-                <h3 className="font-headline-lg-mobile text-sm text-primary mb-md font-bold uppercase tracking-wider">Select discipline</h3>
-                <div className="flex flex-col gap-sm">
-                  
-                  {/* Running Selection */}
-                  <div 
-                    onClick={() => setActiveWorkoutSubView('running')}
-                    className="p-md bg-surface-container-high/40 border border-white/5 active:scale-95 transition-all rounded-lg flex items-center justify-between cursor-pointer"
-                  >
-                    <div className="flex items-center gap-sm">
-                      <div className="w-10 h-10 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-fixed">
-                        <span className="material-symbols-outlined text-2xl">directions_run</span>
-                      </div>
-                      <div>
-                        <h4 className="text-xs text-primary font-bold">Running Performance</h4>
-                        <p className="text-[10px] text-on-surface-variant mt-0.5">{totalMiles.toFixed(1)} miles tracked this week</p>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined text-on-surface-variant text-md">chevron_right</span>
-                  </div>
-
-                  {/* Strength Selection */}
-                  <div 
-                    onClick={() => { setActiveWorkoutSubView(null); setCurrentTab('home'); setDashboardMode('performance'); }}
-                    className="p-md bg-surface-container-high/40 border border-white/5 active:scale-95 transition-all rounded-lg flex items-center justify-between cursor-pointer"
-                  >
-                    <div className="flex items-center gap-sm">
-                      <div className="w-10 h-10 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-fixed">
-                        <span className="material-symbols-outlined text-2xl">fitness_center</span>
-                      </div>
-                      <div>
-                        <h4 className="text-xs text-primary font-bold">Strength Training</h4>
-                        <p className="text-[10px] text-on-surface-variant mt-0.5">{activeLog.sets} sets logged today ({activeLog.workout})</p>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined text-on-surface-variant text-md">chevron_right</span>
-                  </div>
-
-                </div>
-              </section>
-
-              {/* Stopwatch timer */}
-              <section className="glass-card rounded-xl p-md">
-                <h3 className="font-headline-lg-mobile text-sm text-primary mb-md font-bold uppercase tracking-wider">Live stopwatch</h3>
-                <div className="py-lg flex flex-col items-center justify-center bg-background/40 border border-white/5 rounded-lg">
-                  {!workoutActive ? (
-                    <button onClick={startWorkout} className="px-6 py-2 bg-primary-fixed text-on-primary-fixed font-bold text-xs rounded-full">
-                      Start stopwatch
-                    </button>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <h4 className="font-mono text-xl text-primary font-bold tracking-widest mb-md">{formatTimer(timerSeconds)}</h4>
-                      <div className="flex gap-2">
-                        <button onClick={pauseWorkout} className="bg-surface-variant text-xs text-primary-fixed px-3 py-1 rounded-full">{workoutPaused ? 'Resume' : 'Pause'}</button>
-                        <button onClick={stopWorkout} className="bg-error/20 text-xs text-error px-3 py-1 rounded-full">Complete</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </section>
-            </div>
-          )}
-
-          {/* VIEW: ACTIVITY LIST FOR MOBILE */}
-          {activeWorkoutSubView === null && currentTab === 'activity' && (
-            <div className="flex flex-col gap-lg animate-fade-in">
-              <section className="flex flex-col gap-md">
-                <div className="flex bg-surface-container rounded-full p-1 border border-white/5">
-                  <button className="flex-1 py-1.5 text-xs text-primary-fixed bg-surface-variant rounded-full font-semibold shadow">Day</button>
-                  <button onClick={() => triggerToast('Weekly stats')} className="flex-1 py-1.5 text-xs text-on-surface-variant font-semibold">Week</button>
-                  <button onClick={() => triggerToast('Monthly stats')} className="flex-1 py-1.5 text-xs text-on-surface-variant font-semibold">Month</button>
-                </div>
-                
-                <div className="flex justify-between items-center bg-surface-container-low p-sm rounded-xl border border-white/5">
-                  {weeklyLogs.map(log => {
-                    const active = log.dayNum === selectedDayNum;
-                    return (
-                      <div 
-                        key={log.dayNum} onClick={() => setSelectedDayNum(log.dayNum)}
-                        className={`flex flex-col items-center gap-xs cursor-pointer transition-all ${
-                          active ? 'bg-primary-container/20 border border-primary-container/30 rounded-lg px-3 py-1 scale-105' : 'px-2'
-                        }`}
-                      >
-                        <span className={`font-label-sm text-[10px] ${active ? 'text-primary-fixed font-bold' : 'text-on-surface-variant'}`}>{log.dayName}</span>
-                        <span className={`w-2 h-2 rounded-full ${log.steps >= 10000 ? 'bg-primary-container' : 'bg-surface-variant'}`}></span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-
-              {/* CARDIO SECTION */}
-              <section className="glass-card rounded-xl p-md flex flex-col gap-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-sm">
-                    <span className="material-symbols-outlined text-secondary-fixed">directions_run</span>
-                    <h2 className="font-label-md text-xs uppercase tracking-widest text-on-surface-variant font-bold">Cardio Performance</h2>
-                  </div>
-                  <button onClick={() => setActiveWorkoutSubView('running')} className="material-symbols-outlined text-on-surface-variant text-sm">open_in_new</button>
-                </div>
-
-                <div className="grid grid-cols-3 gap-md text-center">
-                  <div className="flex flex-col items-center gap-sm">
-                    <div className="relative w-16 h-16 flex items-center justify-center">
-                      <svg className="w-full h-full -rotate-90">
-                        <circle className="text-surface-variant" cx="32" cy="32" fill="transparent" r="26" stroke="currentColor" strokeWidth="6"></circle>
-                        <circle className="text-primary-fixed transition-all" cx="32" cy="32" fill="transparent" r="26" stroke="currentColor" strokeDasharray="163" strokeDashoffset={163 - (163 * (stepsPercent / 100))} strokeLinecap="round" strokeWidth="6"></circle>
-                      </svg>
-                      <span className="absolute font-label-sm text-[10px] text-primary-fixed font-bold">{stepsPercent}%</span>
-                    </div>
-                    <div>
-                      <p className="font-stat-value text-md leading-none font-bold text-primary">{activeLog.steps.toLocaleString()}</p>
-                      <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">steps</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-sm">
-                    <div className="relative w-16 h-16 flex items-center justify-center">
-                      <svg className="w-full h-full -rotate-90">
-                        <circle className="text-surface-variant" cx="32" cy="32" fill="transparent" r="26" stroke="currentColor" strokeWidth="6"></circle>
-                        <circle className="text-secondary-fixed transition-all" cx="32" cy="32" fill="transparent" r="26" stroke="currentColor" strokeDasharray="163" strokeDashoffset={163 - (163 * (Math.min(100, Math.round((activeLog.km / 8.0) * 100)) / 100))} strokeLinecap="round" strokeWidth="6"></circle>
-                      </svg>
-                      <span className="absolute font-label-sm text-[10px] text-secondary-fixed font-bold">{Math.min(100, Math.round((activeLog.km / 8.0) * 100))}%</span>
-                    </div>
-                    <div>
-                      <p className="font-stat-value text-md leading-none font-bold text-primary">{activeLog.km}</p>
-                      <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">km</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-sm">
-                    <div className="relative w-16 h-16 flex items-center justify-center">
-                      <svg className="w-full h-full -rotate-90">
-                        <circle className="text-surface-variant" cx="32" cy="32" fill="transparent" r="26" stroke="currentColor" strokeWidth="6"></circle>
-                        <circle className="text-primary-fixed transition-all" cx="32" cy="32" fill="transparent" r="26" stroke="currentColor" strokeDasharray="163" strokeDashoffset={163 - (163 * (activeMinPercent / 100))} strokeLinecap="round" strokeWidth="6"></circle>
-                      </svg>
-                      <span className="absolute font-label-sm text-[10px] text-primary-fixed font-bold">{activeMinPercent}%</span>
-                    </div>
-                    <div>
-                      <p className="font-stat-value text-md leading-none font-bold text-primary">{activeLog.activeMin}</p>
-                      <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">min</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* STRENGTH SECTION */}
-              <section className="glass-card rounded-xl p-md flex flex-col gap-lg">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-sm">
-                    <span className="material-symbols-outlined text-primary-fixed">fitness_center</span>
-                    <h2 className="font-label-md text-xs uppercase tracking-widest text-on-surface-variant font-bold">Strength Training</h2>
-                  </div>
-                  <div className="bg-primary-container/10 px-2 py-1 rounded-lg">
-                    <span className="font-label-sm text-[10px] text-primary-fixed font-semibold">
-                      {activeLog.sets > 0 ? '3/5 Complete' : 'Rest Day'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-lg text-center">
-                  <div className="flex flex-col gap-xs bg-surface-container-low/50 py-2 rounded-lg">
-                    <p className="font-stat-value text-xl font-bold text-primary">{activeLog.sets}</p>
-                    <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">TOTAL SETS</p>
-                  </div>
-                  <div className="flex flex-col gap-xs bg-surface-container-low/50 py-2 rounded-lg">
-                    <p className="font-stat-value text-xl font-bold text-primary">{activeLog.reps}</p>
-                    <p className="font-label-sm text-[10px] text-on-surface-variant font-semibold">TOTAL REPS</p>
-                  </div>
-                </div>
-
-                <div className="space-y-sm">
-                  <div className="flex justify-between items-center text-[10px] uppercase text-on-surface-variant font-bold mb-1">
-                    <span>Muscle Groups</span>
-                    <span>Intensity</span>
-                  </div>
-                  <div className="space-y-xs">
-                    {[
-                      { name: 'Chest', val: activeLog.chest },
-                      { name: 'Back', val: activeLog.back || 78 },
-                      { name: 'Legs', val: activeLog.legs || 64 },
-                      { name: 'Arms', val: activeLog.arms || 88 }
-                    ].map(muscle => (
-                      <div key={muscle.name} className="flex items-center gap-sm">
-                        <span className="w-12 font-label-sm text-xs text-primary font-semibold">{muscle.name}</span>
-                        <div className="flex-1 h-2 bg-surface-variant rounded-full overflow-hidden">
-                          <div className="h-full bg-primary-fixed electric-lime-glow transition-all" style={{ width: `${muscle.val}%` }}></div>
-                        </div>
-                        <span className="text-[10px] text-on-surface-variant w-6 text-right font-mono">{muscle.val}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Consistency Grid */}
-                <div className="flex flex-col gap-sm">
-                  <h3 className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Weekly Consistency</h3>
-                  <div className="flex justify-between gap-1 text-center">
-                    {weeklyLogs.map(item => {
-                      const active = item.dayNum === selectedDayNum;
-                      const hasSets = item.sets > 0;
-                      return (
-                        <div key={item.dayNum} onClick={() => setSelectedDayNum(item.dayNum)} className={`flex-1 aspect-square rounded-sm flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all ${
-                          active ? 'bg-primary-container text-on-primary-container border border-primary-fixed shadow' : hasSets ? 'bg-primary-container/60 text-on-primary-container' : 'bg-surface-variant text-on-surface-variant/75'
-                        }`}>
-                          {item.dayName[0]}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </section>
-
-              {/* RECOVERY SECTION */}
-              <section className="glass-card rounded-xl p-md flex flex-col gap-md relative overflow-hidden">
-                <div className="absolute -right-8 -top-8 w-24 h-24 bg-secondary-fixed/5 blur-[40px] rounded-full"></div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-sm">
-                    <span className="material-symbols-outlined text-secondary-fixed">bedtime</span>
-                    <h2 className="font-label-md text-xs uppercase tracking-widest text-on-surface-variant font-bold">Body Recovery</h2>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-lg">
-                  <div className="relative w-20 h-20 shrink-0">
-                    <svg className="w-full h-full -rotate-90">
-                      <circle className="text-surface-variant" cx="40" cy="40" fill="transparent" r="32" stroke="currentColor" strokeWidth="8"></circle>
-                      <circle className="text-secondary-fixed neo-cyan-glow transition-all" cx="40" cy="40" fill="transparent" r="32" stroke="currentColor" strokeDasharray="201" strokeDashoffset={201 - (201 * (activeLog.recovery / 100))} strokeLinecap="round" strokeWidth="8"></circle>
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="font-stat-value text-md font-bold text-primary">{activeLog.recovery}%</span>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-headline-lg-mobile text-sm font-bold text-secondary-fixed mb-0.5">Good zone</h3>
-                    <p className="font-body-md text-xs text-on-surface-variant leading-relaxed">Weekly rest levels are optimized. Focus on hydration to enhance it.</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-sm mt-2 text-center">
-                  <div className="bg-surface-container-high/40 p-sm rounded-lg border border-white/5">
-                    <span className="material-symbols-outlined text-secondary-fixed text-sm mb-0.5">sleep</span>
-                    <p className="font-stat-value text-md font-bold text-primary">{activeLog.sleep}h</p>
-                    <p className="font-label-sm text-[9px] text-on-surface-variant uppercase font-semibold">Sleep</p>
-                  </div>
-                  <div className="bg-surface-container-high/40 p-sm rounded-lg border border-white/5">
-                    <span className="material-symbols-outlined text-secondary-fixed text-sm mb-0.5">favorite</span>
-                    <p className="font-stat-value text-md font-bold text-primary">{liveHeartRate}</p>
-                    <p className="font-label-sm text-[9px] text-on-surface-variant uppercase font-semibold">BPM</p>
-                  </div>
-                  <div className="bg-surface-container-high/40 p-sm rounded-lg border border-white/5 cursor-pointer" onClick={() => addHydration(0.25)}>
-                    <span className="material-symbols-outlined text-secondary-fixed text-sm mb-0.5">water_drop</span>
-                    <p className="font-stat-value text-md font-bold text-primary">{getWaterDisplayValue(activeLog.water)}</p>
-                    <p className="font-label-sm text-[9px] text-on-surface-variant uppercase font-semibold">Water</p>
-                  </div>
-                </div>
-              </section>
-            </div>
-          )}
-
-          {/* VIEW: COMMUNITY FOR MOBILE */}
-          {activeWorkoutSubView === null && currentTab === 'community' && (
-            <div className="flex flex-col gap-lg animate-fade-in">
-              <div className="glass-card p-md rounded-xl">
-                <h3 className="font-headline-lg-mobile text-sm text-primary mb-md font-bold uppercase tracking-wider">Social Standings</h3>
-                <div className="flex flex-col gap-sm">
-                  {[
-                    { rank: 1, name: 'Sarah Miller', score: '14,232 steps', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0' },
-                    { rank: 2, name: `${userProfile.name} (You)`, score: `${activeLog.steps.toLocaleString()} steps`, active: true, avatar: userProfile.avatar },
-                    { rank: 3, name: 'John Doe', score: '9,432 steps', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuEtWq0z7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8' }
-                  ].map((friend, idx) => (
-                    <div key={idx} className={`flex items-center justify-between p-sm rounded-lg border transition-all ${
-                      friend.active ? 'bg-primary-container/10 border-primary-fixed/20 shadow-md' : 'bg-surface-container-high/40 border-white/5'
-                    }`}>
-                      <div className="flex items-center gap-sm">
-                        <span className="w-4 font-bold text-xs text-on-surface-variant">{friend.rank}</span>
-                        <img src={friend.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-white/10" />
-                        <div>
-                          <div className="font-label-md text-xs text-primary font-bold">{friend.name}</div>
-                          <div className="text-[10px] text-on-surface-variant">{friend.score}</div>
-                        </div>
-                      </div>
-                      <button onClick={() => triggerToast('Buddy cheered!')} className="text-[10px] bg-surface-variant border border-white/10 text-on-surface-variant hover:text-white px-2.5 py-0.5 rounded-full">Cheer</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VIEW: SETTINGS FOR MOBILE */}
-          {activeWorkoutSubView === null && currentTab === 'settings' && (
-            <div className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md shadow-md animate-fade-in flex flex-col gap-md">
-              <h3 className="font-headline-lg-mobile text-sm text-primary font-bold uppercase tracking-wider mb-sm">Preferences Config</h3>
-              
-              <div className="grid grid-cols-2 gap-sm">
-                <div className="flex flex-col gap-xs">
-                  <label className="text-[10px] text-on-surface-variant font-bold uppercase">Display Name</label>
-                  <input 
-                    type="text" value={userProfile.name}
-                    onChange={(e) => setUserProfile(prev => ({ ...prev, name: e.target.value }))}
-                    className="bg-background border border-white/10 rounded-lg px-3 py-2 text-xs text-primary focus:outline-none focus:border-primary-fixed"
-                  />
-                </div>
-                <div className="flex flex-col gap-xs">
-                  <label className="text-[10px] text-on-surface-variant font-bold uppercase">Level</label>
-                  <input 
-                    type="number" value={userProfile.level}
-                    onChange={(e) => setUserProfile(prev => ({ ...prev, level: parseInt(e.target.value) || 1 }))}
-                    className="bg-background border border-white/10 rounded-lg px-3 py-2 text-xs text-primary focus:outline-none focus:border-primary-fixed"
-                  />
-                </div>
-              </div>
-
-              {/* Weight / Height composition */}
-              <div className="grid grid-cols-2 gap-sm">
-                <div className="flex flex-col gap-xs">
-                  <label className="text-[10px] text-on-surface-variant font-bold uppercase">Height (cm)</label>
-                  <input 
-                    type="number" value={userProfile.height}
-                    onChange={(e) => setUserProfile(prev => ({ ...prev, height: parseInt(e.target.value) || 0 }))}
-                    className="bg-background border border-white/10 rounded-lg px-3 py-2 text-xs text-primary focus:outline-none focus:border-primary-fixed"
-                  />
-                </div>
-                <div className="flex flex-col gap-xs">
-                  <label className="text-[10px] text-on-surface-variant font-bold uppercase">Weight (kg)</label>
-                  <input 
-                    type="number" step="0.1" value={userProfile.weight}
-                    onChange={(e) => setUserProfile(prev => ({ ...prev, weight: parseFloat(e.target.value) || 0 }))}
-                    className="bg-background border border-white/10 rounded-lg px-3 py-2 text-xs text-primary focus:outline-none focus:border-primary-fixed"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-xs">
-                <label className="text-[10px] text-on-surface-variant font-bold uppercase">Profile Picture URL</label>
-                <input 
-                  type="text" value={userProfile.avatar}
-                  onChange={(e) => setUserProfile(prev => ({ ...prev, avatar: e.target.value }))}
-                  className="bg-background border border-white/10 rounded-lg px-3 py-1.5 text-[10px] text-on-surface-variant focus:outline-none focus:border-primary-fixed"
-                />
-              </div>
-
-              {/* Sliders for steps goals */}
-              <div className="border-t border-white/5 pt-sm mt-xs space-y-sm">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-on-surface-variant">Daily Steps Target</span>
-                  <span className="text-primary-fixed font-bold">{userProfile.goals.steps.toLocaleString()}</span>
-                </div>
-                <input 
-                  type="range" min="5000" max="15000" step="500" value={userProfile.goals.steps}
-                  onChange={(e) => setUserProfile(prev => ({ ...prev, goals: { ...prev.goals, steps: parseInt(e.target.value) } }))}
-                  className="w-full accent-primary-fixed h-1 bg-surface-variant cursor-pointer"
-                />
-              </div>
-            </div>
-          )}
-
-        </main>
-
-        {/* Global Floating Action Button for Mobile activity list */}
-        <button 
-          onClick={() => {
-            if (activeWorkoutSubView === 'running') {
-              setShowLogRunModal(true);
-            } else if (currentTab === 'home' && dashboardMode === 'wellness') {
-              // Open custom water/intake logger
-              const val = prompt("Enter food calories logged (kcal):");
-              const intakeVal = parseInt(val) || 0;
-              if (intakeVal > 0) {
-                setCalorieIntake(prev => prev + intakeVal);
-                triggerToast(`🥗 Intake updated +${intakeVal} kcal`);
-              }
-            } else {
-              setShowLogWorkoutModal(true);
-            }
-          }}
-          className="fixed bottom-24 right-gutter w-14 h-14 bg-primary-container text-on-primary-container rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform z-40 accent-glow-lime"
-          aria-label="Add workout log"
-        >
-          <span className="material-symbols-outlined text-2xl">add</span>
-        </button>
-
-        {/* Mobile BottomNavBar */}
-        <nav className="fixed bottom-0 left-0 w-full rounded-t-xl z-45 bg-surface/60 backdrop-blur-xl border-t border-white/5 shadow-[0_-4px_20px_rgba(171,214,0,0.1)] flex justify-around items-center h-20 pb-safe px-base">
-          {/* Home */}
-          <button 
-            onClick={() => { setCurrentTab('home'); setActiveWorkoutSubView(null); }}
-            className={`flex flex-col items-center gap-xs transition-all px-4 py-1 ${
-              currentTab === 'home' 
-                ? 'text-primary bg-primary/10 rounded-xl font-bold' 
-                : 'text-on-surface-variant hover:text-primary'
-            }`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'home' ? 1 : 0}` }}>
-              dashboard
-            </span>
-            <span className="font-label-sm text-[10px]">Home</span>
-          </button>
-
-          {/* Activity */}
-          <button 
-            onClick={() => { setCurrentTab('activity'); setActiveWorkoutSubView(null); }}
-            className={`flex flex-col items-center gap-xs transition-all px-4 py-1 ${
-              currentTab === 'activity' 
-                ? 'text-primary bg-primary/10 rounded-xl font-bold' 
-                : 'text-on-surface-variant hover:text-primary'
-            }`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'activity' ? 1 : 0}` }}>
-              fitness_center
-            </span>
-            <span className="font-label-sm text-[10px]">Activity</span>
-          </button>
-
-          {/* Community */}
-          <button 
-            onClick={() => { setCurrentTab('community'); setActiveWorkoutSubView(null); }}
-            className={`flex flex-col items-center gap-xs transition-all px-4 py-1 ${
-              currentTab === 'community' 
-                ? 'text-primary bg-primary/10 rounded-xl font-bold' 
-                : 'text-on-surface-variant hover:text-primary'
-            }`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'community' ? 1 : 0}` }}>
-              group
-            </span>
-            <span className="font-label-sm text-[10px]">Community</span>
-          </button>
-
-          {/* Settings */}
-          <button 
-            onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}
-            className={`flex flex-col items-center gap-xs transition-all px-4 py-1 ${
-              currentTab === 'settings' 
-                ? 'text-primary bg-primary/10 rounded-xl font-bold' 
-                : 'text-on-surface-variant hover:text-primary'
-            }`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: `FILL ${currentTab === 'settings' ? 1 : 0}` }}>
-              settings
-            </span>
-            <span className="font-label-sm text-[10px]">Settings</span>
-          </button>
-        </nav>
-
-      </div>
+      {/* Global Floating Action Button for Mobile/Tablet views */}
+      <button 
+        onClick={() => {
+          if (activeWorkoutSubView === 'running') {
+            setShowLogRunModal(true);
+          } else {
+            setShowLogWorkoutModal(true);
+          }
+        }}
+        className="fixed bottom-24 right-gutter w-14 h-14 bg-primary-container text-on-primary-container rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform z-30 accent-glow-lime lg:hidden cursor-pointer"
+        aria-label="Quick Add log"
+      >
+        <span className="material-symbols-outlined text-2xl">add</span>
+      </button>
 
     </div>
   );
