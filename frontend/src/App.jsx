@@ -3,6 +3,10 @@ import './App.css';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import WatchSimulator from './components/WatchSimulator';
+import AICoachChat from './components/AICoachChat';
+import AIMealScanner from './components/AIMealScanner';
+import WorkoutBuilder from './components/WorkoutBuilder';
 
 function App() {
   // --- Navigation & Core Views ---
@@ -12,6 +16,15 @@ function App() {
   
   // Dashboard Section Mode selector: switch between Performance details and Wellness status
   const [dashboardMode, setDashboardMode] = useState('performance'); // 'performance' | 'wellness'
+  
+  // AI Tools & Scanners
+  const [showMealScanner, setShowMealScanner] = useState(false);
+  const [showWorkoutBuilder, setShowWorkoutBuilder] = useState(false);
+  const [routinesList, setRoutinesList] = useState([
+    { name: 'Bench Press', routine: 'Chest & Triceps', repinfo: '4 Sets x 8 Reps' },
+    { name: 'Incline Dumbbell Flys', routine: 'Chest Focus', repinfo: '3 Sets x 12 Reps' },
+    { name: 'Dips (Weighted)', routine: 'Triceps & Lower Chest', repinfo: '3 Sets x 8 Reps' }
+  ]);
   
   const [selectedDayNum, setSelectedDayNum] = useState(14); // Wed 14 default
   const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
@@ -841,20 +854,9 @@ function App() {
         {/* ============================================================== */}
         {currentTab === 'home' && (
           <div className="flex flex-col gap-lg animate-fade-in">
-            {/* Coaching Tip Banner */}
+            {/* Interactive Coaching Chat Component */}
             {dashboardMode === 'performance' && (
-              <section className="bg-surface-container/60 backdrop-blur-xl rounded-xl border border-white/10 p-md relative overflow-hidden shadow-lg">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-primary-fixed/5 rounded-full blur-[40px] pointer-events-none -mr-8 -mt-8"></div>
-                <div className="flex items-center gap-xs mb-xs">
-                  <span className="material-symbols-outlined text-secondary-fixed text-lg">auto_awesome</span>
-                  <h2 className="font-label-sm text-[10px] md:text-xs text-secondary-fixed uppercase tracking-widest font-bold">Coaching Tip</h2>
-                </div>
-                <p className="font-body-md text-xs md:text-sm text-on-surface-variant leading-relaxed">
-                  Hi {userProfile.name.split(' ')[0]}! Steps are at <span className="text-primary-fixed font-bold">{activeLog.steps.toLocaleString()}</span> today. 
-                  {activeLog.steps >= 10000 ? ' Target exceeded, great resilience!' : ` Walk ${(userProfile.goals.steps - activeLog.steps).toLocaleString()} more steps to hit goal.`}
-                  {' '}Sleep of {activeLog.sleep} hrs provides adequate repair.
-                </p>
-              </section>
+              <AICoachChat userProfile={userProfile} activeLog={activeLog} />
             )}
 
             {/* PERFORMANCE MODE: Quick Summary Dashboard */}
@@ -1047,26 +1049,35 @@ function App() {
                     ))}
                   </div>
 
-                  {/* Calorie food input */}
-                  <div className="border-t border-white/10 pt-sm flex justify-between items-center gap-xs">
-                    <div className="text-[10px]">
-                      <p className="text-on-surface-variant">Intake: <span className="text-primary font-bold">{calorieIntake} kcal</span></p>
-                      <p className="text-primary-fixed font-bold">Net: +{calorieIntake - 512} kcal</p>
-                    </div>
-                    <input 
-                      type="number" placeholder="+ kcal"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const val = parseInt(e.target.value) || 0;
-                          if (val > 0) {
-                            setCalorieIntake(prev => prev + val);
-                            triggerToast(`🥗 Logged Food Intake: +${val} kcal`);
-                            e.target.value = '';
+                  {/* Calorie food input with AI Scanner trigger */}
+                  <div className="border-t border-white/10 pt-sm flex flex-col gap-sm">
+                    <button 
+                      onClick={() => setShowMealScanner(true)}
+                      className="w-full py-1.5 bg-primary-fixed/20 text-primary-fixed hover:bg-primary-fixed hover:text-on-primary-fixed font-bold border border-primary-fixed/30 rounded-lg active:scale-95 transition-all text-[10px] flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+                      AI Scan Meal Photo
+                    </button>
+                    <div className="flex justify-between items-center gap-xs">
+                      <div className="text-[10px]">
+                        <p className="text-on-surface-variant">Intake: <span className="text-primary font-bold">{calorieIntake} kcal</span></p>
+                        <p className="text-primary-fixed font-bold">Net: +{calorieIntake - 512} kcal</p>
+                      </div>
+                      <input 
+                        type="number" placeholder="+ kcal"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = parseInt(e.target.value) || 0;
+                            if (val > 0) {
+                              setCalorieIntake(prev => prev + val);
+                              triggerToast(`🥗 Logged Food Intake: +${val} kcal`);
+                              e.target.value = '';
+                            }
                           }
-                        }
-                      }}
-                      className="w-16 bg-background/80 border border-white/10 rounded-md px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-primary-fixed text-primary text-center"
-                    />
+                        }}
+                        className="w-16 bg-background/80 border border-white/10 rounded-md px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-primary-fixed text-primary text-center"
+                      />
+                    </div>
                   </div>
                 </section>
 
@@ -1755,28 +1766,32 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Routine Planner card */}
+                  {/* Routine Planner card with custom Workout Builder */}
                   <div className="glass-card p-lg rounded-2xl">
                     <div className="flex justify-between items-center mb-lg">
                       <h3 className="font-headline-lg text-xs md:text-sm text-primary font-bold uppercase tracking-wider">Routines Planner</h3>
-                      <button 
-                        onClick={() => setShowLogWorkoutModal(true)}
-                        className="text-[10px] bg-primary-fixed text-on-primary-fixed px-2.5 py-1 rounded-full font-bold cursor-pointer"
-                      >
-                        + Log Set
-                      </button>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setShowWorkoutBuilder(true)}
+                          className="text-[10px] bg-secondary-container text-on-secondary-container px-2.5 py-1 rounded-full font-bold cursor-pointer"
+                        >
+                          + Builder
+                        </button>
+                        <button 
+                          onClick={() => setShowLogWorkoutModal(true)}
+                          className="text-[10px] bg-primary-fixed text-on-primary-fixed px-2.5 py-1 rounded-full font-bold cursor-pointer"
+                        >
+                          + Log Set
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-sm">
-                      {[
-                        { name: 'Bench Press', routine: 'Chest & Triceps', repinfo: '4 Sets x 8 Reps' },
-                        { name: 'Incline Dumbbell Flys', routine: 'Chest Focus', repinfo: '3 Sets x 12 Reps' },
-                        { name: 'Dips (Weighted)', routine: 'Triceps & Lower Chest', repinfo: '3 Sets x 8 Reps' }
-                      ].map((ex, idx) => (
+                      {routinesList.map((ex, idx) => (
                         <div key={idx} className="flex justify-between items-center p-sm bg-surface-container-high/40 rounded-xl border border-white/5">
                           <div>
                             <p className="font-label-md text-xs text-primary font-bold">{ex.name}</p>
-                            <p className="text-[9px] text-on-surface-variant">{ex.routine} • {ex.repinfo}</p>
+                            <p className="text-[9px] text-on-surface-variant">{(ex.routine || ex.repinfo)} • {ex.repinfo}</p>
                           </div>
                           <button onClick={() => triggerToast(`Logged sets for ${ex.name}`)} className="w-7 h-7 rounded-full bg-primary-fixed/20 text-primary-fixed flex items-center justify-center cursor-pointer active:scale-90 transition-transform">
                             <span className="material-symbols-outlined text-[14px]">check</span>
@@ -2029,6 +2044,61 @@ function App() {
       >
         <span className="material-symbols-outlined text-2xl">add</span>
       </button>
+
+      {/* AI Meal Scanner Modal Dialog */}
+      {showMealScanner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md">
+          <div className="relative w-full max-w-xl">
+            <button 
+              onClick={() => setShowMealScanner(false)}
+              className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+            <AIMealScanner 
+              onLogNutrition={(calories) => {
+                setCalorieIntake(prev => prev + calories);
+                triggerToast(`🥗 Logged Food Scan: +${calories} kcal`);
+                setTimeout(() => setShowMealScanner(false), 2000);
+              }} 
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Custom Workout Routine Builder Modal Dialog */}
+      {showWorkoutBuilder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-2xl my-8">
+            <button 
+              onClick={() => setShowWorkoutBuilder(false)}
+              className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+            <WorkoutBuilder 
+              onSaveRoutine={(routineName, exercisesList) => {
+                setRoutinesList(prev => [
+                  { 
+                    name: routineName, 
+                    routine: 'Custom Routine', 
+                    repinfo: `${exercisesList.length} Exercises`
+                  },
+                  ...prev
+                ]);
+                triggerToast(`🏋️‍♂️ Custom routine '${routineName}' created!`);
+                setTimeout(() => setShowWorkoutBuilder(false), 1500);
+              }} 
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Smartwatch Companion Simulator */}
+      <WatchSimulator 
+        onSyncHeartRate={(bpm) => setLiveHeartRate(bpm)}
+        onSyncSteps={(amount) => addSteps(amount)}
+      />
 
     </div>
   );
