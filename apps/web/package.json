@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node -e \"if (process.platform === 'linux') require('child_process').execSync('npm install --no-save @tailwindcss/oxide-linux-x64-gnu lightningcss-linux-x64-gnu', {stdio: 'inherit'});\" && prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "prisma": "prisma"
