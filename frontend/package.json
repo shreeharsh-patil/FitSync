@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node -e \"if (process.platform === 'linux') require('child_process').execSync('npm install --no-save @tailwindcss/oxide-linux-x64-gnu lightningcss-linux-x64-gnu', {stdio: 'inherit'});\" && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
