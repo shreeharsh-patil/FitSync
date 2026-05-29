@@ -328,7 +328,7 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                                   {ex.category}
                                 </span>
                                 <span className="text-[8px] text-muted-foreground">
-                                  {ex.muscleGroups.slice(0, 2).join(", ")}
+                                  {(ex.muscleGroups || "").split(", ").slice(0, 2).join(", ")}
                                 </span>
                               </div>
                             </div>
@@ -712,13 +712,13 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                 <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl text-left">
                   <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Target Muscles</p>
                   <p className="text-xs font-bold text-white mt-1 capitalize">
-                    {selectedExercise.muscleGroups.join(", ")}
+                    {selectedExercise.muscleGroups}
                   </p>
                 </div>
                 <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl text-left">
                   <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Equipment Needed</p>
                   <p className="text-xs font-bold text-white mt-1 capitalize">
-                    {selectedExercise.equipment.join(", ")}
+                    {selectedExercise.equipment}
                   </p>
                 </div>
               </div>

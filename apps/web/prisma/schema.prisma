@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 enum Role {
@@ -89,12 +89,12 @@ model Account {
   type               String
   provider           String
   providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
+  refresh_token      String?
+  access_token       String?
   expires_at         Int?
   token_type         String?
   scope              String?
-  id_token           String?  @db.Text
+  id_token           String?
   session_state      String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -137,7 +137,7 @@ model Workout {
   difficulty  Difficulty
   daysPerWeek Int
   isPublic    Boolean    @default(false)
-  tags        String[]
+  tags        String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -181,8 +181,8 @@ model Exercise {
   id           String           @id @default(uuid())
   name         String           @unique
   category     ExerciseCategory
-  muscleGroups String[]
-  equipment    String[]
+  muscleGroups String
+  equipment    String
   instructions String
   videoUrl     String?
   gifUrl       String?
@@ -230,7 +230,7 @@ model BlogPost {
   content         String
   featuredImageUrl String?
   category        String
-  tags            String[]
+  tags            String?
   metaTitle       String?
   metaDescription String?
   status          PostStatus @default(DRAFT)
@@ -247,7 +247,7 @@ model Post {
   id            String    @id @default(uuid())
   userId        String
   content       String
-  mediaUrls     String[]
+  mediaUrls     String?
   likesCount    Int       @default(0)
   commentsCount Int       @default(0)
   createdAt     DateTime  @default(now())

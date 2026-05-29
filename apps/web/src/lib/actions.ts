@@ -132,8 +132,8 @@ export async function searchExercises(query: string) {
     const exercises = await db.exercise.findMany({
       where: {
         OR: [
-          { name: { contains: query, mode: "insensitive" } },
-          { muscleGroups: { hasSome: [query] } },
+          { name: { contains: query } },
+          { muscleGroups: { contains: query } },
         ],
       },
       take: 10,
