@@ -1,18 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Activity, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [role, setRole] = useState<"athlete" | "pro">("athlete");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Subtle mouse reactive parallax for the background glow (Athlete view)
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (role !== "athlete") return;
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      
+      const spheres = document.querySelectorAll(".glow-sphere");
+      spheres.forEach((sphere, index) => {
+        const speed = (index + 1) * 20;
+        (sphere as HTMLElement).style.transform = `translate(${x * speed}px, ${y * speed}px)`;
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [role]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,162 +65,349 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[120px]" />
+    <div className="min-h-screen w-full bg-[#051424] text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden relative flex flex-col items-center justify-center p-4 md:p-0">
+      
+      {/* Top Floating Role Switcher */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex bg-surface-container-high/60 backdrop-blur-md p-1 rounded-full border border-white/10 shadow-2xl">
+        <button
+          type="button"
+          onClick={() => {
+            setRole("athlete");
+            setError("");
+          }}
+          className={`relative px-5 py-2 rounded-full font-label-md text-[11px] tracking-wider uppercase font-semibold transition-all duration-300 ${
+            role === "athlete"
+              ? "bg-primary-container text-on-primary-container shadow-[0_0_15px_rgba(171,214,0,0.4)]"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
+          Athlete Mode
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setRole("pro");
+            setError("");
+          }}
+          className={`relative px-5 py-2 rounded-full font-label-md text-[11px] tracking-wider uppercase font-semibold transition-all duration-300 ${
+            role === "pro"
+              ? "bg-secondary-container text-on-secondary-container shadow-[0_0_15px_rgba(0,238,252,0.4)]"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
+          Pro Mode
+        </button>
+      </div>
 
-      <Card className="w-full max-w-md glass border-white/10 shadow-2xl overflow-hidden relative z-10">
-        <div className="p-8 space-y-8">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-secondary to-primary p-[1px]">
-              <div className="h-full w-full rounded-2xl bg-background flex items-center justify-center text-secondary">
-                <Activity className="h-10 w-10" />
-              </div>
+      <AnimatePresence mode="wait">
+        {role === "athlete" ? (
+          /* ================= ATHLETE LOGIN VIEW (HTML 1) ================= */
+          <motion.div
+            key="athlete"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.4 }}
+            className="w-full min-h-screen flex flex-col items-center justify-center relative z-10 px-container-padding py-xl"
+          >
+            {/* Background Layer for Athlete */}
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+              <div className="absolute inset-0 kinetic-grid opacity-30"></div>
+              <div className="absolute top-[-10%] right-[-10%] w-96 h-96 glow-sphere"></div>
+              <div className="absolute bottom-[-5%] left-[-5%] w-[500px] h-[500px] glow-sphere opacity-50"></div>
             </div>
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold font-heading tracking-tight">
-                Welcome Back
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Sync your body. Sync your life.
-              </p>
-            </div>
-          </div>
 
-          {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs flex items-start gap-2.5 animate-pulse">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
+            <div className="w-full max-w-sm relative z-10 flex flex-col items-center space-y-lg">
+              {/* Logo & Branding Section */}
+              <header className="w-full flex flex-col items-center mb-base text-center">
+                <div className="flex items-center gap-xs mb-md">
+                  <div className="w-12 h-12 bg-primary-container flex items-center justify-center rounded-xl shadow-[0_0_30px_rgba(171,214,0,0.4)]">
+                    <span className="material-symbols-outlined text-on-primary-container text-[32px] font-bold">fitness_center</span>
+                  </div>
+                  <h1 className="font-display-sm text-display-sm text-primary-fixed italic tracking-tighter">FitSync</h1>
+                </div>
+                <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Welcome back, Athlete</h2>
+                <p className="font-label-md text-label-md text-on-surface-variant">Your peak performance starts here.</p>
+              </header>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  name="email"
-                  type="email"
-                  placeholder="Email Address"
-                  className="pl-10 h-12 bg-background/50 border-border/40 focus:border-secondary/40 transition-all animate-fade-in"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  name="password"
-                  type="password"
-                  placeholder="Password"
-                  className="pl-10 h-12 bg-background/50 border-border/40 focus:border-secondary/40 transition-all animate-fade-in"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="text-right">
-                <Link
-                  href="#"
-                  className="text-xs text-secondary hover:underline font-medium"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 bg-secondary hover:bg-secondary/90 text-primary font-bold text-lg shadow-lg shadow-secondary/20 transition-all active:scale-[0.98] rounded-xl flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              ) : (
-                "Sign In"
+              {error && (
+                <div className="w-full p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs flex items-start gap-2.5 animate-pulse">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
               )}
-            </Button>
-          </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border/40"></span>
+              {/* Form Section */}
+              <form onSubmit={handleSubmit} className="w-full space-y-lg">
+                <div className="space-y-md">
+                  {/* Email Field */}
+                  <div className="flex flex-col gap-xs">
+                    <label className="font-label-sm text-label-sm text-on-surface-variant px-1 uppercase tracking-widest" htmlFor="email">Email Address</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none">
+                        <span className="material-symbols-outlined text-outline text-[20px]">mail</span>
+                      </div>
+                      <input
+                        className="w-full h-14 bg-surface-container-low border border-white/10 rounded-xl pl-11 pr-md text-on-surface font-body-md focus:outline-none focus:border-secondary-container transition-all duration-300 placeholder:text-outline-variant"
+                        id="email"
+                        name="email"
+                        placeholder="alex.rivers@performance.com"
+                        type="email"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="flex flex-col gap-xs">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest" htmlFor="password">Password</label>
+                      <a className="font-label-sm text-label-sm text-secondary-container hover:text-secondary-fixed-dim transition-colors" href="#">Forgot Password?</a>
+                    </div>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none">
+                        <span className="material-symbols-outlined text-outline text-[20px]">lock</span>
+                      </div>
+                      <input
+                        className="w-full h-14 bg-surface-container-low border border-white/10 rounded-xl pl-11 pr-12 text-on-surface font-body-md focus:outline-none focus:border-secondary-container transition-all duration-300 placeholder:text-outline-variant"
+                        id="password"
+                        name="password"
+                        placeholder=""
+                        type={showPassword ? "text" : "password"}
+                        required
+                        disabled={isLoading}
+                      />
+                      <button
+                        className="absolute inset-y-0 right-0 pr-md flex items-center text-outline hover:text-on-surface-variant transition-colors"
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          {showPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-14 bg-primary-container text-on-primary-container font-headline-lg-mobile text-headline-lg-mobile rounded-xl shadow-[0_8px_20px_rgba(171,214,0,0.2)] hover:shadow-[0_8px_30px_rgba(171,214,0,0.4)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-sm cursor-pointer disabled:opacity-75"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      Sign In
+                      <span className="material-symbols-outlined">bolt</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Divider */}
+                <div className="relative flex items-center gap-md py-sm">
+                  <div className="flex-grow h-px bg-white/10"></div>
+                  <span className="font-label-sm text-label-sm text-outline-variant">OR CONTINUE WITH</span>
+                  <div className="flex-grow h-px bg-white/10"></div>
+                </div>
+
+                {/* Social Login Buttons */}
+                <div className="grid grid-cols-2 gap-md">
+                  <button
+                    type="button"
+                    onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                    className="flex items-center justify-center gap-sm h-14 bg-surface-container-high border border-white/5 rounded-xl hover:bg-surface-variant transition-all active:scale-[0.95] cursor-pointer"
+                  >
+                    <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPb0vRi19aXl0VtZl3foWY0y7WGo0S7nQoVAPKvhzFz64-LGo_L88t5zk5m4cy-KUYSc_UGu8xG-4RG6Hmjem53qPhATZjJg--W3WlhL3p6tAe5cM0efkBxWwSpgDWxLZNh0j99NXYuBdyK8b4FtETs75kC0-si39K69S2OaEUSH22t0IQDeRKA_uo45MmZtKqHfGrgHwrBxm54BwXt1oA2eCYskGF_dYEn2p4cyg98s7Bc3JUrdIdBPpxcoDCQqvEv4jw5h1rcrUC" />
+                    <span className="font-label-md text-label-md">Google</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => signIn("github", { callbackUrl: "/dashboard" })} // Fallback to GitHub instead of iOS
+                    className="flex items-center justify-center gap-sm h-14 bg-surface-container-high border border-white/5 rounded-xl hover:bg-surface-variant transition-all active:scale-[0.95] cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[24px]">ios</span>
+                    <span className="font-label-md text-label-md">GitHub</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Footer / Redirect */}
+              <footer className="w-full text-center pt-md">
+                <p className="font-label-md text-label-md text-on-surface-variant">
+                  New to FitSync? 
+                  <Link className="text-primary-container font-bold hover:underline underline-offset-4 ml-1" href="/signup">
+                    Create Account
+                  </Link>
+                </p>
+              </footer>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Or continue with
-              </span>
+          </motion.div>
+        ) : (
+          /* ================= PRO MEMBER LOGIN VIEW (HTML 2) ================= */
+          <motion.div
+            key="pro"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.4 }}
+            className="w-full max-w-[1200px] h-auto md:h-[720px] flex overflow-hidden rounded-2xl shadow-2xl border border-white/5 relative z-10 bg-mesh"
+          >
+            {/* Left Side: Visual/Hero Section */}
+            <div className="hidden md:flex flex-1 relative overflow-hidden">
+              <img
+                alt="High performance training"
+                className="absolute inset-0 w-full h-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH10kfcnCjyz1ANrDojoEV5rNZg6WILWcy-fyg6fdfYu6WXy6wR6sx5teXXIUXgbFQiNRRwJ-WWgeLfd5GOeLoUfsU5qFE2mr9OGI4pv8CJYX-YiTIZ0U46KDnTIb5cQ05qs5CwZXUjtxpvMeb5QAPycKJdudlAh2AMPVxwMonDm9TRw6XrNn1K-BhiiVFKZYv9PESbHbDBl2nyO3gsQS9ja2IEeAsdixksE5kCWo-oaSGiIY1SGonMkrSBcAiBa5QmvzTZON846Jn"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#051424]/90 via-[#051424]/40 to-transparent"></div>
+              
+              {/* Branding Overlay */}
+              <div className="absolute bottom-xl left-xl max-w-sm z-10 text-left">
+                <div className="flex items-center gap-xs mb-md">
+                  <span className="material-symbols-outlined text-primary-fixed text-4xl">bolt</span>
+                  <h1 className="font-display-sm text-display-sm text-primary italic tracking-tighter">FitSync</h1>
+                </div>
+                <p className="font-body-lg text-body-lg text-on-surface-variant mb-lg">
+                  Harness the power of data-driven performance. Log in to track your progress and sync your lifestyle.
+                </p>
+                <div className="flex gap-md">
+                  <div className="flex flex-col">
+                    <span className="font-stat-value text-stat-value text-primary-fixed">12.5k</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Active Pros</span>
+                  </div>
+                  <div className="w-px h-12 bg-white/10"></div>
+                  <div className="flex flex-col">
+                    <span className="font-stat-value text-stat-value text-secondary-fixed-dim">98%</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Goal Success</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              type="button"
-              disabled={isLoading}
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-              variant="outline"
-              className="w-full h-12 font-bold gap-3 border-border/40 hover:bg-secondary/10 hover:border-secondary/40 transition-all rounded-xl"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.34v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.12z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
-              </svg>
-              Google
-            </Button>
-            <Button
-              type="button"
-              disabled={isLoading}
-              onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-              variant="outline"
-              className="w-full h-12 font-bold gap-3 border-border/40 hover:bg-secondary/10 hover:border-secondary/40 transition-all rounded-xl"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              GitHub
-            </Button>
-          </div>
+            {/* Right Side: Login Form Canvas */}
+            <div className="flex-1 bg-surface-container-low flex flex-col justify-center items-center px-lg md:px-xl relative py-xl md:py-0">
+              
+              {/* Mobile Branding (Hidden on Desktop) */}
+              <div className="md:hidden flex items-center gap-xs mb-xl">
+                <span className="material-symbols-outlined text-primary-fixed text-3xl">bolt</span>
+                <h1 className="font-display-sm text-display-sm text-primary italic tracking-tighter">FitSync</h1>
+              </div>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/signup"
-              className="text-secondary hover:underline font-bold"
-            >
-              Sign up
-            </Link>
-          </p>
-        </div>
-        <div className="bg-secondary/5 p-4 text-center border-t border-white/5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-            Secure · Encrypted · Enterprise Grade
-          </p>
-        </div>
-      </Card>
+              <div className="w-full max-w-md">
+                <div className="mb-xl text-center md:text-left">
+                  <h2 className="font-headline-lg text-headline-lg text-primary mb-xs">Pro Member Login</h2>
+                  <p className="font-body-md text-body-md text-on-surface-variant">Enter your credentials to access your dashboard.</p>
+                </div>
+
+                {error && (
+                  <div className="mb-md p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs flex items-start gap-2.5 animate-pulse">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-lg text-left">
+                  {/* Email Field */}
+                  <div className="space-y-xs group">
+                    <label className="font-label-md text-label-md text-on-surface-variant block ml-1" htmlFor="pro-email">Email Address</label>
+                    <div className="relative neon-glow rounded-xl overflow-hidden border border-white/10 bg-background transition-all duration-300">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">mail</span>
+                      <input
+                        className="w-full bg-transparent text-on-surface pl-12 pr-4 py-4 focus:ring-0 focus:outline-none placeholder:text-white/20 font-body-md text-body-md border-none"
+                        id="pro-email"
+                        name="email"
+                        placeholder="alex.rivers@fitsync.pro"
+                        type="email"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="space-y-xs group">
+                    <label className="font-label-md text-label-md text-on-surface-variant block ml-1 flex justify-between" htmlFor="pro-password">
+                      <span>Password</span>
+                      <a className="text-secondary-fixed-dim hover:underline transition-all text-xs" href="#">Forgot Password?</a>
+                    </label>
+                    <div className="relative neon-glow rounded-xl overflow-hidden border border-white/10 bg-background transition-all duration-300">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">lock</span>
+                      <input
+                        className="w-full bg-transparent text-on-surface pl-12 pr-12 py-4 focus:ring-0 focus:outline-none placeholder:text-white/20 font-body-md text-body-md border-none"
+                        id="pro-password"
+                        name="password"
+                        placeholder=""
+                        type={showPassword ? "text" : "password"}
+                        required
+                        disabled={isLoading}
+                      />
+                      <button
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        <span className="material-symbols-outlined">
+                          {showPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Remember Me */}
+                  <div className="flex items-center gap-md">
+                    <label className="relative flex items-center cursor-pointer">
+                      <input className="sr-only peer" type="checkbox" name="remember" />
+                      <div className="w-5 h-5 bg-background border border-white/20 rounded peer-checked:bg-primary-container peer-checked:border-primary-container transition-all"></div>
+                      <span className="material-symbols-outlined absolute left-0 text-on-primary text-[20px] opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+                      <span className="ml-3 font-label-md text-label-md text-on-surface-variant">Remember me for 30 days</span>
+                    </label>
+                  </div>
+
+                  {/* Action Button */}
+                  <button
+                    className="w-full electric-btn py-4 rounded-xl font-label-md text-label-md uppercase tracking-widest flex items-center justify-center gap-md cursor-pointer disabled:opacity-75"
+                    type="submit"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-[#161e00]" />
+                    ) : (
+                      <>
+                        Sign In
+                        <span className="material-symbols-outlined">login</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* Footer Links */}
+                <div className="mt-xl text-center">
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    Don't have a Pro account? 
+                    <Link className="text-primary-fixed font-semibold hover:underline decoration-primary-fixed decoration-2 underline-offset-4 ml-1" href="/signup">
+                      Create Account
+                    </Link>
+                  </p>
+                </div>
+
+                {/* Terms/Legal */}
+                <div className="mt-lg pt-lg border-t border-white/5 flex justify-center gap-lg">
+                  <a className="font-label-sm text-label-sm text-white/30 hover:text-on-surface-variant transition-colors" href="#">Terms of Service</a>
+                  <a className="font-label-sm text-label-sm text-white/30 hover:text-on-surface-variant transition-colors" href="#">Privacy Policy</a>
+                </div>
+              </div>
+
+              {/* Atmospheric Glow */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-secondary-fixed-dim/5 blur-[120px] rounded-full pointer-events-none"></div>
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-fixed/5 blur-[120px] rounded-full pointer-events-none"></div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
