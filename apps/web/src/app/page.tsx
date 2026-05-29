@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 export default function LandingPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,6 +22,43 @@ export default function LandingPage() {
     target: containerRef,
     offset: ["start start", "end end"],
   });
+
+  // Chat Simulator State
+  const [chatMessages, setChatMessages] = useState<any[]>([
+    { role: "assistant", content: "Active recovery initialized. Choose a query blueprint to compile biological instructions." }
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
+
+  const mockReplies = [
+    {
+      q: "Explain progressive overload index",
+      r: "Progressive overload is the foundation of hypertrophy. Aim to increase total mechanical tension weekly by incrementing load by 2.5% to 5%, or adding sets/reps. Maintain concentric control."
+    },
+    {
+      q: "Suggest cellular recovery protocols",
+      r: "Optimal recovery targets a parasympathetic shift. Implement:\n1. 10 mins myofascial release\n2. 3:1 hydration ratio (water to electrolytes)\n3. 8 hours sleep with dark temperature at 18°C."
+    },
+    {
+      q: "Calculate protein macro targets",
+      r: "To optimize protein synthesis: consume 2.0g per kg of bodyweight, distributed in 4 equal feeding windows of 35-40g every 3.5 hours. Prioritize post-workout synchronization."
+    }
+  ];
+
+  const handleSimulateQuestion = (index: number) => {
+    if (isTyping) return;
+    const q = mockReplies[index].q;
+    const r = mockReplies[index].r;
+    
+    // Add user message
+    setChatMessages(prev => [...prev, { role: "user", content: q }]);
+    setIsTyping(true);
+    
+    // Simulate thinking delay and typing effect
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, { role: "assistant", content: r }]);
+      setIsTyping(false);
+    }, 1200);
+  };
 
   return (
     <div ref={containerRef} className="flex flex-col min-h-screen bg-background overflow-hidden selection:bg-secondary selection:text-primary relative">
@@ -320,6 +357,115 @@ export default function LandingPage() {
                     alt="AI Nutrition Engine"
                     className="w-full h-auto rounded-[2.5rem] border border-white/5 object-cover"
                   />
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Part 3: AI Chat Simulator */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="space-y-6"
+              >
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-bold uppercase tracking-widest font-mono">
+                  <Brain className="h-3.5 w-3.5" />
+                  Cognitive AI Layer
+                </div>
+                <h3 className="text-4xl sm:text-6xl font-bold font-heading text-white leading-tight">
+                  Interact with the <br />
+                  <span className="text-secondary">Grok Fitness Matrix</span>
+                </h3>
+                <p className="text-muted-foreground text-lg leading-relaxed font-medium">
+                  Try it live. Select a command blueprint below to simulate Grok's biological calculations in real-time.
+                </p>
+                
+                {/* Pre-set simulation buttons */}
+                <div className="flex flex-col gap-3 pt-2">
+                  {mockReplies.map((item, idx) => (
+                    <motion.button
+                      key={idx}
+                      whileHover={{ scale: 1.02, x: 5 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleSimulateQuestion(idx)}
+                      disabled={isTyping}
+                      className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-secondary/20 hover:bg-secondary/[0.02] text-left text-sm font-bold text-white transition-all cursor-pointer"
+                    >
+                      <span className="flex items-center gap-3">
+                        <Sparkles className="h-4 w-4 text-secondary shrink-0" />
+                        {item.q}
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+              
+              {/* Interactive Phone/Card Mockup Chat Simulator */}
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-secondary/20 blur-[60px] rounded-[3rem] opacity-30 group-hover:opacity-50 transition-opacity pointer-events-none" />
+                <div className="relative glass border-white/5 rounded-[3rem] p-6 h-[450px] flex flex-col shadow-2xl overflow-hidden bg-slate-950/40">
+                  <div className="flex items-center gap-3 pb-4 border-b border-white/5">
+                    <div className="h-10 w-10 rounded-xl bg-secondary/15 text-secondary border border-secondary/20 flex items-center justify-center font-bold">
+                      <Brain className="h-5 w-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold font-heading text-sm text-white">Grok AI Coach Simulator</h4>
+                      <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">Biometric Neural Model</p>
+                    </div>
+                  </div>
+                  
+                  {/* Messages Area */}
+                  <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 custom-scrollbar scroll-smooth">
+                    {chatMessages.map((msg, index) => (
+                      <div
+                        key={index}
+                        className={`flex gap-3 max-w-[85%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                      >
+                        <div className={`h-8 w-8 shrink-0 rounded-lg flex items-center justify-center border mt-0.5 text-xs font-bold ${
+                          msg.role === "assistant" ? "bg-secondary/15 text-secondary border-secondary/30" : "bg-accent/15 text-accent border-accent/30"
+                        }`}>
+                          {msg.role === "assistant" ? "G" : "U"}
+                        </div>
+                        <div className={`rounded-xl p-3 border text-xs leading-relaxed ${
+                          msg.role === "assistant" ? "bg-white/5 border-white/10 text-muted-foreground rounded-tl-sm" : "bg-accent/10 border-accent/20 text-white rounded-tr-sm"
+                        }`}>
+                          {msg.content.split("\n").map((line: string, iIdx: number) => (
+                            <p key={iIdx} className={iIdx > 0 ? "mt-1.5" : ""}>{line}</p>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {isTyping && (
+                      <div className="flex gap-3 max-w-[85%] mr-auto">
+                        <div className="h-8 w-8 shrink-0 rounded-lg bg-secondary/15 text-secondary border border-secondary/30 flex items-center justify-center text-xs font-bold animate-pulse">
+                          G
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-xl rounded-tl-sm p-3 text-[10px] font-mono text-secondary animate-pulse">
+                          Grok Coach is compiling biological overrides...
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Bottom input simulation bar */}
+                  <div className="pt-3 border-t border-white/5 flex gap-2 items-center">
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-xl h-10 px-3 flex items-center text-[10px] text-muted-foreground font-medium">
+                      Blueprint command active... select question to execute.
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-primary shadow-lg shadow-secondary/15 shrink-0">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             </div>
