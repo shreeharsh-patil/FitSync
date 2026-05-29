@@ -425,6 +425,13 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('feed-update', data);
     console.log('Broadcasting new post from:', data.author);
   });
+  
+  socket.on('direct-message', (data) => {
+    // data: { senderId, senderName, receiverId, content, time }
+    // Emit to the receiver's room
+    io.to(data.receiverId).emit('receive-direct-message', data);
+    console.log(`DM from ${data.senderName} to ${data.receiverId}`);
+  });
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
