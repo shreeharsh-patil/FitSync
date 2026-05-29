@@ -5,7 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Bot, User, Sparkles, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { askGrokCoach } from "@/lib/actions";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
   role: "user" | "assistant";
@@ -83,82 +85,101 @@ export function AICoachClient() {
   };
 
   return (
-    <Card className="flex-1 glass border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col relative shadow-2xl min-h-[500px]">
+    <Card className="flex-1 glass border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col relative shadow-2xl min-h-[600px]">
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/5 via-transparent to-accent/5 opacity-50 pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-secondary via-accent to-secondary" />
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 relative z-10 custom-scrollbar">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex gap-4 max-w-[80%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
-          >
-            <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center border mt-1 ${
-              msg.role === "assistant"
-                ? "bg-secondary/15 text-secondary border-secondary/30"
-                : "bg-accent/15 text-accent border-accent/30"
-            }`}>
-              {msg.role === "assistant" ? <Bot className="h-5 w-5" /> : <User className="h-5 w-5" />}
-            </div>
-            <div className="space-y-2">
-              <div className={`rounded-2xl p-4 border text-sm leading-relaxed ${
-                msg.role === "assistant"
-                  ? "bg-white/5 border-white/10 rounded-tl-sm text-foreground"
-                  : "bg-accent/10 border-accent/20 rounded-tr-sm text-white"
-              }`}>
-                {msg.content.split("\n").map((line, lIdx) => (
-                  <p key={lIdx} className={lIdx > 0 ? "mt-2" : ""}>
-                    {line}
-                  </p>
-                ))}
+        <AnimatePresence initial={false}>
+          {messages.map((msg, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className={`flex gap-4 max-w-[85%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+            >
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center border mt-1 shadow-lg ${
+                  msg.role === "assistant"
+                    ? "bg-secondary/15 text-secondary border-secondary/30"
+                    : "bg-accent/15 text-accent border-accent/30"
+                }`}
+              >
+                {msg.role === "assistant" ? <Bot className="h-5 w-5" /> : <User className="h-5 w-5" />}
+              </motion.div>
+              <div className="space-y-2">
+                <div className={cn(
+                  "rounded-2xl p-4 border text-sm leading-relaxed shadow-xl backdrop-blur-md",
+                  msg.role === "assistant"
+                    ? "bg-white/5 border-white/10 rounded-tl-sm text-foreground"
+                    : "bg-accent/10 border-accent/20 rounded-tr-sm text-white"
+                )}>
+                  {msg.content.split("\n").map((line, lIdx) => (
+                    <p key={lIdx} className={lIdx > 0 ? "mt-2" : ""}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+                <p className={`text-[9px] text-muted-foreground font-mono font-bold ${msg.role === "user" ? "text-right mr-1" : "ml-1"}`}>
+                  {msg.time}
+                </p>
               </div>
-              <p className={`text-[9px] text-muted-foreground font-mono font-bold ${msg.role === "user" ? "text-right mr-1" : "ml-1"}`}>
-                {msg.time}
-              </p>
-            </div>
-          </div>
-        ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
 
         {/* Loading Indicator */}
         {isLoading && (
-          <div className="flex gap-4 max-w-[80%] mr-auto animate-pulse">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex gap-4 max-w-[80%] mr-auto"
+          >
             <div className="h-10 w-10 shrink-0 rounded-xl bg-secondary/15 text-secondary border border-secondary/30 flex items-center justify-center mt-1">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div className="space-y-2">
-              <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm p-4 text-xs font-mono text-secondary">
+              <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm p-4 text-xs font-mono text-secondary animate-pulse">
                 Grok Coach is analyzing body sheets & formulating advice...
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input Form Panel */}
-      <div className="p-6 border-t border-white/5 bg-background/50 backdrop-blur-xl relative z-10 shrink-0">
+      <div className="p-8 border-t border-white/5 bg-slate-950/50 backdrop-blur-2xl relative z-10 shrink-0">
         <form onSubmit={handleSubmit} className="flex gap-4 items-center">
-          <div className="relative flex-1">
+          <div className="relative flex-1 group">
             <Input
               disabled={isLoading}
-              placeholder="Ask Grok Coach about progressive overload, macro ratios, or custom plans..."
+              placeholder="Ask Grok Coach about progressive overload, macro ratios..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="pl-4 pr-12 h-14 bg-white/5 border-white/10 focus:border-secondary/50 rounded-2xl text-sm transition-all placeholder:text-muted-foreground"
+              className="pl-5 pr-12 h-16 bg-white/5 border-white/10 focus:border-secondary/50 rounded-2xl text-base transition-all placeholder:text-muted-foreground hover:bg-white/10"
             />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-secondary/50 transition-colors">
+              <Sparkles className="h-5 w-5" />
+            </div>
           </div>
-          <Button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            size="icon"
-            className="h-14 w-14 rounded-2xl bg-secondary hover:bg-secondary/90 text-primary shadow-lg shadow-secondary/20 shrink-0 transition-transform active:scale-95"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              size="icon"
+              className="h-16 w-16 rounded-2xl bg-secondary hover:bg-secondary/90 text-primary shadow-xl shadow-secondary/20 shrink-0"
+            >
+              <Send className="h-6 w-6" />
+            </Button>
+          </motion.div>
         </form>
 
         {/* Suggestion Bubbles */}
-        <div className="flex gap-2 mt-4 overflow-x-auto pb-2 custom-scrollbar">
+        <div className="flex gap-3 mt-6 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
           <SuggestionButton label="Suggest active recovery stretching" onClick={() => handleSuggestionClick("Give me a 10-minute active recovery stretching routine for lower back soreness")} />
           <SuggestionButton label="Explain protein macro guidelines" onClick={() => handleSuggestionClick("How much daily protein do I need to support muscle hypertrophy?")} />
           <SuggestionButton label="Explain bench press plateaus" onClick={() => handleSuggestionClick("How do I push past a plateau on my bench press?")} />
@@ -170,15 +191,17 @@ export function AICoachClient() {
 
 function SuggestionButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      onClick={onClick}
-      className="h-8 text-xs rounded-full border-white/10 bg-white/5 hover:bg-white/10 whitespace-nowrap font-bold text-muted-foreground hover:text-white"
-    >
-      <Sparkles className="h-3 w-3 text-secondary mr-1.5" />
-      {label}
-    </Button>
+    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onClick}
+        className="h-9 px-4 text-xs rounded-full border-white/10 bg-white/5 hover:bg-white/10 whitespace-nowrap font-bold text-muted-foreground hover:text-white transition-all shadow-md"
+      >
+        <Sparkles className="h-3.5 w-3.5 text-secondary mr-2" />
+        {label}
+      </Button>
+    </motion.div>
   );
 }

@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 function App() {
   // --- Navigation & Core Views ---
+  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'login' | 'register' | 'app'
   const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'activity' | 'workouts' | 'community' | 'settings'
   const [activeWorkoutSubView, setActiveWorkoutSubView] = useState(null); // null | 'running'
   
@@ -364,6 +368,16 @@ function App() {
       };
     });
   };
+
+  if (currentView === 'landing') {
+    return <LandingPage onViewChange={setCurrentView} />;
+  }
+  if (currentView === 'login') {
+    return <LoginPage onViewChange={setCurrentView} />;
+  }
+  if (currentView === 'register') {
+    return <RegisterPage onViewChange={setCurrentView} />;
+  }
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body-md select-none relative overflow-x-hidden">
@@ -1981,6 +1995,19 @@ function App() {
                   onChange={(e) => setUserProfile(prev => ({ ...prev, goals: { ...prev.goals, sleep: parseFloat(e.target.value) } }))}
                   className="w-full accent-secondary-fixed h-1 bg-surface-variant cursor-pointer"
                 />
+
+                <div className="mt-lg border-t border-white/5 pt-lg">
+                  <button
+                    onClick={() => {
+                      setCurrentView('landing');
+                      setCurrentTab('home');
+                      triggerToast('👋 Signed out successfully.');
+                    }}
+                    className="w-full py-3 bg-error text-on-error hover:bg-white hover:text-primary transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-xs uppercase tracking-widest cursor-pointer"
+                  >
+                    Sign Out of Profile
+                  </button>
+                </div>
               </div>
             </div>
           </div>

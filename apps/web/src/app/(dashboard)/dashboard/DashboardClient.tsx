@@ -28,6 +28,7 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { createProgressEntry, searchExercises } from "@/lib/actions";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface DashboardClientProps {
   user: any;
@@ -37,6 +38,29 @@ interface DashboardClientProps {
     activeDates: string[];
   };
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+} as const;
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+} as const;
 
 export function DashboardClient({ user, activeWorkoutId, streakDetails }: DashboardClientProps) {
   const firstName = user.name?.split(" ")[0] || "Athlete";
@@ -239,9 +263,18 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
   };
 
   return (
-    <div className="space-y-8 sm:space-y-12">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="space-y-8 sm:space-y-12 relative"
+    >
+      {/* Background Orbs for Depth */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] glow-sphere opacity-20 pointer-events-none" />
+      <div className="absolute bottom-[20%] right-[-10%] w-[40%] h-[40%] glow-sphere opacity-10 pointer-events-none" style={{ background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)' }} />
+
       {/* Header Section */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+      <motion.div variants={itemVariants} className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 relative z-10">
         <div className="space-y-2">
           <h1 className="text-4xl sm:text-5xl font-bold font-heading tracking-tight leading-none text-white">
             Good morning, <span className="text-secondary">{firstName}</span>
@@ -263,113 +296,123 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                 setSearchQuery(e.target.value);
                 setShowSearchDropdown(true);
               }}
-              className="pl-12 pr-4 h-13 bg-white/5 border-white/10 rounded-2xl placeholder:text-muted-foreground focus-visible:ring-secondary/40 text-white text-sm w-full transition-all focus:bg-slate-900/90"
+              className="pl-12 pr-4 h-13 bg-white/5 border-white/10 rounded-2xl placeholder:text-muted-foreground focus-visible:ring-secondary/40 text-white text-sm w-full transition-all focus:bg-slate-900/90 hover:bg-white/10"
             />
 
             {/* Glassmorphic Autocomplete Search Dropdown */}
-            {showSearchDropdown && (searchQuery.length > 0) && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-slate-950/95 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl z-50 max-h-[400px] overflow-y-auto space-y-5 animate-in fade-in slide-in-from-top-3 duration-200">
-                
-                {/* 1. Filtered Quick Navigation Shortcuts */}
-                {filteredShortcuts.length > 0 && (
-                  <div className="space-y-2.5">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
-                      Navigation Shortcuts
-                    </p>
-                    <div className="grid grid-cols-1 gap-1.5">
-                      {filteredShortcuts.map((item) => (
-                        <Link key={item.name} href={item.href} onClick={() => setShowSearchDropdown(false)}>
-                          <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all group">
-                            <div className="h-9 w-9 rounded-xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/10 group-hover:scale-105 transition-transform">
-                              <item.icon className="h-4.5 w-4.5" />
-                            </div>
-                            <div className="text-left">
-                              <p className="text-xs font-bold text-white group-hover:text-secondary transition-colors">
-                                {item.name}
-                              </p>
-                              <p className="text-[9px] text-muted-foreground mt-0.5">
-                                {item.desc}
-                              </p>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. Debounced Exercise Database Searches */}
-                {searchQuery.trim().length > 2 && (
-                  <div className="space-y-2.5 pt-2 border-t border-white/5">
-                    <div className="flex justify-between items-center px-2">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        Exercise Database
+            <AnimatePresence>
+              {showSearchDropdown && (searchQuery.length > 0) && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-slate-950/95 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl z-50 max-h-[400px] overflow-y-auto space-y-5"
+                >
+                  
+                  {/* 1. Filtered Quick Navigation Shortcuts */}
+                  {filteredShortcuts.length > 0 && (
+                    <div className="space-y-2.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
+                        Navigation Shortcuts
                       </p>
-                      {isSearching && <Loader2 className="h-3 w-3 animate-spin text-secondary" />}
-                    </div>
-
-                    <div className="space-y-1.5">
-                      {searchResults.length > 0 ? (
-                        searchResults.map((ex) => (
-                          <div
-                            key={ex.id}
-                            onClick={() => {
-                              setSelectedExercise(ex);
-                              setShowSearchDropdown(false);
-                            }}
-                            className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-secondary/20 hover:bg-secondary/5 cursor-pointer transition-all group"
-                          >
-                            <div className="text-left flex-1 min-w-0">
-                              <p className="text-xs font-bold text-white group-hover:text-secondary transition-colors truncate">
-                                {ex.name}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[8px] bg-muted px-1.5 py-0.5 rounded font-bold text-muted-foreground uppercase tracking-wider">
-                                  {ex.category}
-                                </span>
-                                <span className="text-[8px] text-muted-foreground">
-                                  {(ex.muscleGroups || "").split(", ").slice(0, 2).join(", ")}
-                                </span>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {filteredShortcuts.map((item) => (
+                          <Link key={item.name} href={item.href} onClick={() => setShowSearchDropdown(false)}>
+                            <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all group">
+                              <div className="h-9 w-9 rounded-xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/10 group-hover:scale-105 transition-transform">
+                                <item.icon className="h-4.5 w-4.5" />
+                              </div>
+                              <div className="text-left">
+                                <p className="text-xs font-bold text-white group-hover:text-secondary transition-colors">
+                                  {item.name}
+                                </p>
+                                <p className="text-[9px] text-muted-foreground mt-0.5">
+                                  {item.desc}
+                                </p>
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 text-[10px] font-bold text-secondary hover:bg-secondary/15 rounded-xl transition-all"
-                            >
-                              Details
-                            </Button>
-                          </div>
-                        ))
-                      ) : (
-                        !isSearching && (
-                          <p className="text-center text-[11px] text-muted-foreground py-2">
-                            No exercises matching "{searchQuery}"
-                          </p>
-                        )
-                      )}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-                
-                {searchQuery.trim().length <= 2 && (
-                  <p className="text-center text-[9px] text-muted-foreground py-1 uppercase tracking-wider font-bold">
-                    Type 3+ letters to search database...
-                  </p>
-                )}
-              </div>
-            )}
+                  )}
+
+                  {/* 2. Debounced Exercise Database Searches */}
+                  {searchQuery.trim().length > 2 && (
+                    <div className="space-y-2.5 pt-2 border-t border-white/5">
+                      <div className="flex justify-between items-center px-2">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          Exercise Database
+                        </p>
+                        {isSearching && <Loader2 className="h-3 w-3 animate-spin text-secondary" />}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {searchResults.length > 0 ? (
+                          searchResults.map((ex) => (
+                            <div
+                              key={ex.id}
+                              onClick={() => {
+                                setSelectedExercise(ex);
+                                setShowSearchDropdown(false);
+                              }}
+                              className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-secondary/20 hover:bg-secondary/5 cursor-pointer transition-all group"
+                            >
+                              <div className="text-left flex-1 min-w-0">
+                                <p className="text-xs font-bold text-white group-hover:text-secondary transition-colors truncate">
+                                  {ex.name}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[8px] bg-muted px-1.5 py-0.5 rounded font-bold text-muted-foreground uppercase tracking-wider">
+                                    {ex.category}
+                                  </span>
+                                  <span className="text-[8px] text-muted-foreground">
+                                    {(ex.muscleGroups || "").split(", ").slice(0, 2).join(", ")}
+                                  </span>
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-[10px] font-bold text-secondary hover:bg-secondary/15 rounded-xl transition-all"
+                              >
+                                Details
+                              </Button>
+                            </div>
+                          ))
+                        ) : (
+                          !isSearching && (
+                            <p className="text-center text-[11px] text-muted-foreground py-2">
+                              No exercises matching "{searchQuery}"
+                            </p>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {searchQuery.trim().length <= 2 && (
+                    <p className="text-center text-[9px] text-muted-foreground py-1 uppercase tracking-wider font-bold">
+                      Type 3+ letters to search database...
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Active Interactive Streak Flame */}
-          <div
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsStreakModalOpen(true)}
-            className="flex items-center gap-4 bg-secondary/15 hover:bg-secondary/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer px-6 py-3.5 rounded-2xl border border-secondary/25 shadow-lg shadow-secondary/5 shrink-0 w-full sm:w-auto transition-all"
+            className="flex items-center gap-4 bg-secondary/15 hover:bg-secondary/20 cursor-pointer px-6 py-3.5 rounded-2xl border border-secondary/25 shadow-lg shadow-secondary/5 shrink-0 w-full sm:w-auto transition-all relative overflow-hidden group"
           >
-            <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+            <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner relative z-10">
               <Flame className="h-5.5 w-5.5 fill-primary animate-pulse" />
             </div>
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-left relative z-10">
               <span className="font-bold text-secondary text-lg leading-none font-mono">
                 {dynamicStreak} Days
               </span>
@@ -377,12 +420,12 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                 Streak Level ⚡
               </span>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Primary Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
         <SummaryCard
           href={activeWorkoutId ? `/workout/${activeWorkoutId}` : "/workout/builder"}
           icon={<Dumbbell className="h-6 w-6 text-blue-400" />}
@@ -415,17 +458,19 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
           subtext="Community Leaderboard"
           gradient="from-yellow-500/10 to-transparent"
         />
-      </div>
+      </motion.div>
 
       {/* Main Charts & Coach Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-3 gap-8 relative z-10">
         
         {/* Performance Analytics area chart widget */}
         <Card className="xl:col-span-2 p-6 sm:p-8 md:p-10 glass border-white/5 rounded-[3rem] space-y-8 relative overflow-hidden group shadow-xl flex flex-col justify-between">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 blur-3xl pointer-events-none" />
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 z-10">
             <div className="space-y-1">
-              <h2 className="text-2xl font-bold font-heading text-white">
+              <h2 className="text-2xl font-bold font-heading text-white flex items-center gap-2">
                 Performance Analytics
+                <Sparkles className="h-4 w-4 text-secondary animate-pulse" />
               </h2>
               <p className="text-xs text-muted-foreground">
                 Total weekly and monthly logged training volume.
@@ -482,34 +527,41 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                       style={{ width: `${100 / chartData.values.length}%` }}
                     >
                       {/* Interactive Tooltip Bubble */}
-                      <div
-                        className={cn(
-                          "absolute bottom-[105%] left-1/2 -translate-x-1/2 bg-slate-950/95 border border-secondary/30 text-white rounded-2xl px-4 py-2 shadow-2xl z-30 transition-all duration-300 pointer-events-none flex flex-col items-center min-w-[130px] scale-90 opacity-0",
-                          isHovered && "scale-100 opacity-100"
+                      <AnimatePresence>
+                        {isHovered && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.9, x: "-50%" }}
+                            animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                            exit={{ opacity: 0, y: 10, scale: 0.9, x: "-50%" }}
+                            className="absolute bottom-[105%] left-1/2 bg-slate-950/95 border border-secondary/30 text-white rounded-2xl px-4 py-2 shadow-2xl z-30 pointer-events-none flex flex-col items-center min-w-[130px]"
+                          >
+                            <span className="text-[10px] uppercase font-bold text-secondary tracking-widest">{label}</span>
+                            <span className="text-sm font-mono font-bold text-white mt-0.5">
+                              {val > 0 ? `${val.toLocaleString()} kg` : "Rest Day"}
+                            </span>
+                            <span className="text-[8px] text-muted-foreground uppercase tracking-wider font-bold">
+                              {val > 0 ? "Total Volume" : "Active Recovery"}
+                            </span>
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-secondary/30" />
+                          </motion.div>
                         )}
-                      >
-                        <span className="text-[10px] uppercase font-bold text-secondary tracking-widest">{label}</span>
-                        <span className="text-sm font-mono font-bold text-white mt-0.5">
-                          {val > 0 ? `${val.toLocaleString()} kg` : "Rest Day"}
-                        </span>
-                        <span className="text-[8px] text-muted-foreground uppercase tracking-wider font-bold">
-                          {val > 0 ? "Total Volume" : "Active Recovery"}
-                        </span>
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-secondary/30" />
-                      </div>
+                      </AnimatePresence>
 
                       {/* Glowing Bar */}
-                      <div
+                      <motion.div
+                        initial={{ height: 10 }}
+                        animate={{ height: val > 0 ? `${percent * 1.5}px` : "10px" }}
+                        transition={{ type: "spring", stiffness: 100, damping: 15 }}
                         className={cn(
                           "w-4 sm:w-8 md:w-10 rounded-t-xl transition-all duration-500 relative shadow-lg shadow-black/10",
                           val > 0 
                             ? "bg-gradient-to-t from-secondary/40 to-secondary hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:to-white" 
                             : "bg-white/5 border border-dashed border-white/10 hover:bg-white/10"
                         )}
-                        style={{ height: val > 0 ? `${percent * 1.5}px` : "10px", maxHeight: '180px', minHeight: '10px' }}
+                        style={{ maxHeight: '180px', minHeight: '10px' }}
                       >
                         <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity rounded-t-xl" />
-                      </div>
+                      </motion.div>
                     </div>
                   );
                 })}
@@ -539,17 +591,22 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
           <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
             <Zap className="h-36 w-36 text-accent fill-accent" />
           </div>
-          <div className="space-y-4">
-            <div className="h-12 w-12 rounded-2xl bg-accent/20 flex items-center justify-center text-accent border border-accent/30 shadow-inner">
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-accent/10 blur-3xl pointer-events-none" />
+          
+          <div className="space-y-4 relative z-10">
+            <motion.div 
+              whileHover={{ rotate: 15, scale: 1.1 }}
+              className="h-12 w-12 rounded-2xl bg-accent/20 flex items-center justify-center text-accent border border-accent/30 shadow-inner"
+            >
               <Brain className="h-6 w-6" />
-            </div>
+            </motion.div>
             <h3 className="text-xl font-bold font-heading text-white">AI Coach Insights</h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-semibold">
               "Your progressive overload indices are peaking beautifully. However, cardiovascular log ratios suggest executing a dynamic recovery protocol tomorrow is optimal for peak strength on Monday."
             </p>
           </div>
           
-          <div className="space-y-3.5 pt-4">
+          <div className="space-y-3.5 pt-4 relative z-10">
             <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-white bg-slate-950/40 p-2.5 border border-white/5 rounded-xl">
               <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
               <span>Recommended: stretching protocols</span>
@@ -557,18 +614,18 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
             <Link href="/ai-coach" className="block w-full">
               <Button
                 variant="outline"
-                className="w-full border-accent/25 hover:bg-accent/10 hover:text-white transition-all text-xs font-bold rounded-xl h-11"
+                className="w-full border-accent/25 hover:bg-accent/10 hover:text-white transition-all text-xs font-bold rounded-xl h-11 group"
               >
                 Launch Coach Consult
-                <ArrowRight className="h-3.5 w-3.5 ml-2" />
+                <ArrowRight className="h-3.5 w-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Action Center Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         
         {/* Action Center Controls */}
         <div className="lg:col-span-2 space-y-4">
@@ -581,7 +638,8 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               {/* Leg Day Challenge Card */}
-              <div
+              <motion.div
+                whileHover={{ y: -5 }}
                 onClick={() => setIsChallengeOpen(true)}
                 className={cn(
                   "flex flex-col justify-between p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-secondary/30 hover:bg-secondary/5 transition-all cursor-pointer group relative overflow-hidden",
@@ -609,9 +667,10 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                       <span className="text-secondary">{getChallengeProgress()}% Completed</span>
                     </div>
                     <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div 
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${getChallengeProgress()}%` }}
                         className="h-full bg-gradient-to-r from-secondary to-green-400 rounded-full transition-all duration-500" 
-                        style={{ width: `${getChallengeProgress()}%` }}
                       />
                     </div>
                     <span className="text-[8px] text-secondary font-bold uppercase tracking-wider block mt-1">
@@ -619,10 +678,11 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                     </span>
                   </div>
                 )}
-              </div>
+              </motion.div>
 
               {/* PR Verification Card */}
-              <div
+              <motion.div
+                whileHover={{ y: -5 }}
                 onClick={() => setIsPrOpen(true)}
                 className="flex items-center gap-4 p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-accent/30 hover:bg-accent/5 transition-all cursor-pointer group"
               >
@@ -637,22 +697,28 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                     Verify Bench Press Log
                   </p>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Start Routine Button */}
             {activeWorkoutId ? (
               <Link href={`/workout/${activeWorkoutId}`} className="block w-full">
-                <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-14 rounded-2xl text-base shadow-xl shadow-secondary/10 group">
-                  Enter Live Workout Session
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-14 rounded-2xl text-base shadow-xl shadow-secondary/10 group relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  <span className="relative z-10 flex items-center justify-center">
+                    Enter Live Workout Session
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
                 </Button>
               </Link>
             ) : (
               <Link href="/workout/builder" className="block w-full">
-                <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-14 rounded-2xl text-base shadow-xl shadow-secondary/10 group">
-                  Create Personal Workout Plan
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-14 rounded-2xl text-base shadow-xl shadow-secondary/10 group relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  <span className="relative z-10 flex items-center justify-center">
+                    Create Personal Workout Plan
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
                 </Button>
               </Link>
             )}
@@ -668,7 +734,7 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <Award className="h-20 w-20 text-indigo-400" />
             </div>
-            <div className="space-y-3.5 text-left">
+            <div className="space-y-3.5 text-left relative z-10">
               <div className="h-10 w-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 border border-indigo-500/30">
                 <Compass className="h-5.5 w-5.5" />
               </div>
@@ -679,345 +745,383 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
             </div>
           </Card>
         </div>
-      </div>
+      </motion.div>
 
-      {/* 1. Dynamic Exercise Details Drawer Modal */}
-      {selectedExercise && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg glass border-white/10 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setSelectedExercise(null)}
-              className="absolute top-6 right-6 h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
+      {/* Modals & Overlays */}
+      <AnimatePresence>
+        {/* 1. Dynamic Exercise Details Drawer Modal */}
+        {selectedExercise && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
             >
-              <X className="h-4 w-4" />
-            </button>
+              <Card className="w-full max-w-lg glass border-white/10 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left max-h-[90vh] overflow-y-auto">
+                <button
+                  onClick={() => setSelectedExercise(null)}
+                  className="absolute top-6 right-6 h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
 
-            <div className="space-y-3.5">
-              <div className="h-12 w-12 rounded-2xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/20 shadow-inner">
-                <Dumbbell className="h-6 w-6" />
-              </div>
-              <h3 className="text-2xl font-bold font-heading text-white">{selectedExercise.name}</h3>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-extrabold uppercase bg-secondary/20 text-secondary border border-secondary/30 px-2.5 py-1 rounded-xl">
-                  {selectedExercise.category}
-                </span>
-                <span className="text-[10px] font-extrabold uppercase bg-white/5 text-muted-foreground border border-white/10 px-2.5 py-1 rounded-xl">
-                  {selectedExercise.difficulty}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl text-left">
-                  <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Target Muscles</p>
-                  <p className="text-xs font-bold text-white mt-1 capitalize">
-                    {selectedExercise.muscleGroups}
-                  </p>
+                <div className="space-y-3.5">
+                  <div className="h-12 w-12 rounded-2xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/20 shadow-inner">
+                    <Dumbbell className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-2xl font-bold font-heading text-white">{selectedExercise.name}</h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase bg-secondary/20 text-secondary border border-secondary/30 px-2.5 py-1 rounded-xl">
+                      {selectedExercise.category}
+                    </span>
+                    <span className="text-[10px] font-extrabold uppercase bg-white/5 text-muted-foreground border border-white/10 px-2.5 py-1 rounded-xl">
+                      {selectedExercise.difficulty}
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl text-left">
-                  <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Equipment Needed</p>
-                  <p className="text-xs font-bold text-white mt-1 capitalize">
-                    {selectedExercise.equipment}
-                  </p>
-                </div>
-              </div>
 
-              <div className="space-y-2 bg-white/[0.02] border border-white/5 p-5 rounded-2xl text-left">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Execution Protocol</p>
-                <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
-                  {selectedExercise.instructions}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => setSelectedExercise(null)}
-                className="flex-1 border-white/10 border h-12 rounded-2xl font-bold text-xs"
-              >
-                Close Details
-              </Button>
-              <Link href="/workout" className="flex-1">
-                <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-12 rounded-2xl text-xs shadow-lg shadow-secondary/15">
-                  Launch Workout Logs
-                </Button>
-              </Link>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* 2. Dynamic Streak Calendar Modal */}
-      {isStreakModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg glass border-white/10 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left">
-            <button
-              onClick={() => setIsStreakModalOpen(false)}
-              className="absolute top-6 right-6 h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            <div className="space-y-3.5">
-              <div className="h-12 w-12 rounded-2xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/25 shadow-inner">
-                <Flame className="h-6 w-6 animate-pulse" />
-              </div>
-              <h3 className="text-2xl font-bold font-heading text-white">Active Streak Calendar</h3>
-              <p className="text-xs text-muted-foreground">
-                Chronological activity logging mapped over your past 30 days of training.
-              </p>
-            </div>
-
-            {/* Streak Grid Calendar heat map */}
-            <div className="bg-slate-900/65 border border-white/5 p-4 sm:p-6 rounded-[2rem] space-y-4">
-              <div className="flex justify-between items-center px-1">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Streak Progress Calendar
-                </span>
-                <span className="text-xs font-mono font-bold text-secondary">
-                  {dynamicStreak} Consecutive Days Logged
-                </span>
-              </div>
-
-              <div className="grid grid-cols-6 sm:grid-cols-7 gap-2.5 max-h-[220px] overflow-y-auto pr-1">
-                {generatePast30Days().map((day) => {
-                  const isActive = finalActiveDates.includes(day.dateStr);
-
-                  return (
-                    <div
-                      key={day.dateStr}
-                      title={`${day.monthStr} ${day.dayNum} (${day.dayOfWeek}) - ${isActive ? "Workout Logged! 🔥" : "No Activity Logged"}`}
-                      className={cn(
-                        "flex flex-col items-center justify-center p-2 rounded-xl border aspect-square transition-all duration-300 relative group/cell hover:scale-105",
-                        isActive
-                          ? "bg-gradient-to-br from-orange-500/20 to-amber-500/25 border-orange-500/40 text-orange-400 shadow-md shadow-orange-500/5"
-                          : "bg-white/5 border-white/5 text-muted-foreground"
-                      )}
-                    >
-                      <span className="text-[8px] opacity-60 font-bold uppercase tracking-wider leading-none">
-                        {day.dayOfWeek}
-                      </span>
-                      <span className="text-xs font-mono font-bold mt-1 text-white leading-none">
-                        {day.dayNum}
-                      </span>
-                      {isActive && (
-                        <div className="h-1.5 w-1.5 bg-orange-500 rounded-full mt-1.5 animate-pulse" />
-                      )}
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl text-left">
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Target Muscles</p>
+                      <p className="text-xs font-bold text-white mt-1 capitalize">
+                        {selectedExercise.muscleGroups}
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                    <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl text-left">
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Equipment Needed</p>
+                      <p className="text-xs font-bold text-white mt-1 capitalize">
+                        {selectedExercise.equipment}
+                      </p>
+                    </div>
+                  </div>
 
-            <div className="flex gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => setIsStreakModalOpen(false)}
-                className="flex-1 border-white/10 border h-12 rounded-2xl font-bold text-xs"
-              >
-                Close Calendar
-              </Button>
-              <Button
-                onClick={handleShareStreak}
-                className="flex-1 bg-secondary hover:bg-secondary/90 text-primary font-bold h-12 rounded-2xl text-xs shadow-lg shadow-secondary/15 flex items-center justify-center gap-2"
-              >
-                <Share2 className="h-4 w-4" />
-                {isStreakShared ? "Copied Streak! ⚡" : "Share Streak Protocol"}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* 3. Leg Day Challenge Modal */}
-      {isChallengeOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-md glass border-white/10 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left">
-            <button
-              onClick={() => setIsChallengeOpen(false)}
-              className="absolute top-6 right-6 h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            <div className="space-y-3.5">
-              <div className="h-12 w-12 rounded-2xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/25 shadow-inner">
-                <Calendar className="h-6 w-6" />
-              </div>
-              <h3 className="text-2xl font-bold font-heading text-white">Leg Day Challenge</h3>
-              <p className="text-xs text-muted-foreground">Community accountability protocol.</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-3.5 text-xs text-muted-foreground leading-relaxed bg-white/[0.02] border border-white/5 p-5 rounded-2xl font-semibold">
-                <p>Join 1,204 active athletes in this high-intensity overload cycle. Perform any leg-focused routine twice a week for 30 consecutive days.</p>
-                <div className="flex justify-between text-[10px] font-mono font-bold text-white pt-3 border-t border-white/5">
-                  <span>Start: May 25, 2026</span>
-                  <span className="text-secondary">Tier: Active Athlete</span>
+                  <div className="space-y-2 bg-white/[0.02] border border-white/5 p-5 rounded-2xl text-left">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Execution Protocol</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
+                      {selectedExercise.instructions}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Challenge Checklists if joined */}
-              {challengeJoined && (
-                <div className="space-y-3 p-4 bg-slate-950/40 border border-white/5 rounded-2xl">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 px-1">
-                    Challenge Progress Checklist
+                <div className="flex gap-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setSelectedExercise(null)}
+                    className="flex-1 border-white/10 border h-12 rounded-2xl font-bold text-xs"
+                  >
+                    Close Details
+                  </Button>
+                  <Link href="/workout" className="flex-1">
+                    <Button className="w-full bg-secondary hover:bg-secondary/90 text-primary font-bold h-12 rounded-2xl text-xs shadow-lg shadow-secondary/15">
+                      Launch Workout Logs
+                    </Button>
+                  </Link>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 2. Dynamic Streak Calendar Modal */}
+        {isStreakModalOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            >
+              <Card className="w-full max-w-lg glass border-white/10 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left">
+                <button
+                  onClick={() => setIsStreakModalOpen(false)}
+                  className="absolute top-6 right-6 h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+
+                <div className="space-y-3.5">
+                  <div className="h-12 w-12 rounded-2xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/25 shadow-inner">
+                    <Flame className="h-6 w-6 animate-pulse" />
+                  </div>
+                  <h3 className="text-2xl font-bold font-heading text-white">Active Streak Calendar</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Chronological activity logging mapped over your past 30 days of training.
                   </p>
-                  <div className="space-y-2.5">
-                    {[
-                      "Complete 1 Heavy Squat Workout session",
-                      "Record dynamic body weight in progress metrics",
-                      "Consult AI coach for hamstring stretching logs"
-                    ].map((item, idx) => (
-                      <div 
-                        key={idx}
-                        onClick={() => toggleChallengeCheck(idx)}
-                        className="flex items-center gap-3 cursor-pointer group/item"
-                      >
-                        <div className={cn(
-                          "h-5 w-5 rounded-lg border flex items-center justify-center transition-all",
-                          challengeCheckedItems[idx] 
-                            ? "bg-secondary border-secondary text-primary" 
-                            : "border-white/20 hover:border-secondary/40 bg-white/5"
-                        )}>
-                          {challengeCheckedItems[idx] && <CheckCircle2 className="h-3.5 w-3.5 text-primary stroke-[3px]" />}
+                </div>
+
+                {/* Streak Grid Calendar heat map */}
+                <div className="bg-slate-900/65 border border-white/5 p-4 sm:p-6 rounded-[2rem] space-y-4">
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Streak Progress Calendar
+                    </span>
+                    <span className="text-xs font-mono font-bold text-secondary">
+                      {dynamicStreak} Consecutive Days Logged
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-6 sm:grid-cols-7 gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    {generatePast30Days().map((day) => {
+                      const isActive = finalActiveDates.includes(day.dateStr);
+
+                      return (
+                        <div
+                          key={day.dateStr}
+                          title={`${day.monthStr} ${day.dayNum} (${day.dayOfWeek}) - ${isActive ? "Workout Logged! 🔥" : "No Activity Logged"}`}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-2 rounded-xl border aspect-square transition-all duration-300 relative group/cell hover:scale-105",
+                            isActive
+                              ? "bg-gradient-to-br from-orange-500/20 to-amber-500/25 border-orange-500/40 text-orange-400 shadow-md shadow-orange-500/5"
+                              : "bg-white/5 border-white/5 text-muted-foreground"
+                          )}
+                        >
+                          <span className="text-[8px] opacity-60 font-bold uppercase tracking-wider leading-none">
+                            {day.dayOfWeek}
+                          </span>
+                          <span className="text-xs font-mono font-bold mt-1 text-white leading-none">
+                            {day.dayNum}
+                          </span>
+                          {isActive && (
+                            <div className="h-1.5 w-1.5 bg-orange-500 rounded-full mt-1.5 animate-pulse" />
+                          )}
                         </div>
-                        <span className={cn(
-                          "text-xs font-semibold select-none transition-colors",
-                          challengeCheckedItems[idx] ? "text-muted-foreground line-through" : "text-white group-hover/item:text-secondary"
-                        )}>
-                          {item}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
-              )}
-            </div>
 
-            <div className="flex gap-4">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsChallengeOpen(false)}
-                className="flex-1 border-white/10 border h-12 rounded-2xl font-bold text-xs"
-              >
-                Close
-              </Button>
-              <Button
-                onClick={handleJoinChallenge}
-                disabled={challengeJoined && getChallengeProgress() === 100}
-                className={cn(
-                  "flex-1 font-bold h-12 rounded-2xl text-xs shadow-lg transition-all",
-                  challengeJoined 
-                    ? "bg-white/5 border border-white/10 text-muted-foreground cursor-default shadow-none" 
-                    : "bg-secondary hover:bg-secondary/90 text-primary shadow-secondary/15"
-                )}
-              >
-                {challengeJoined ? "Protocol Joined" : "Join Challenge"}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+                <div className="flex gap-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setIsStreakModalOpen(false)}
+                    className="flex-1 border-white/10 border h-12 rounded-2xl font-bold text-xs"
+                  >
+                    Close Calendar
+                  </Button>
+                  <Button
+                    onClick={handleShareStreak}
+                    className="flex-1 bg-secondary hover:bg-secondary/90 text-primary font-bold h-12 rounded-2xl text-xs shadow-lg shadow-secondary/15 flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    {isStreakShared ? "Copied Streak! ⚡" : "Share Streak Protocol"}
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+        )}
 
-      {/* 4. PR Verification Modal */}
-      {isPrOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-md glass border-white/10 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left overflow-hidden">
-            
-            {/* dynamic confetti/sparkles visual overlay */}
-            {showPrCelebration && (
-              <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center z-50 space-y-4 animate-in zoom-in-95 duration-300">
-                <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-secondary/10 animate-pulse pointer-events-none" />
-                <div className="relative">
-                  <div className="absolute -inset-4 rounded-full bg-accent/20 blur-xl animate-ping" />
-                  <Trophy className="h-20 w-20 text-accent animate-bounce" />
-                </div>
-                <div className="text-center space-y-2 relative z-10 px-6">
-                  <h3 className="text-3xl font-extrabold font-heading text-white tracking-tight animate-pulse uppercase leading-none">
-                    PR Locked In! 🚀🏋️‍♂️
-                  </h3>
-                  <p className="text-sm font-semibold text-secondary">
-                    Bench Press Load set at {prWeight} kg!
-                  </p>
-                  <p className="text-[10px] text-muted-foreground leading-normal mt-2 max-w-xs mx-auto">
-                    A progressive overload record has been successfully logged to your progress charts. Complete synchronization.
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  {[...Array(6)].map((_, i) => (
-                    <Sparkles key={i} className={cn("h-5 w-5 text-accent animate-pulse", i % 2 === 0 ? "text-secondary" : "")} style={{ animationDelay: `${i * 150}ms` }} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setIsPrOpen(false)}
-              className="absolute top-6 right-6 h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
+        {/* 3. Leg Day Challenge Modal */}
+        {isChallengeOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
             >
-              <X className="h-4 w-4" />
-            </button>
+              <Card className="w-full max-w-md glass border-white/10 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left">
+                <button
+                  onClick={() => setIsChallengeOpen(false)}
+                  className="absolute top-6 right-6 h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
 
-            <div className="space-y-3.5">
-              <div className="h-12 w-12 rounded-2xl bg-accent/15 flex items-center justify-center text-accent border border-accent/25 shadow-inner mb-4 animate-bounce">
-                <Trophy className="h-6 w-6" />
-              </div>
-              <h3 className="text-2xl font-bold font-heading text-white">New PR Detected</h3>
-              <p className="text-xs text-muted-foreground">Verify and log your milestone metric.</p>
-            </div>
-
-            {isPrLogged ? (
-              <div className="p-6 bg-secondary/10 border border-secondary/20 rounded-xl text-center space-y-2 text-secondary">
-                <Sparkles className="h-8 w-8 mx-auto animate-pulse" />
-                <p className="font-bold text-base">Bench Press PR Verified!</p>
-                <p className="text-xs text-muted-foreground">Logged metrics to progress history sheets.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-3 text-left">
-                  <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
-                    Our performance matrices detected a possible 1-Rep Max Bench Press milestone. Confirm your logged load metric:
-                  </p>
-                  <div className="flex items-center gap-4 justify-center py-3 bg-slate-950/20 border border-white/5 rounded-xl">
-                    <span className="text-xs font-bold text-white">Bench Press Load:</span>
-                    <Input
-                      type="number"
-                      value={prWeight}
-                      onChange={(e) => setPrWeight(parseFloat(e.target.value) || 0)}
-                      className="w-24 text-center font-mono font-bold h-10 border-white/15 bg-white/5 rounded-xl text-sm focus-visible:ring-accent/40 focus:bg-slate-900/90 text-white"
-                    />
-                    <span className="text-xs font-bold text-muted-foreground">kg</span>
+                <div className="space-y-3.5">
+                  <div className="h-12 w-12 rounded-2xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/25 shadow-inner">
+                    <Calendar className="h-6 w-6" />
                   </div>
+                  <h3 className="text-2xl font-bold font-heading text-white">Leg Day Challenge</h3>
+                  <p className="text-xs text-muted-foreground">Community accountability protocol.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-3.5 text-xs text-muted-foreground leading-relaxed bg-white/[0.02] border border-white/5 p-5 rounded-2xl font-semibold">
+                    <p>Join 1,204 active athletes in this high-intensity overload cycle. Perform any leg-focused routine twice a week for 30 consecutive days.</p>
+                    <div className="flex justify-between text-[10px] font-mono font-bold text-white pt-3 border-t border-white/5">
+                      <span>Start: May 25, 2026</span>
+                      <span className="text-secondary">Tier: Active Athlete</span>
+                    </div>
+                  </div>
+
+                  {/* Challenge Checklists if joined */}
+                  {challengeJoined && (
+                    <div className="space-y-3 p-4 bg-slate-950/40 border border-white/5 rounded-2xl">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 px-1">
+                        Challenge Progress Checklist
+                      </p>
+                      <div className="space-y-2.5">
+                        {[
+                          "Complete 1 Heavy Squat Workout session",
+                          "Record dynamic body weight in progress metrics",
+                          "Consult AI coach for hamstring stretching logs"
+                        ].map((item, idx) => (
+                          <div 
+                            key={idx}
+                            onClick={() => toggleChallengeCheck(idx)}
+                            className="flex items-center gap-3 cursor-pointer group/item"
+                          >
+                            <div className={cn(
+                              "h-5 w-5 rounded-lg border flex items-center justify-center transition-all",
+                              challengeCheckedItems[idx] 
+                                ? "bg-secondary border-secondary text-primary" 
+                                : "border-white/20 hover:border-secondary/40 bg-white/5"
+                            )}>
+                              {challengeCheckedItems[idx] && <CheckCircle2 className="h-3.5 w-3.5 text-primary stroke-[3px]" />}
+                            </div>
+                            <span className={cn(
+                              "text-xs font-semibold select-none transition-colors",
+                              challengeCheckedItems[idx] ? "text-muted-foreground line-through" : "text-white group-hover/item:text-secondary"
+                            )}>
+                              {item}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-4">
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => setIsPrOpen(false)}
+                    onClick={() => setIsChallengeOpen(false)}
                     className="flex-1 border-white/10 border h-12 rounded-2xl font-bold text-xs"
                   >
-                    Cancel
+                    Close
                   </Button>
                   <Button
-                    onClick={handleVerifyPr}
-                    disabled={isPrSaving}
-                    className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold h-12 rounded-2xl shadow-lg shadow-accent/15 text-xs gap-2"
+                    onClick={handleJoinChallenge}
+                    disabled={challengeJoined && getChallengeProgress() === 100}
+                    className={cn(
+                      "flex-1 font-bold h-12 rounded-2xl text-xs shadow-lg transition-all",
+                      challengeJoined 
+                        ? "bg-white/5 border border-white/10 text-muted-foreground cursor-default shadow-none" 
+                        : "bg-secondary hover:bg-secondary/90 text-primary shadow-secondary/15"
+                    )}
                   >
-                    {isPrSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trophy className="h-4 w-4" />}
-                    Confirm PR
+                    {challengeJoined ? "Protocol Joined" : "Join Challenge"}
                   </Button>
                 </div>
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
-    </div>
+              </Card>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 4. PR Verification Modal */}
+        {isPrOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            >
+              <Card className="w-full max-w-md glass border-white/10 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left overflow-hidden">
+                
+                {/* dynamic confetti/sparkles visual overlay */}
+                <AnimatePresence>
+                  {showPrCelebration && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center z-50 space-y-4"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-secondary/10 animate-pulse pointer-events-none" />
+                      <motion.div 
+                        initial={{ scale: 0.5, rotate: -20 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        className="relative"
+                      >
+                        <div className="absolute -inset-4 rounded-full bg-accent/20 blur-xl animate-ping" />
+                        <Trophy className="h-20 w-20 text-accent animate-bounce" />
+                      </motion.div>
+                      <div className="text-center space-y-2 relative z-10 px-6">
+                        <h3 className="text-3xl font-extrabold font-heading text-white tracking-tight animate-pulse uppercase leading-none">
+                          PR Locked In! 🚀🏋️‍♂️
+                        </h3>
+                        <p className="text-sm font-semibold text-secondary">
+                          Bench Press Load set at {prWeight} kg!
+                        </p>
+                        <p className="text-[10px] text-muted-foreground leading-normal mt-2 max-w-xs mx-auto">
+                          A progressive overload record has been successfully logged to your progress charts. Complete synchronization.
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        {[...Array(6)].map((_, i) => (
+                          <Sparkles key={i} className={cn("h-5 w-5 text-accent animate-pulse", i % 2 === 0 ? "text-secondary" : "")} style={{ animationDelay: `${i * 150}ms` }} />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <button
+                  onClick={() => setIsPrOpen(false)}
+                  className="absolute top-6 right-6 h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+
+                <div className="space-y-3.5">
+                  <div className="h-12 w-12 rounded-2xl bg-accent/15 flex items-center justify-center text-accent border border-accent/25 shadow-inner mb-4 animate-bounce">
+                    <Trophy className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-2xl font-bold font-heading text-white">New PR Detected</h3>
+                  <p className="text-xs text-muted-foreground">Verify and log your milestone metric.</p>
+                </div>
+
+                {isPrLogged ? (
+                  <div className="p-6 bg-secondary/10 border border-secondary/20 rounded-xl text-center space-y-2 text-secondary">
+                    <Sparkles className="h-8 w-8 mx-auto animate-pulse" />
+                    <p className="font-bold text-base">Bench Press PR Verified!</p>
+                    <p className="text-xs text-muted-foreground">Logged metrics to progress history sheets.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-3 text-left">
+                      <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
+                        Our performance matrices detected a possible 1-Rep Max Bench Press milestone. Confirm your logged load metric:
+                      </p>
+                      <div className="flex items-center gap-4 justify-center py-3 bg-slate-950/20 border border-white/5 rounded-xl">
+                        <span className="text-xs font-bold text-white">Bench Press Load:</span>
+                        <Input
+                          type="number"
+                          value={prWeight}
+                          onChange={(e) => setPrWeight(parseFloat(e.target.value) || 0)}
+                          className="w-24 text-center font-mono font-bold h-10 border-white/15 bg-white/5 rounded-xl text-sm focus-visible:ring-accent/40 focus:bg-slate-900/90 text-white"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">kg</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setIsPrOpen(false)}
+                        className="flex-1 border-white/10 border h-12 rounded-2xl font-bold text-xs"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleVerifyPr}
+                        disabled={isPrSaving}
+                        className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold h-12 rounded-2xl shadow-lg shadow-accent/15 text-xs gap-2"
+                      >
+                        {isPrSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trophy className="h-4 w-4" />}
+                        Confirm PR
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -1037,31 +1141,39 @@ function SummaryCard({
   href: string;
 }) {
   return (
-    <Link href={href} className="block">
-      <Card className="p-6 sm:p-8 glass border-white/5 rounded-[2.5rem] hover:border-white/15 hover:shadow-xl transition-all group relative overflow-hidden h-full flex flex-col justify-between text-left">
-        <div
-          className={cn(
-            "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
-            gradient
-          )}
-        />
-        <div className="relative z-10 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-background/50 flex items-center justify-center border border-white/5 group-hover:border-white/10 group-hover:scale-105 transition-all shadow-inner">
-              {icon}
+    <Link href={href} className="block group">
+      <motion.div 
+        whileHover={{ y: -8, scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="h-full"
+      >
+        <Card className="p-6 sm:p-8 glass border-white/5 rounded-[2.5rem] group-hover:border-white/15 group-hover:shadow-2xl transition-all relative overflow-hidden h-full flex flex-col justify-between text-left">
+          <div
+            className={cn(
+              "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
+              gradient
+            )}
+          />
+          <div className="relative z-10 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-background/50 flex items-center justify-center border border-white/5 group-hover:border-white/10 group-hover:scale-105 transition-all shadow-inner">
+                {icon}
+              </div>
+              <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-[0.2em] leading-none">
+                {label}
+              </p>
             </div>
-            <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-[0.2em] leading-none">
-              {label}
-            </p>
+            <div className="space-y-1">
+              <p className="text-xl sm:text-2xl font-bold font-heading group-hover:text-secondary transition-colors tracking-tight text-white leading-none">
+                {value}
+              </p>
+              <p className="text-xs text-muted-foreground font-medium">{subtext}</p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xl sm:text-2xl font-bold font-heading group-hover:text-secondary transition-colors tracking-tight text-white leading-none">
-              {value}
-            </p>
-            <p className="text-xs text-muted-foreground font-medium">{subtext}</p>
-          </div>
-        </div>
-      </Card>
+          {/* Subtle line indicator */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-1 bg-secondary group-hover:w-full transition-all duration-500 opacity-50" />
+        </Card>
+      </motion.div>
     </Link>
   );
 }

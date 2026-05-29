@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,110 +9,198 @@ import {
   Brain,
   Trophy,
   Smartphone,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 
 export default function LandingPage() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
   return (
-    <div className="flex flex-col min-h-screen bg-background overflow-hidden selection:bg-secondary selection:text-primary">
+    <div ref={containerRef} className="flex flex-col min-h-screen bg-background overflow-hidden selection:bg-secondary selection:text-primary relative">
       <Header />
 
-      <main className="flex-1">
+      {/* Persistent Background Elements */}
+      <div className="fixed inset-0 kinetic-grid opacity-10 pointer-events-none -z-10" />
+      <div className="fixed top-0 left-0 w-full h-full bg-mesh opacity-20 pointer-events-none -z-10" />
+
+      <main className="flex-1 relative z-10">
         {/* Hero Section */}
-        <section className="w-full py-20 md:py-32 lg:py-48 flex flex-col items-center justify-center relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,var(--secondary)_0%,transparent_70%)] opacity-[0.03] pointer-events-none" />
+        <section className="w-full min-h-[90vh] flex flex-col items-center justify-center relative overflow-hidden">
+          {/* Floating Orbs */}
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              x: [0, 50, 0],
+              y: [0, 30, 0],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute top-[10%] left-[10%] w-[40vw] h-[40vw] glow-sphere opacity-20 pointer-events-none" 
+          />
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.3, 1],
+              x: [0, -40, 0],
+              y: [0, -50, 0],
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute bottom-[10%] right-[10%] w-[35vw] h-[35vw] glow-sphere opacity-15 pointer-events-none" 
+            style={{ background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)' }}
+          />
+
           <div className="container mx-auto px-4 md:px-6 flex flex-col items-center text-center space-y-12 relative z-10">
-            <div className="space-y-6 max-w-4xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-bold uppercase tracking-[0.2em] animate-fade-in">
-                <Zap className="h-3 w-3 fill-secondary" />
-                The Future of Fitness is Here
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="space-y-6 max-w-5xl"
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-bold uppercase tracking-[0.3em] backdrop-blur-md">
+                <Zap className="h-3.5 w-3.5 fill-secondary animate-pulse" />
+                The Future of Fitness is Synchronized
               </div>
-              <h1 className="text-5xl font-bold tracking-tight sm:text-7xl md:text-8xl lg:text-9xl font-heading leading-[0.9]">
+              <h1 className="text-6xl font-bold tracking-tight sm:text-8xl md:text-9xl lg:text-[10rem] font-heading leading-[0.85] text-white">
                 Sync Your Body. <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary via-accent to-secondary bg-[length:200%_auto] animate-gradient">
                   Sync Your Life.
                 </span>
               </h1>
-              <p className="mx-auto max-w-[800px] text-muted-foreground text-lg md:text-xl lg:text-2xl font-medium leading-relaxed">
+              <p className="mx-auto max-w-[800px] text-muted-foreground text-lg md:text-xl lg:text-2xl font-medium leading-relaxed mt-8">
                 The AI-powered fitness ecosystem designed to unify your
                 tracking, nutrition, and community in one premium platform.
               </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-6">
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="flex flex-col sm:flex-row gap-6"
+            >
               <Link href="/signup">
                 <Button
                   size="lg"
-                  className="bg-accent hover:bg-accent/90 text-white px-10 h-16 text-lg font-bold shadow-2xl shadow-accent/20 transition-all hover:scale-105 active:scale-95"
+                  className="bg-accent hover:bg-accent/90 text-white px-12 h-16 text-xl font-bold shadow-2xl shadow-accent/40 transition-all hover:scale-105 active:scale-95 group relative overflow-hidden"
                 >
-                  Start Your Journey
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    Start Your Journey
+                    <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                  </span>
                 </Button>
               </Link>
               <Link href="/features">
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white/10 hover:bg-white/5 h-16 px-10 text-lg font-bold transition-all"
+                  className="border-white/10 hover:bg-white/5 h-16 px-12 text-xl font-bold transition-all backdrop-blur-md group"
                 >
                   Explore Ecosystem
+                  <ChevronRight className="ml-1 h-5 w-5 opacity-50 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-            </div>
+            </motion.div>
 
             {/* Social Proof */}
-            <div className="pt-12 flex flex-col items-center gap-6">
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8, duration: 1 }}
+              className="pt-16 flex flex-col items-center gap-6"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground flex items-center gap-3">
+                <span className="h-px w-8 bg-white/10" />
                 Trusted by 500,000+ athletes
+                <span className="h-px w-8 bg-white/10" />
               </p>
               <div className="flex -space-x-4">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div
+                  <motion.div
                     key={i}
-                    className="h-12 w-12 rounded-full border-4 border-background bg-muted flex items-center justify-center overflow-hidden"
+                    whileHover={{ scale: 1.2, zIndex: 20 }}
+                    className="h-14 w-14 rounded-full border-4 border-background bg-muted flex items-center justify-center overflow-hidden cursor-pointer shadow-xl"
                   >
                     <div className="h-full w-full bg-gradient-to-br from-secondary/40 to-primary/40" />
-                  </div>
+                  </motion.div>
                 ))}
+                <div className="h-14 w-14 rounded-full border-4 border-background bg-secondary flex items-center justify-center font-bold text-primary text-xs shadow-xl z-10">
+                  +2k
+                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
+
+          {/* Scroll Indicator */}
+          <motion.div 
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30"
+          >
+            <span className="text-[9px] font-bold uppercase tracking-widest">Scroll</span>
+            <div className="h-10 w-px bg-gradient-to-b from-white to-transparent" />
+          </motion.div>
         </section>
 
         {/* Features Section */}
         <section
           id="features"
-          className="w-full py-24 md:py-32 relative overflow-hidden"
+          className="w-full py-32 md:py-48 relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-muted/20 -skew-y-3 origin-right scale-110" />
+          <div className="absolute inset-0 bg-muted/10 -skew-y-3 origin-right scale-110 backdrop-blur-3xl" />
           <div className="container mx-auto px-4 md:px-6 relative z-10">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-20">
-              <h2 className="text-4xl font-bold tracking-tight sm:text-6xl font-heading">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-24">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="h-16 w-16 rounded-3xl bg-secondary/10 flex items-center justify-center text-secondary mb-4 border border-secondary/20 shadow-inner"
+              >
+                <Sparkles className="h-8 w-8" />
+              </motion.div>
+              <h2 className="text-5xl font-bold tracking-tight sm:text-7xl font-heading text-white">
                 Engineered for{" "}
-                <span className="text-secondary">Peak Performance</span>
+                <span className="text-secondary relative">
+                  Peak Performance
+                  <div className="absolute bottom-2 left-0 w-full h-3 bg-secondary/10 -rotate-1 -z-10" />
+                </span>
               </h2>
-              <p className="max-w-[800px] text-muted-foreground text-lg md:text-xl">
+              <p className="max-w-[800px] text-muted-foreground text-xl md:text-2xl mt-4">
                 FitSync combines elite-level data tracking with human-centric
                 design.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <FeatureCard
-                icon={<Brain className="h-8 w-8 text-secondary" />}
+                index={0}
+                icon={<Brain className="h-10 w-10 text-secondary" />}
                 title="AI Coaching"
                 description="Context-aware guidance that adapts to your recovery and progress in real-time."
               />
               <FeatureCard
-                icon={<Activity className="h-8 w-8 text-accent" />}
+                index={1}
+                icon={<Activity className="h-10 w-10 text-accent" />}
                 title="Deep Analytics"
                 description="Visualise your progress with rich charts and predictive performance metrics."
               />
               <FeatureCard
-                icon={<Smartphone className="h-8 w-8 text-blue-400" />}
+                index={2}
+                icon={<Smartphone className="h-10 w-10 text-blue-400" />}
                 title="Unified Sync"
                 description="Connect your wearables and nutrition in one seamless digital environment."
               />
               <FeatureCard
-                icon={<Trophy className="h-8 w-8 text-yellow-400" />}
+                index={3}
+                icon={<Trophy className="h-10 w-10 text-yellow-400" />}
                 title="Achievements"
                 description="Stay motivated with an advanced gamification system and community challenges."
               />
@@ -119,67 +209,88 @@ export default function LandingPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="w-full py-24 md:py-32 border-t border-white/5 bg-gradient-to-b from-background to-primary/10">
+        <section className="w-full py-32 md:py-48 border-t border-white/5 bg-gradient-to-b from-background to-primary/20 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-secondary/50 to-transparent" />
+          
           <div className="container mx-auto px-4 md:px-6">
-            <div className="glass p-12 md:p-24 rounded-[3rem] border-white/10 flex flex-col items-center justify-center space-y-8 text-center relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative z-10 space-y-4">
-                <h2 className="text-4xl font-bold tracking-tight sm:text-7xl font-heading leading-tight">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="glass p-16 md:p-32 rounded-[4rem] border-white/10 flex flex-col items-center justify-center space-y-12 text-center relative overflow-hidden group shadow-3xl"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-transparent to-accent/10 opacity-30 group-hover:opacity-50 transition-opacity duration-1000" />
+              <div className="absolute -top-24 -left-24 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full" />
+              <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-accent/10 blur-[100px] rounded-full" />
+
+              <div className="relative z-10 space-y-6">
+                <h2 className="text-5xl font-bold tracking-tight sm:text-8xl font-heading leading-[0.9] text-white">
                   Ready to Level Up Your <br />{" "}
                   <span className="text-secondary">Fitness DNA?</span>
                 </h2>
-                <p className="max-w-[600px] mx-auto text-muted-foreground text-lg md:text-xl">
+                <p className="max-w-[700px] mx-auto text-muted-foreground text-xl md:text-2xl leading-relaxed">
                   Join the elite community of athletes who have found their
                   perfect sync.
                 </p>
-                <div className="pt-8">
+                <div className="pt-10">
                   <Link href="/signup">
                     <Button
                       size="lg"
-                      className="bg-secondary hover:bg-secondary/90 text-primary font-bold px-12 h-16 text-xl rounded-2xl shadow-2xl shadow-secondary/20 transition-all hover:scale-105"
+                      className="bg-secondary hover:bg-secondary/90 text-primary font-bold px-16 h-20 text-2xl rounded-[2rem] shadow-[0_20px_50px_rgba(0,201,167,0.3)] transition-all hover:scale-105 active:scale-95 group relative overflow-hidden"
                     >
-                      Create Your Free Account
+                      <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                      <span className="relative z-10">Create Your Free Account</span>
                     </Button>
                   </Link>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="w-full py-12 border-t border-white/5">
-        <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-3">
-            <Activity className="h-6 w-6 text-secondary" />
-            <span className="text-xl font-bold font-heading tracking-tighter">
-              FitSync
-            </span>
+      <footer className="w-full py-20 border-t border-white/5 bg-slate-950/50 backdrop-blur-xl relative z-10">
+        <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-12">
+          <div className="flex flex-col items-center md:items-start gap-6">
+            <Link href="/" className="flex items-center gap-4 group">
+              <div className="h-12 w-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary border border-secondary/20 shadow-inner group-hover:scale-110 transition-transform">
+                <Activity className="h-7 w-7" />
+              </div>
+              <span className="text-3xl font-bold font-heading tracking-tighter text-white">
+                FitSync
+              </span>
+            </Link>
+            <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left leading-relaxed">
+              Synchronize your body, synchronize your life. The ultimate ecosystem for the modern athlete.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground font-medium">
-            © 2026 FitSync Platform. Built for the modern athlete.
-          </p>
-          <nav className="flex gap-8">
-            <Link
-              className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/legal?tab=terms"
-            >
-              Terms
-            </Link>
-            <Link
-              className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/legal?tab=privacy"
-            >
-              Privacy
-            </Link>
-            <Link
-              className="text-xs font-bold uppercase tracking-widest hover:text-secondary transition-colors"
-              href="/legal?tab=security"
-            >
-              Security
-            </Link>
-          </nav>
+          
+          <div className="flex flex-col items-center md:items-end gap-8">
+            <nav className="flex gap-12">
+              <Link
+                className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-secondary transition-colors"
+                href="/legal?tab=terms"
+              >
+                Terms
+              </Link>
+              <Link
+                className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-secondary transition-colors"
+                href="/legal?tab=privacy"
+              >
+                Privacy
+              </Link>
+              <Link
+                className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-secondary transition-colors"
+                href="/legal?tab=security"
+              >
+                Security
+              </Link>
+            </nav>
+            <p className="text-[10px] text-muted-foreground/50 font-bold uppercase tracking-widest">
+              © 2026 FitSync Platform. Engineered by Excellence.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
@@ -190,24 +301,38 @@ function FeatureCard({
   icon,
   title,
   description,
+  index,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
+  index: number;
 }) {
   return (
-    <div className="glass p-8 rounded-[2rem] border-white/5 flex flex-col items-center text-center space-y-6 transition-all hover:bg-white/5 hover:border-white/10 hover:-translate-y-2 group cursor-default">
-      <div className="h-16 w-16 rounded-2xl bg-background/50 flex items-center justify-center border border-white/5 group-hover:border-secondary/20 transition-colors shadow-inner">
+    <motion.div 
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.1, duration: 0.5 }}
+      whileHover={{ y: -15, scale: 1.02 }}
+      className="glass p-10 rounded-[3rem] border-white/5 flex flex-col items-center text-center space-y-8 transition-all hover:bg-white/5 hover:border-white/10 hover:shadow-2xl group cursor-default h-full relative overflow-hidden"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="h-20 w-20 rounded-3xl bg-background/50 flex items-center justify-center border border-white/5 group-hover:border-secondary/30 transition-all shadow-inner relative z-10">
+        <div className="absolute inset-0 bg-secondary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
         {icon}
       </div>
-      <div className="space-y-2">
-        <h3 className="text-xl font-bold font-heading group-hover:text-secondary transition-colors">
+      <div className="space-y-3 relative z-10">
+        <h3 className="text-2xl font-bold font-heading group-hover:text-secondary transition-colors text-white">
           {title}
         </h3>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-muted-foreground text-base leading-relaxed font-medium">
           {description}
         </p>
       </div>
-    </div>
+      <div className="pt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="h-1 w-12 bg-secondary/30 rounded-full mx-auto" />
+      </div>
+    </motion.div>
   );
 }

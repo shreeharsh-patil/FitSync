@@ -17,6 +17,7 @@ import {
   UserCircle,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { motion } from "framer-motion";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -58,9 +59,13 @@ export function SideNavBar({ user }: { user?: any }) {
       <div className="hidden lg:flex flex-col h-full w-72 bg-card/30 backdrop-blur-xl border-r border-white/5 relative z-20 shrink-0">
         <div className="p-8">
           <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+            <motion.div 
+              whileHover={{ rotate: 180 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 group-hover:bg-secondary/20 transition-all shadow-[0_0_15px_rgba(0,201,167,0.1)] group-hover:shadow-[0_0_20px_rgba(0,201,167,0.3)]"
+            >
               <Activity className="h-6 w-6" />
-            </div>
+            </motion.div>
             <span className="text-2xl font-bold font-heading tracking-tighter text-white">
               FitSync
             </span>
@@ -80,12 +85,15 @@ export function SideNavBar({ user }: { user?: any }) {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden",
                   isActive
-                    ? "bg-secondary/10 text-secondary"
+                    ? "bg-secondary/10 text-secondary shadow-[inset_0_0_20px_rgba(0,201,167,0.05)]"
                     : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
                 )}
               >
                 {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-secondary rounded-full" />
+                  <motion.div 
+                    layoutId="active-indicator"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-secondary rounded-full shadow-[0_0_10px_rgba(0,201,167,0.5)]" 
+                  />
                 )}
                 <item.icon
                   className={cn(
@@ -99,6 +107,8 @@ export function SideNavBar({ user }: { user?: any }) {
                 {isActive && (
                   <ChevronRight className="ml-auto h-4 w-4 opacity-50" />
                 )}
+                {/* Subtle hover sweep */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
               </Link>
             );
           })}
@@ -106,13 +116,17 @@ export function SideNavBar({ user }: { user?: any }) {
 
         <div className="p-6 space-y-4">
           <Link href="/profile">
-            <div className="p-4 rounded-[2rem] bg-gradient-to-br from-primary/40 to-background border border-white/5 relative overflow-hidden group hover:border-secondary/20 transition-all cursor-pointer">
+            <motion.div 
+              whileHover={{ scale: 1.02 }}
+              className="p-4 rounded-[2rem] bg-gradient-to-br from-primary/40 to-background border border-white/5 relative overflow-hidden group hover:border-secondary/20 transition-all cursor-pointer shadow-lg"
+            >
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Activity className="h-16 w-16 text-secondary" />
               </div>
               <div className="flex items-center gap-3 relative z-10">
-                <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary text-xs shadow-lg shadow-secondary/20">
-                  {userInitials}
+                <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary text-xs shadow-lg shadow-secondary/30 relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  <span className="relative z-10">{userInitials}</span>
                 </div>
                 <div className="flex flex-col overflow-hidden">
                   <span className="text-sm font-bold truncate text-white">{displayName}</span>
@@ -121,7 +135,7 @@ export function SideNavBar({ user }: { user?: any }) {
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </Link>
 
           <button
@@ -148,7 +162,10 @@ export function SideNavBar({ user }: { user?: any }) {
               )}
             >
               {isActive && (
-                <div className="absolute top-0 h-1 w-6 bg-secondary rounded-full" />
+                <motion.div 
+                  layoutId="mobile-active-indicator"
+                  className="absolute top-0 h-1 w-6 bg-secondary rounded-full shadow-[0_0_10px_rgba(0,201,167,0.5)]" 
+                />
               )}
               <item.icon
                 className={cn(
