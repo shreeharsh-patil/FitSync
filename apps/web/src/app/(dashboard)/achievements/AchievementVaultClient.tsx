@@ -10,7 +10,6 @@ import {
   Zap,
   Target,
   Users,
-  Star,
   CheckCircle2,
   Lock,
   ChevronRight,
@@ -149,7 +148,7 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
                   <Flame className="h-8 w-8 animate-pulse fill-secondary" />
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Multiplier</p>
+                  <p className="text-[10px] font-bold text-secondary uppercase tracking-widest leading-none">Athlete: {user?.name || "Alex"}</p>
                   <p className="text-2xl font-bold text-white mt-1">1.5x XP</p>
                 </div>
               </div>

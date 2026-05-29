@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { User, Mail, Activity, Target, Edit3, Settings, X, Loader2, Sparkles } from "lucide-react";
 import { updateProfile } from "@/lib/actions";
+import Image from "next/image";
 
 interface ProfileTrackerClientProps {
   user: any;
@@ -94,9 +95,9 @@ export function ProfileTrackerClient({ user }: ProfileTrackerClientProps) {
 
         <div className="flex flex-col sm:flex-row items-end gap-6 px-8 -mt-20 relative z-10">
           <div className="h-40 w-40 rounded-full border-4 border-background bg-muted flex items-center justify-center overflow-hidden shadow-2xl relative group">
-            <div className="h-full w-full bg-gradient-to-br from-secondary/40 to-primary/40 flex items-center justify-center">
+            <div className="h-full w-full bg-gradient-to-br from-secondary/40 to-primary/40 flex items-center justify-center relative">
               {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={profile.name || "Avatar"} className="h-full w-full object-cover" />
+                <Image src={profile.avatarUrl} alt={profile.name || "Avatar"} fill className="object-cover" sizes="160px" />
               ) : (
                 <User className="h-16 w-16 text-white/50" />
               )}

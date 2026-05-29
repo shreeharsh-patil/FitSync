@@ -5,13 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Users,
   Flame,
-  MessageCircle,
   Heart,
   Share2,
   Award,
-  Search,
   Image as ImageIcon,
   Sparkles,
   MessageSquare,
@@ -19,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { io } from "socket.io-client";
-import { followUser, unfollowUser } from "@/lib/actions";
+import { followUser, unfollowUser, createPostAction, createCommentAction, toggleLikePostAction } from "@/lib/actions";
 
 interface Comment {
   author: string;
@@ -47,9 +44,10 @@ interface CommunityFeedClientProps {
   user?: any;
   otherUsers?: { id: string; name: string; role: string; avatar: string }[];
   initialFollowingIds?: string[];
+  initialPosts?: PostItem[];
 }
 
-export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds = [] }: CommunityFeedClientProps) {
+export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds = [], initialPosts = [] }: CommunityFeedClientProps) {
   const displayName = user?.name || "Alex Rivers";
   const avatarInitials = displayName
     .split(" ")
@@ -89,39 +87,44 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
     }
   };
 
-  const [posts, setPosts] = useState<PostItem[]>([
-    {
-      id: "1",
-      author: "Sarah Connor",
-      role: "Powerlifter",
-      avatar: "S",
-      time: "2 hours ago",
-      content: "Just crushed the \"Leg Day Destroyer\" routine! Added 10kg to my squat PR. Feeling strong but definitely going to be sore tomorrow. 🔥💪",
-      workoutName: "Leg Day Destroyer",
-      workoutMeta: "Volume: 12,400 kg • Duration: 1h 15m",
-      likesCount: 24,
-      commentsCount: 2,
-      isLikedByUser: false,
-      comments: [
-        { author: "Markus Vane", avatar: "M", content: "Insane squat volume Sarah! Standard overload.", time: "1 hour ago" },
-        { author: "Elena Rossi", avatar: "E", content: "Crushing it! Remember dynamic stretching tonight.", time: "45 mins ago" },
-      ],
-    },
-    {
-      id: "2",
-      author: "Markus Vane",
-      role: "Performance Coach",
-      avatar: "M",
-      time: "5 hours ago",
-      content: "Highly recommend checking your cellular hydration metrics today. The summer heat requires at least 3.5L of water intake to maintain maximal muscle contractility. Hydration is performance! 💧🏋️‍♂️",
-      likesCount: 18,
-      commentsCount: 1,
-      isLikedByUser: false,
-      comments: [
-        { author: "Sarah Connor", avatar: "S", content: "Logged 2.5L so far, tracking on the nutrition dashboard!", time: "3 hours ago" },
-      ],
-    },
-  ]);
+  const [posts, setPosts] = useState<PostItem[]>(() => {
+    if (initialPosts && initialPosts.length > 0) {
+      return initialPosts;
+    }
+    return [
+      {
+        id: "1",
+        author: "Sarah Connor",
+        role: "Powerlifter",
+        avatar: "S",
+        time: "2 hours ago",
+        content: "Just crushed the \"Leg Day Destroyer\" routine! Added 10kg to my squat PR. Feeling strong but definitely going to be sore tomorrow. 🔥💪",
+        workoutName: "Leg Day Destroyer",
+        workoutMeta: "Volume: 12,400 kg • Duration: 1h 15m",
+        likesCount: 24,
+        commentsCount: 2,
+        isLikedByUser: false,
+        comments: [
+          { author: "Markus Vane", avatar: "M", content: "Insane squat volume Sarah! Standard overload.", time: "1 hour ago" },
+          { author: "Elena Rossi", avatar: "E", content: "Crushing it! Remember dynamic stretching tonight.", time: "45 mins ago" },
+        ],
+      },
+      {
+        id: "2",
+        author: "Markus Vane",
+        role: "Performance Coach",
+        avatar: "M",
+        time: "5 hours ago",
+        content: "Highly recommend checking your cellular hydration metrics today. The summer heat requires at least 3.5L of water intake to maintain maximal muscle contractility. Hydration is performance! 💧🏋️‍♂️",
+        likesCount: 18,
+        commentsCount: 1,
+        isLikedByUser: false,
+        comments: [
+          { author: "Sarah Connor", avatar: "S", content: "Logged 2.5L so far, tracking on the nutrition dashboard!", time: "3 hours ago" },
+        ],
+      },
+    ];
+  });
 
   // Form composer state
   const [newPostContent, setNewPostContent] = useState("");
@@ -222,14 +225,15 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
         socketRef.current.disconnect();
       }
     };
-  }, []);
+  }, [user?.id]);
 
-  const handleComposePost = (e: React.FormEvent) => {
+  const handleComposePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostContent.trim()) return;
 
+    const tempId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
     const newPost: PostItem = {
-      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
+      id: tempId,
       author: displayName,
       role: userGoal,
       avatar: avatarInitials,
@@ -242,7 +246,20 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
     };
 
     setPosts((prev) => [newPost, ...prev]);
+    const contentToPost = newPostContent;
     setNewPostContent("");
+
+    // Persist to Postgres database
+    if (user?.id) {
+      const result = await createPostAction(user.id, contentToPost);
+      if (result.success && result.post) {
+        // Update the temporary ID with the real database ID
+        setPosts((prev) =>
+          prev.map((p) => (p.id === tempId ? { ...p, id: result.post.id } : p))
+        );
+        newPost.id = result.post.id;
+      }
+    }
 
     // Emit real-time post creation event
     if (socketRef.current) {
@@ -250,11 +267,13 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
     }
   };
 
-  const handleLikeToggle = (postId: string) => {
+  const handleLikeToggle = async (postId: string) => {
+    let nextLikedState = false;
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id === postId) {
           const isLiked = !p.isLikedByUser;
+          nextLikedState = isLiked;
           const nextCount = isLiked ? p.likesCount + 1 : p.likesCount - 1;
 
           // Emit real-time like update event
@@ -274,6 +293,9 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
         return p;
       })
     );
+
+    // Persist like to Postgres
+    await toggleLikePostAction(postId, nextLikedState);
   };
 
   const handleToggleComments = (postId: string) => {
@@ -283,7 +305,7 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
     }));
   };
 
-  const handleCommentSubmit = (postId: string) => {
+  const handleCommentSubmit = async (postId: string) => {
     const text = newCommentText[postId] || "";
     if (!text.trim()) return;
 
@@ -320,6 +342,11 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
       ...prev,
       [postId]: "",
     }));
+
+    // Persist to database
+    if (user?.id) {
+      await createCommentAction(user.id, postId, text);
+    }
   };
 
   const handleJoinChallenge = (key: string) => {
@@ -635,7 +662,7 @@ function SuggestedAthlete({
   onToggle: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between group">
+    <div className="flex items-center justify-between group" id={`suggested-athlete-${id}`}>
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-white/5 flex shrink-0 items-center justify-center font-bold text-white border border-white/5 group-hover:border-secondary/20 transition-colors">
           {avatar}

@@ -77,3 +77,69 @@ export async function askAICoach(userMessage: string, history: { role: "user" | 
     return "I hit a glitch syncing with the AI matrix, but your consistency is what matters! Let's keep training.";
   }
 }
+
+export async function generateAIWorkout(difficulty: string, availableExercises: string[]) {
+  const PRESET_PLANS: Record<string, any[]> = {
+    BEGINNER: [
+      { name: "Push-up", sets: 3, reps: "10-12", rest: 60 },
+      { name: "Squat", sets: 3, reps: "15", rest: 60 },
+      { name: "Plank", sets: 3, reps: "30s", rest: 45 },
+      { name: "Running", sets: 1, reps: "10m", rest: 0 }
+    ],
+    INTERMEDIATE: [
+      { name: "Pull-up", sets: 4, reps: "8-10", rest: 90 },
+      { name: "Push-up", sets: 3, reps: "20", rest: 60 },
+      { name: "Squat", sets: 4, reps: "12-15", rest: 60 },
+      { name: "Plank", sets: 3, reps: "60s", rest: 60 }
+    ],
+    ADVANCED: [
+      { name: "Deadlift", sets: 4, reps: "5", rest: 120 },
+      { name: "Pull-up", sets: 4, reps: "12", rest: 90 },
+      { name: "Squat", sets: 4, reps: "8-10", rest: 90 },
+      { name: "Push-up", sets: 4, reps: "25", rest: 60 }
+    ]
+  };
+
+  if (!GROK_API_KEY) {
+    await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate thinking latency
+    return PRESET_PLANS[difficulty] || PRESET_PLANS.BEGINNER;
+  }
+
+  try {
+    const response = await fetch(`${GROK_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: GROK_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional athletic performance system. Respond ONLY with a valid JSON array of objects representing a workout routine. No introductory or concluding remarks, no backticks, no markdown. Just JSON.",
+          },
+          {
+            role: "user",
+            content: `Create a ${difficulty} workout plan choosing from these exercises: ${availableExercises.join(", ")}. Return a JSON array matching this format: [{"name": "Exercise Name", "sets": 3, "reps": "12", "rest": 60}]. Ensure exact exercise names.`,
+          },
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content?.trim() || "";
+    // Clean up potential markdown formatting block if AI returned it despite the system prompt
+    const cleanedText = text.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+    return JSON.parse(cleanedText);
+  } catch (error) {
+    console.error("AI Workout generation API error, using preset fallback:", error);
+    return PRESET_PLANS[difficulty] || PRESET_PLANS.BEGINNER;
+  }
+}
+

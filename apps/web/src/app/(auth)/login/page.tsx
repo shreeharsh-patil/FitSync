@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -221,7 +222,7 @@ export default function LoginPage() {
                     onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
                     className="flex items-center justify-center gap-sm h-14 bg-surface-container-high border border-white/5 rounded-xl hover:bg-surface-variant transition-all active:scale-[0.95] cursor-pointer"
                   >
-                    <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPb0vRi19aXl0VtZl3foWY0y7WGo0S7nQoVAPKvhzFz64-LGo_L88t5zk5m4cy-KUYSc_UGu8xG-4RG6Hmjem53qPhATZjJg--W3WlhL3p6tAe5cM0efkBxWwSpgDWxLZNh0j99NXYuBdyK8b4FtETs75kC0-si39K69S2OaEUSH22t0IQDeRKA_uo45MmZtKqHfGrgHwrBxm54BwXt1oA2eCYskGF_dYEn2p4cyg98s7Bc3JUrdIdBPpxcoDCQqvEv4jw5h1rcrUC" />
+                    <Image alt="Google" width={20} height={20} src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPb0vRi19aXl0VtZl3foWY0y7WGo0S7nQoVAPKvhzFz64-LGo_L88t5zk5m4cy-KUYSc_UGu8xG-4RG6Hmjem53qPhATZjJg--W3WlhL3p6tAe5cM0efkBxWwSpgDWxLZNh0j99NXYuBdyK8b4FtETs75kC0-si39K69S2OaEUSH22t0IQDeRKA_uo45MmZtKqHfGrgHwrBxm54BwXt1oA2eCYskGF_dYEn2p4cyg98s7Bc3JUrdIdBPpxcoDCQqvEv4jw5h1rcrUC" />
                     <span className="font-label-md text-label-md">Google</span>
                   </button>
                   <button
@@ -258,9 +259,11 @@ export default function LoginPage() {
           >
             {/* Left Side: Visual/Hero Section */}
             <div className="hidden md:flex flex-1 relative overflow-hidden">
-              <img
+              <Image
                 alt="High performance training"
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 object-cover"
+                fill
+                priority
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH10kfcnCjyz1ANrDojoEV5rNZg6WILWcy-fyg6fdfYu6WXy6wR6sx5teXXIUXgbFQiNRRwJ-WWgeLfd5GOeLoUfsU5qFE2mr9OGI4pv8CJYX-YiTIZ0U46KDnTIb5cQ05qs5CwZXUjtxpvMeb5QAPycKJdudlAh2AMPVxwMonDm9TRw6XrNn1K-BhiiVFKZYv9PESbHbDBl2nyO3gsQS9ja2IEeAsdixksE5kCWo-oaSGiIY1SGonMkrSBcAiBa5QmvzTZON846Jn"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-[#051424]/90 via-[#051424]/40 to-transparent"></div>

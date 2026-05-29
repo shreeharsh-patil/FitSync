@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Flame, 
   MessageSquare, 
@@ -12,41 +12,7 @@ import {
   Heart
 } from "lucide-react";
 
-export default function CommunityFeed({ userProfile, activeLog, triggerToast }) {
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      author: "Sarah Miller",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0",
-      time: "2 hours ago",
-      tag: "Cardio",
-      content: "Smashed my morningtempo run around the reservoir! Cadence felt amazing and managed to shave off 12 seconds from my best mile pace. Progressive overload is paying off! 🏃‍♀️✨",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-",
-      reactions: { fire: 14, strong: 8, clap: 6 },
-      userReacted: { fire: false, strong: false, clap: false },
-      comments: [
-        { id: 1, author: "John Doe", text: "Incredible pace, Sarah! What shoes are you running in?", time: "1h ago" },
-        { id: 2, author: "Coach Marcus", text: "Form is looking extremely stable. Keep up the high cadence work.", time: "45m ago" }
-      ],
-      showComments: false
-    },
-    {
-      id: 2,
-      author: "John Doe",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuEtWq0z7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8",
-      time: "5 hours ago",
-      tag: "Strength",
-      content: "Hit a new Personal Record on bench press today: 110kg for 3 clean reps! Rest periods were longer, but the power output felt solid. Fueled by high protein meals all week! 💪🏋️‍♂️",
-      image: "",
-      reactions: { fire: 9, strong: 18, clap: 4 },
-      userReacted: { fire: false, strong: false, clap: false },
-      comments: [
-        { id: 1, author: "Sarah Miller", text: "Massive lift John! Clean reps too!", time: "4h ago" }
-      ],
-      showComments: false
-    }
-  ]);
-
+export default function CommunityFeed({ userProfile, activeLog, triggerToast, currentUser, posts, setPosts }) {
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedTag, setSelectedTag] = useState("Activity");
   const [selectedPresetImage, setSelectedPresetImage] = useState("");
@@ -59,52 +25,126 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast }) 
     { name: "Fitness Gear", url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAEmDrGdLfIwA0XhRe8akzIq5_19R6qy8f6OQQ2SsdNh0Bdr3hmgVqzZMc0OdskpFldYarwSViE4nMzz0chEp4XcSp5eJr1QuAcYF8XyohE8tHMyLIIk0lFQlfQ9QmoQp-IsZTmIgjMYnHsT96rJB-dNMYk3dIhK4Rf7EOxtg4KicxgflERqInMjM-DLJ06JKkrb7aAD7WMiera2f139VgbFaepMCOf3pEaBET0EQqQmy479aU4yaCiadKx8iFD60lOVIPQJ9mPKYc2" }
   ];
 
-  const handleCreatePost = (e) => {
+  const mapPostData = (post, currentUserId) => {
+    const isReacted = (type) => {
+      if (!post.reactedUsers || !post.reactedUsers[type]) return false;
+      return currentUserId ? post.reactedUsers[type].includes(currentUserId) : false;
+    };
+    return {
+      ...post,
+      id: post._id || post.id,
+      time: post.createdAt ? new Date(post.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : (post.time || "Just now"),
+      userReacted: {
+        fire: isReacted("fire"),
+        strong: isReacted("strong"),
+        clap: isReacted("clap")
+      },
+      showComments: post.showComments || false
+    };
+  };
+
+  // Fetch posts from backend on load
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        const res = await fetch("/api/posts");
+        if (res.ok) {
+          const raw = await res.json();
+          setPosts(raw.map(p => mapPostData(p, currentUser?.id)));
+        }
+      } catch (err) {
+        console.error("Failed to load community feed posts:", err);
+      }
+    };
+    loadPosts();
+  }, [currentUser, setPosts]);
+
+  const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!newPostContent.trim()) return;
 
-    const newPost = {
-      id: posts.length + 1,
+    const postPayload = {
+      userId: currentUser?.id || "mock-user",
       author: userProfile.name,
       avatar: userProfile.avatar,
-      time: "Just now",
       tag: selectedTag,
       content: newPostContent,
-      image: selectedPresetImage,
-      reactions: { fire: 0, strong: 0, clap: 0 },
-      userReacted: { fire: false, strong: false, clap: false },
-      comments: [],
-      showComments: false
+      image: selectedPresetImage
     };
 
-    setPosts([newPost, ...posts]);
+    try {
+      if (currentUser) {
+        const res = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(postPayload)
+        });
+        if (res.ok) {
+          const saved = await res.json();
+          setPosts(prev => [mapPostData(saved, currentUser.id), ...prev]);
+        }
+      } else {
+        const newPost = {
+          ...postPayload,
+          id: Date.now(),
+          time: "Just now",
+          reactions: { fire: 0, strong: 0, clap: 0 },
+          userReacted: { fire: false, strong: false, clap: false },
+          comments: [],
+          showComments: false
+        };
+        setPosts(prev => [newPost, ...prev]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
     setNewPostContent("");
     setSelectedPresetImage("");
     triggerToast("✨ Share published to FitSync Feed!");
   };
 
-  const handleReaction = (postId, reactionType) => {
-    setPosts(prevPosts => 
-      prevPosts.map(post => {
-        if (post.id === postId) {
-          const reacted = post.userReacted[reactionType];
-          const updatedReactions = { ...post.reactions };
-          updatedReactions[reactionType] = reacted 
-            ? updatedReactions[reactionType] - 1 
-            : updatedReactions[reactionType] + 1;
-          
-          const updatedUserReacted = { ...post.userReacted };
-          updatedUserReacted[reactionType] = !reacted;
-
-          return {
-            ...post,
-            reactions: updatedReactions,
-            userReacted: updatedUserReacted
-          };
+  const handleReaction = async (postId, reactionType) => {
+    try {
+      if (currentUser) {
+        const res = await fetch(`/api/posts/${postId}/react`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: currentUser.id, reactionType })
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setPosts(prev => 
+            prev.map(p => (p.id === postId ? mapPostData(updated, currentUser.id) : p))
+          );
         }
-        return post;
-      })
-    );
+      } else {
+        // Fallback local updates
+        setPosts(prevPosts => 
+          prevPosts.map(post => {
+            if (post.id === postId) {
+              const reacted = post.userReacted[reactionType];
+              const updatedReactions = { ...post.reactions };
+              updatedReactions[reactionType] = reacted 
+                ? updatedReactions[reactionType] - 1 
+                : updatedReactions[reactionType] + 1;
+              
+              const updatedUserReacted = { ...post.userReacted };
+              updatedUserReacted[reactionType] = !reacted;
+
+              return {
+                ...post,
+                reactions: updatedReactions,
+                userReacted: updatedUserReacted
+              };
+            }
+            return post;
+          })
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const toggleComments = (postId) => {
@@ -115,29 +155,47 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast }) 
     );
   };
 
-  const handleAddComment = (postId) => {
+  const handleAddComment = async (postId) => {
     const text = commentInputs[postId] || "";
     if (!text.trim()) return;
 
-    setPosts(prevPosts =>
-      prevPosts.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            comments: [
-              ...post.comments,
-              {
-                id: post.comments.length + 1,
-                author: userProfile.name,
-                text: text,
-                time: "Just now"
-              }
-            ]
-          };
+    try {
+      if (currentUser) {
+        const res = await fetch(`/api/posts/${postId}/comment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ author: userProfile.name, text })
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setPosts(prev => 
+            prev.map(p => (p.id === postId ? mapPostData(updated, currentUser.id) : p))
+          );
         }
-        return post;
-      })
-    );
+      } else {
+        setPosts(prevPosts =>
+          prevPosts.map(post => {
+            if (post.id === postId) {
+              return {
+                ...post,
+                comments: [
+                  ...post.comments,
+                  {
+                    id: post.comments.length + 1,
+                    author: userProfile.name,
+                    text: text,
+                    time: "Just now"
+                  }
+                ]
+              };
+            }
+            return post;
+          })
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
 
     setCommentInputs(prev => ({ ...prev, [postId]: "" }));
     triggerToast("💬 Comment posted");
@@ -230,7 +288,7 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast }) 
 
       {/* Social Feed List */}
       <div className="space-y-md">
-        {posts.map((post) => (
+        {posts && posts.map((post) => (
           <div key={post.id} className="glass-card p-md md:p-lg rounded-2xl border border-white/5 flex flex-col gap-md">
             {/* Header info */}
             <div className="flex items-center justify-between">
@@ -270,39 +328,39 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast }) 
                 <button
                   onClick={() => handleReaction(post.id, "fire")}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all cursor-pointer active:scale-95 ${
-                    post.userReacted.fire 
+                    post.userReacted?.fire 
                       ? "bg-red-500/10 border-red-500/30 text-red-400 font-bold" 
                       : "bg-white/5 border-white/5 text-on-surface-variant hover:text-white"
                   }`}
                 >
-                  <Flame className={`w-3.5 h-3.5 ${post.userReacted.fire ? "fill-red-400" : ""}`} />
-                  <span>🔥 {post.reactions.fire}</span>
+                  <Flame className={`w-3.5 h-3.5 ${post.userReacted?.fire ? "fill-red-400" : ""}`} />
+                  <span>🔥 {post.reactions?.fire || 0}</span>
                 </button>
 
                 {/* Strong reaction */}
                 <button
                   onClick={() => handleReaction(post.id, "strong")}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all cursor-pointer active:scale-95 ${
-                    post.userReacted.strong 
+                    post.userReacted?.strong 
                       ? "bg-primary-container/10 border-primary-fixed/30 text-primary-fixed font-bold" 
                       : "bg-white/5 border-white/5 text-on-surface-variant hover:text-white"
                   }`}
                 >
                   <span className="text-[12px]">💪</span>
-                  <span>{post.reactions.strong}</span>
+                  <span>{post.reactions?.strong || 0}</span>
                 </button>
 
                 {/* Clap reaction */}
                 <button
                   onClick={() => handleReaction(post.id, "clap")}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all cursor-pointer active:scale-95 ${
-                    post.userReacted.clap 
+                    post.userReacted?.clap 
                       ? "bg-secondary-container/10 border-secondary-fixed-dim/30 text-secondary-fixed-dim font-bold" 
                       : "bg-white/5 border-white/5 text-on-surface-variant hover:text-white"
                   }`}
                 >
                   <span className="text-[12px]">👏</span>
-                  <span>{post.reactions.clap}</span>
+                  <span>{post.reactions?.clap || 0}</span>
                 </button>
               </div>
 
@@ -311,17 +369,17 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast }) 
                 className="flex items-center gap-1.5 text-on-surface-variant hover:text-white transition-colors cursor-pointer bg-transparent border-none"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>{post.comments.length} comments</span>
+                <span>{post.comments?.length || 0} comments</span>
               </button>
             </div>
 
             {/* Comments block */}
             {post.showComments && (
               <div className="space-y-sm bg-background/30 rounded-xl p-md border border-white/5">
-                {post.comments.length > 0 ? (
+                {post.comments && post.comments.length > 0 ? (
                   <div className="space-y-sm max-h-[200px] overflow-y-auto pr-xs">
-                    {post.comments.map((comment) => (
-                      <div key={comment.id} className="text-xs leading-normal">
+                    {post.comments.map((comment, cidx) => (
+                      <div key={cidx} className="text-xs leading-normal">
                         <div className="flex justify-between font-semibold text-primary-fixed text-[10px]">
                           <span>{comment.author}</span>
                           <span className="text-on-surface-variant font-normal text-[8px]">{comment.time}</span>

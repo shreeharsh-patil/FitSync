@@ -1,42 +1,73 @@
 import React, { useState } from "react";
 import { Activity, Mail, Lock, User, Loader2, AlertCircle } from "lucide-react";
 
-export default function RegisterPage({ onViewChange }) {
+export default function RegisterPage({ onViewChange, onRegisterSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Simulate registration validation
-    setTimeout(() => {
-      if (name.trim().split(" ").length < 2) {
-        setError("Please enter your full name (First and Last name).");
-        setIsLoading(false);
-      } else if (!email.includes("@")) {
-        setError("Invalid email address format.");
-        setIsLoading(false);
-      } else if (password.length < 6) {
-        setError("Password must be at least 6 characters long.");
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
-        onViewChange("app"); // Logged in and registered!
+    if (name.trim().split(" ").length < 2) {
+      setError("Please enter your full name (First and Last name).");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed.");
       }
-    }, 1200);
+      setIsLoading(false);
+      onRegisterSuccess(data.user);
+    } catch (err) {
+      setError(err.message);
+      setIsLoading(false);
+    }
   };
 
-  const handleSocialRegister = () => {
+  const handleSocialRegister = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    setError("");
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "alex@fitsync.com", password: "password123" })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setIsLoading(false);
+        onRegisterSuccess(data.user);
+        return;
+      }
+
+      const regResponse = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Alex Rivers", email: "alex@fitsync.com", password: "password123" })
+      });
+      const regData = await regResponse.json();
+      if (!regResponse.ok) {
+        throw new Error(regData.error || "Social registration failed.");
+      }
       setIsLoading(false);
-      onViewChange("app");
-    }, 1000);
+      onRegisterSuccess(regData.user);
+    } catch (err) {
+      setError(err.message);
+      setIsLoading(false);
+    }
   };
 
   return (

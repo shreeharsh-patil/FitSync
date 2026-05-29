@@ -550,5 +550,107 @@ export async function deleteUserAccount(userId: string) {
   }
 }
 
+export async function generateWorkoutWithAI(difficulty: Difficulty) {
+  try {
+    const dbExercises = await db.exercise.findMany();
+    const exerciseNames = dbExercises.map((e) => e.name);
+
+    const { generateAIWorkout } = await import("@/lib/openai");
+    const aiPlan = await generateAIWorkout(difficulty, exerciseNames);
+
+    const formattedExercises = aiPlan.map((item: any) => {
+      const match = dbExercises.find(
+        (e) => e.name.toLowerCase() === item.name.toLowerCase()
+      );
+      if (match) {
+        return {
+          exerciseId: match.id,
+          name: match.name,
+          sets: item.sets || 3,
+          reps: String(item.reps || "10"),
+          rest: item.rest || 60,
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    return {
+      success: true,
+      exercises: formattedExercises,
+      name: `AI ${difficulty.charAt(0) + difficulty.slice(1).toLowerCase()} Protocol`
+    };
+  } catch (error) {
+    console.error("AI Workout Generation Error:", error);
+    return { error: "Failed to generate AI plan." };
+  }
+}
+
+export async function createPostAction(userId: string, content: string) {
+  try {
+    const post = await db.post.create({
+      data: {
+        userId,
+        content,
+      },
+      include: {
+        user: true,
+      },
+    });
+    revalidatePath("/community");
+    return { success: true, post };
+  } catch (error) {
+    console.error("Create post error:", error);
+    return { success: false, error: "Failed to create post" };
+  }
+}
+
+export async function createCommentAction(userId: string, postId: string, content: string) {
+  try {
+    const comment = await db.comment.create({
+      data: {
+        userId,
+        postId,
+        content,
+      },
+      include: {
+        user: true,
+      },
+    });
+    
+    await db.post.update({
+      where: { id: postId },
+      data: {
+        commentsCount: { increment: 1 },
+      },
+    });
+
+    revalidatePath("/community");
+    return { success: true, comment };
+  } catch (error) {
+    console.error("Create comment error:", error);
+    return { success: false, error: "Failed to create comment" };
+  }
+}
+
+export async function toggleLikePostAction(postId: string, increment: boolean) {
+  try {
+    await db.post.update({
+      where: { id: postId },
+      data: {
+        likesCount: {
+          increment: increment ? 1 : -1,
+        },
+      },
+    });
+    revalidatePath("/community");
+    return { success: true };
+  } catch (error) {
+    console.error("Like toggle error:", error);
+    return { success: false };
+  }
+}
+
+
+
 
 

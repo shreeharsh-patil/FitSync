@@ -38,6 +38,42 @@ export default async function CommunityPage() {
     initialFollowingIds = follows.map(f => f.followingId);
   }
 
+  // Fetch real posts from db
+  const dbPosts = await db.post.findMany({
+    include: {
+      user: true,
+      comments: {
+        include: {
+          user: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const initialPosts = dbPosts.map((p) => ({
+    id: p.id,
+    author: p.user.name || "Athlete",
+    role: p.user.fitnessGoal ? `${p.user.fitnessGoal.charAt(0).toUpperCase() + p.user.fitnessGoal.slice(1).toLowerCase()} Athlete` : "Standard Athlete",
+    avatar: (p.user.name || "Athlete").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
+    time: new Date(p.createdAt).toLocaleDateString() + " " + new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    content: p.content,
+    likesCount: p.likesCount,
+    commentsCount: p.commentsCount,
+    isLikedByUser: false,
+    comments: p.comments.map((c) => ({
+      author: c.user.name || "Athlete",
+      avatar: (c.user.name || "Athlete").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
+      content: c.content,
+      time: new Date(c.createdAt).toLocaleDateString(),
+    })),
+  }));
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -56,6 +92,7 @@ export default async function CommunityPage() {
         user={user} 
         otherUsers={otherUsers}
         initialFollowingIds={initialFollowingIds}
+        initialPosts={initialPosts}
       />
     </div>
   );

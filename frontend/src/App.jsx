@@ -14,10 +14,53 @@ import WeightTracker from './components/WeightTracker';
 import AchievementsPanel from './components/AchievementsPanel';
 
 function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+
   // --- Navigation & Core Views ---
   const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'login' | 'register' | 'app'
   const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'activity' | 'workouts' | 'community' | 'settings'
   const [activeWorkoutSubView, setActiveWorkoutSubView] = useState(null); // null | 'running'
+
+  const fetchUserData = async (userId) => {
+    try {
+      const [logsRes, routinesRes, mealsRes, postsRes] = await Promise.all([
+        fetch(`/api/logs/${userId}`),
+        fetch(`/api/routines/${userId}`),
+        fetch(`/api/meals/${userId}`),
+        fetch(`/api/posts`)
+      ]);
+
+      if (logsRes.ok) {
+        const logs = await logsRes.json();
+        if (logs && logs.length > 0) setWeeklyLogs(logs);
+      }
+      if (routinesRes.ok) {
+        const routines = await routinesRes.json();
+        if (routines) setRoutinesList(routines);
+      }
+      if (mealsRes.ok) {
+        const meals = await mealsRes.json();
+        if (meals) setLoggedMeals(meals);
+      }
+      if (postsRes.ok) {
+        const posts = await postsRes.json();
+        if (posts) setSocialPosts(posts);
+      }
+    } catch (err) {
+      console.error("Failed to load user data:", err);
+    }
+  };
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      setCurrentUser(parsed);
+      setUserProfile(parsed);
+      fetchUserData(parsed.id);
+      setCurrentView('app');
+    }
+  }, []);
   
   // Dashboard Section Mode selector: switch between Performance details and Wellness status
   const [dashboardMode, setDashboardMode] = useState('performance'); // 'performance' | 'wellness'
@@ -215,7 +258,7 @@ function App() {
     dayNum: 14
   });
 
-  const handleSaveRun = (e) => {
+  const handleSaveRun = async (e) => {
     e.preventDefault();
     const durationStr = `${runForm.minutes}:${runForm.seconds.toString().padStart(2, '0')}`;
     
@@ -241,16 +284,37 @@ function App() {
     setRunsList(prev => [newRun, ...prev]);
     setShoeMileage(prev => prev + parseFloat(runForm.distance));
 
-    setWeeklyLogs(prev => prev.map(log => {
-      if (log.dayNum === parseInt(runForm.dayNum)) {
-        return {
-          ...log,
-          runMiles: log.runMiles + parseFloat(runForm.distance),
-          steps: log.steps + Math.round(parseFloat(runForm.distance) * 2000)
-        };
+    const logToModify = weeklyLogs.find(log => log.dayNum === parseInt(runForm.dayNum));
+    if (logToModify) {
+      const targetRunMiles = logToModify.runMiles + parseFloat(runForm.distance);
+      const targetSteps = logToModify.steps + Math.round(parseFloat(runForm.distance) * 2000);
+
+      setWeeklyLogs(prev => prev.map(log => {
+        if (log.dayNum === parseInt(runForm.dayNum)) {
+          return {
+            ...log,
+            runMiles: targetRunMiles,
+            steps: targetSteps
+          };
+        }
+        return log;
+      }));
+
+      if (currentUser) {
+        try {
+          await fetch(`/api/logs/${currentUser.id}/${runForm.dayNum}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              runMiles: targetRunMiles,
+              steps: targetSteps
+            })
+          });
+        } catch (err) {
+          console.error("Failed to sync logged run to backend:", err);
+        }
       }
-      return log;
-    }));
+    }
 
     setShowLogRunModal(false);
     triggerToast(`🏃‍♂️ Run logged: ${runForm.name} (+${runForm.distance} mi)`);
@@ -355,35 +419,51 @@ function App() {
     muscleGroup: 'Chest'
   });
 
-  const handleSaveWorkout = (e) => {
+  const handleSaveWorkout = async (e) => {
     e.preventDefault();
     
     const addedReps = workoutForm.sets * workoutForm.reps;
     const addedMinutes = workoutForm.sets * 3;
     const addedCalories = workoutForm.sets * 25;
 
-    updateActiveLog(log => {
-      const updatedSets = log.sets + parseInt(workoutForm.sets);
-      const updatedReps = log.reps + addedReps;
-      const updatedActiveMin = log.activeMin + addedMinutes;
-      const updatedCalories = log.calories + addedCalories;
+    const targetSets = activeLog.sets + parseInt(workoutForm.sets);
+    const targetReps = activeLog.reps + addedReps;
+    const targetActiveMin = activeLog.activeMin + addedMinutes;
+    const targetCalories = activeLog.calories + addedCalories;
 
-      let updatedMuscleObj = {};
-      const muscleKey = workoutForm.muscleGroup.toLowerCase();
-      if (['chest', 'triceps', 'shoulders', 'legs', 'back', 'arms'].includes(muscleKey)) {
-        const currentVal = log[muscleKey] || 0;
-        updatedMuscleObj[muscleKey] = Math.min(100, currentVal + 10);
+    let targetMuscleObj = {};
+    const muscleKey = workoutForm.muscleGroup.toLowerCase();
+    if (['chest', 'triceps', 'shoulders', 'legs', 'back', 'arms'].includes(muscleKey)) {
+      const currentVal = activeLog[muscleKey] || 0;
+      targetMuscleObj[muscleKey] = Math.min(100, currentVal + 10);
+    }
+
+    updateActiveLog(log => ({
+      ...log,
+      sets: targetSets,
+      reps: targetReps,
+      activeMin: targetActiveMin,
+      calories: targetCalories,
+      ...targetMuscleObj
+    }));
+
+    if (currentUser) {
+      try {
+        await fetch(`/api/logs/${currentUser.id}/${selectedDayNum}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sets: targetSets,
+            reps: targetReps,
+            activeMin: targetActiveMin,
+            calories: targetCalories,
+            ...targetMuscleObj
+          })
+        });
+      } catch (err) {
+        console.error("Failed to sync logged sets to backend:", err);
       }
-
-      return {
-        ...log,
-        sets: updatedSets,
-        reps: updatedReps,
-        activeMin: updatedActiveMin,
-        calories: updatedCalories,
-        ...updatedMuscleObj
-      };
-    });
+    }
 
     if (workoutForm.weight >= 105) {
       const newPrId = prLogs.length + 1;
@@ -407,38 +487,62 @@ function App() {
   ]);
 
   // --- Quick Increment Stats Helpers ---
-  const addSteps = (amount) => {
-    updateActiveLog(log => {
-      const newSteps = Math.max(0, log.steps + amount);
-      const calBurned = Math.round(amount * 0.04);
-      const distKm = parseFloat((amount * 0.0008).toFixed(2));
-      return {
-        ...log,
-        steps: newSteps,
-        calories: Math.max(0, log.calories + calBurned),
-        km: parseFloat(Math.max(0, log.km + distKm).toFixed(1))
-      };
-    });
+  const addSteps = async (amount) => {
+    const newSteps = Math.max(0, activeLog.steps + amount);
+    const calBurned = Math.round(amount * 0.04);
+    const newCalories = Math.max(0, activeLog.calories + calBurned);
+    const distKm = parseFloat((amount * 0.0008).toFixed(2));
+    const newKm = parseFloat(Math.max(0, activeLog.km + distKm).toFixed(1));
+
+    updateActiveLog(log => ({
+      ...log,
+      steps: newSteps,
+      calories: newCalories,
+      km: newKm
+    }));
+
+    if (currentUser) {
+      try {
+        await fetch(`/api/logs/${currentUser.id}/${selectedDayNum}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ steps: newSteps, calories: newCalories, km: newKm })
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
     triggerToast(`🚶‍♂️ Steps updated: ${amount > 0 ? '+' : ''}${amount.toLocaleString()}`);
   };
 
-  const addHydration = (amount) => {
-    updateActiveLog(log => {
-      let currentVal = log.water;
-      let val = 0;
-      if (typeof currentVal === 'string') {
-        val = parseFloat(currentVal.replace(' L', ''));
-      } else {
-        val = currentVal;
+  const addHydration = async (amount) => {
+    let currentVal = activeLog.water;
+    let val = 0;
+    if (typeof currentVal === 'string') {
+      val = parseFloat(currentVal.replace(' L', ''));
+    } else {
+      val = currentVal;
+    }
+    
+    let newVal = Math.max(0, val + amount);
+    let formattedVal = newVal;
+    if (typeof currentVal === 'string') {
+      formattedVal = `${newVal.toFixed(1)} L`;
+    }
+
+    updateActiveLog(log => ({ ...log, water: formattedVal }));
+
+    if (currentUser) {
+      try {
+        await fetch(`/api/logs/${currentUser.id}/${selectedDayNum}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ water: formattedVal })
+        });
+      } catch (err) {
+        console.error(err);
       }
-      
-      let newVal = Math.max(0, val + amount);
-      let formattedVal = newVal;
-      if (typeof currentVal === 'string') {
-        formattedVal = `${newVal.toFixed(1)} L`;
-      }
-      return { ...log, water: formattedVal };
-    });
+    }
     triggerToast(`💧 Water intake updated!`);
   };
 
@@ -451,27 +555,64 @@ function App() {
   };
 
   // Helper to click-toggle water segment glasses in status view
-  const toggleWaterSegment = (index) => {
-    setHydrationLogs(prev => {
-      const targetCount = index + 1;
-      const lastLogged = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
-      triggerToast(`💧 Hydration updated to ${targetCount}/8 glasses`);
-      return {
-        ...prev,
-        glassesLog: targetCount,
-        lastLogTime: lastLogged
-      };
-    });
+  const toggleWaterSegment = async (index) => {
+    const targetCount = index + 1;
+    const lastLogged = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
+    
+    setHydrationLogs(prev => ({
+      ...prev,
+      glassesLog: targetCount,
+      lastLogTime: lastLogged
+    }));
+
+    updateActiveLog(log => ({ ...log, water: targetCount }));
+
+    if (currentUser) {
+      try {
+        await fetch(`/api/logs/${currentUser.id}/${selectedDayNum}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ water: targetCount })
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    triggerToast(`💧 Hydration updated to ${targetCount}/8 glasses`);
   };
 
   if (currentView === 'landing') {
     return <LandingPage onViewChange={setCurrentView} />;
   }
   if (currentView === 'login') {
-    return <LoginPage onViewChange={setCurrentView} />;
+    return (
+      <LoginPage 
+        onViewChange={setCurrentView} 
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          setUserProfile(user);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          fetchUserData(user.id);
+          setCurrentView('app');
+          triggerToast(`👋 Welcome back, ${user.name}!`);
+        }} 
+      />
+    );
   }
   if (currentView === 'register') {
-    return <RegisterPage onViewChange={setCurrentView} />;
+    return (
+      <RegisterPage 
+        onViewChange={setCurrentView} 
+        onRegisterSuccess={(user) => {
+          setCurrentUser(user);
+          setUserProfile(user);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          fetchUserData(user.id);
+          setCurrentView('app');
+          triggerToast(`✨ Welcome to FitSync, ${user.name}!`);
+        }} 
+      />
+    );
   }
 
   return (
@@ -2180,6 +2321,8 @@ function App() {
                 <div className="mt-lg border-t border-white/5 pt-lg">
                   <button
                     onClick={() => {
+                      localStorage.removeItem('currentUser');
+                      setCurrentUser(null);
                       setCurrentView('landing');
                       setCurrentTab('home');
                       triggerToast('👋 Signed out successfully.');

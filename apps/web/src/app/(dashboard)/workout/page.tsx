@@ -44,6 +44,7 @@ export default async function WorkoutPage() {
               workouts.map((workout) => (
                 <PlanCard
                   key={workout.id}
+                  id={workout.id}
                   name={workout.name}
                   days={`${workout.daysPerWeek} days/week`}
                   difficulty={workout.difficulty}
@@ -70,7 +71,6 @@ export default async function WorkoutPage() {
             )}
           </div>
         </div>
-...
         {/* Exercise Database Quick Search */}
         <div className="space-y-6">
           <h2 className="text-xl font-bold font-heading">Exercise Database</h2>
@@ -101,50 +101,54 @@ export default async function WorkoutPage() {
 }
 
 function PlanCard({
+  id,
   name,
   days,
   difficulty,
   exercises,
 }: {
+  id: string;
   name: string;
   days: string;
   difficulty: string;
   exercises: number;
 }) {
   return (
-    <Card className="p-6 glass border-border/40 hover:border-secondary/40 transition-all cursor-pointer group">
-      <div className="flex justify-between items-start mb-4">
-        <div className="h-10 w-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
-          <Dumbbell className="h-5 w-5" />
+    <Link href={`/workout/${id}`}>
+      <Card className="p-6 glass border-border/40 hover:border-secondary/40 transition-all cursor-pointer group h-full">
+        <div className="flex justify-between items-start mb-4">
+          <div className="h-10 w-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+            <Dumbbell className="h-5 w-5" />
+          </div>
+          <div className="px-2 py-1 rounded-full bg-muted text-[10px] font-bold uppercase tracking-wider text-muted-foreground border border-white/5">
+            {difficulty}
+          </div>
         </div>
-        <div className="px-2 py-1 rounded-full bg-muted text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          {difficulty}
+        <h3 className="text-lg font-bold font-heading group-hover:text-secondary transition-colors">
+          {name}
+        </h3>
+        <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground font-medium">
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4 text-secondary/70" />
+            {days}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Zap className="h-4 w-4 text-accent/70" />
+            {exercises} Modules
+          </div>
         </div>
-      </div>
-      <h3 className="text-lg font-bold font-heading group-hover:text-secondary transition-colors">
-        {name}
-      </h3>
-      <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          {days}
-        </div>
-        <div className="flex items-center gap-1">
-          <Zap className="h-3 w-3" />
-          {exercises} Exercises
-        </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 }
 
 function QuickExercise({ name, category }: { name: string; category: string }) {
   return (
-    <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group">
-      <span className="text-sm font-medium group-hover:text-secondary transition-colors">
+    <div className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors cursor-pointer group">
+      <span className="text-sm font-bold text-white group-hover:text-secondary transition-colors">
         {name}
       </span>
-      <span className="text-[10px] font-bold uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded">
+      <span className="text-[10px] font-extrabold uppercase text-muted-foreground bg-white/5 border border-white/10 px-2 py-0.5 rounded-md">
         {category}
       </span>
     </div>

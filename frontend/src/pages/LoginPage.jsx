@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, AlertCircle } from "lucide-react";
 
-export default function LoginPage({ onViewChange }) {
+export default function LoginPage({ onViewChange, onLoginSuccess }) {
   const [role, setRole] = useState("athlete");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,32 +30,60 @@ export default function LoginPage({ onViewChange }) {
     };
   }, [role]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Simulate login validation
-    setTimeout(() => {
-      if (!email.includes("@")) {
-        setError("Invalid email address format. Please try again.");
-        setIsLoading(false);
-      } else if (password.length < 6) {
-        setError("Password must be at least 6 characters long.");
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
-        onViewChange("app"); // Logged in!
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Authentication failed.");
       }
-    }, 1200);
+      setIsLoading(false);
+      onLoginSuccess(data.user);
+    } catch (err) {
+      setError(err.message);
+      setIsLoading(false);
+    }
   };
 
-  const handleSocialLogin = () => {
+  const handleSocialLogin = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    setError("");
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "alex@fitsync.com", password: "password123" })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setIsLoading(false);
+        onLoginSuccess(data.user);
+        return;
+      }
+
+      const regResponse = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Alex Rivers", email: "alex@fitsync.com", password: "password123" })
+      });
+      const regData = await regResponse.json();
+      if (!regResponse.ok) {
+        throw new Error(regData.error || "Social authentication failed.");
+      }
       setIsLoading(false);
-      onViewChange("app"); // Logged in!
-    }, 1000);
+      onLoginSuccess(regData.user);
+    } catch (err) {
+      setError(err.message);
+      setIsLoading(false);
+    }
   };
 
   return (

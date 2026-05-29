@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Activity, 
   Plus, 
@@ -9,7 +9,7 @@ import {
   TrendingUp
 } from "lucide-react";
 
-export default function WeightTracker({ userProfile, setUserProfile, triggerToast }) {
+export default function WeightTracker({ userProfile, setUserProfile, triggerToast, currentUser }) {
   const [unit, setUnit] = useState("kg"); // 'kg' | 'lbs'
   const [weightVal, setWeightVal] = useState("");
   const [logDate, setLogDate] = useState(new Date().toISOString().split("T")[0]);
@@ -24,6 +24,29 @@ export default function WeightTracker({ userProfile, setUserProfile, triggerToas
     { id: 6, date: "May 29", kg: 68.0 }
   ]);
 
+  useEffect(() => {
+    const loadWeightHistory = async () => {
+      if (currentUser) {
+        try {
+          const res = await fetch(`/api/weight/${currentUser.id}`);
+          if (res.ok) {
+            const raw = await res.json();
+            if (raw && raw.length > 0) {
+              setHistory(raw.map(item => ({
+                id: item._id,
+                date: item.date,
+                kg: item.weight
+              })));
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load weight history:", err);
+        }
+      }
+    };
+    loadWeightHistory();
+  }, [currentUser]);
+
   const convertValue = (val, toUnit) => {
     if (toUnit === "lbs") {
       return parseFloat((val * 2.20462).toFixed(1));
@@ -34,7 +57,7 @@ export default function WeightTracker({ userProfile, setUserProfile, triggerToas
   const currentWeightDisplay = unit === "kg" ? userProfile.weight : convertValue(userProfile.weight, "lbs");
   const targetWeightDisplay = unit === "kg" ? 62.0 : convertValue(62.0, "lbs"); // Mock goal weight is 62kg
   
-  const handleLogWeight = (e) => {
+  const handleLogWeight = async (e) => {
     e.preventDefault();
     const parsed = parseFloat(weightVal);
     if (!parsed || parsed <= 0) return;
@@ -47,16 +70,37 @@ export default function WeightTracker({ userProfile, setUserProfile, triggerToas
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const displayDate = `${months[dateObj.getMonth()]} ${dateObj.getDate()}`;
 
-    const newLog = {
-      id: history.length + 1,
-      date: displayDate,
-      kg: kgVal
-    };
+    if (currentUser) {
+      try {
+        const res = await fetch(`/api/weight/${currentUser.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ weight: kgVal, date: displayDate })
+        });
+        if (res.ok) {
+          const saved = await res.json();
+          setHistory(prev => [...prev, { id: saved._id, date: saved.date, kg: saved.weight }]);
+        }
 
-    const newHistory = [...history, newLog];
-    setHistory(newHistory);
+        // Update profile weight in database as well
+        await fetch(`/api/profile/${currentUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ weight: parseFloat(kgVal.toFixed(1)) })
+        });
+      } catch (err) {
+        console.error("Failed to save weight log:", err);
+      }
+    } else {
+      const newLog = {
+        id: Date.now(),
+        date: displayDate,
+        kg: kgVal
+      };
+      setHistory(prev => [...prev, newLog]);
+    }
     
-    // Update user profile weight
+    // Update user profile weight locally
     setUserProfile(prev => ({
       ...prev,
       weight: parseFloat(kgVal.toFixed(1))

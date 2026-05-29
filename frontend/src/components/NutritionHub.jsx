@@ -20,7 +20,8 @@ export default function NutritionHub({
   setShowMealScanner, 
   userProfile,
   loggedMeals,
-  triggerToast
+  triggerToast,
+  onLogMeal
 }) {
   const [selectedMealType, setSelectedMealType] = useState("all");
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
@@ -58,7 +59,6 @@ export default function NutritionHub({
     if (!quickAddForm.name.trim()) return;
 
     const newMeal = {
-      id: loggedMeals.length + 1,
       name: quickAddForm.name,
       calories: parseInt(quickAddForm.calories) || 0,
       protein: parseInt(quickAddForm.protein) || 0,
@@ -69,8 +69,13 @@ export default function NutritionHub({
       img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-'
     };
 
-    setCalorieIntake(prev => prev + newMeal.calories);
-    loggedMeals.unshift(newMeal); // Prepend to share list reference
+    if (onLogMeal) {
+      onLogMeal(newMeal);
+    } else {
+      setCalorieIntake(prev => prev + newMeal.calories);
+      loggedMeals.unshift({ id: loggedMeals.length + 1, ...newMeal });
+    }
+    
     triggerToast(`🥗 Logged: ${newMeal.name} (+${newMeal.calories} kcal)`);
     setShowQuickAddModal(false);
     setQuickAddForm({

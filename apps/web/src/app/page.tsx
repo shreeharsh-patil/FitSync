@@ -23,9 +23,6 @@ export default function LandingPage() {
     offset: ["start start", "end end"],
   });
 
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-
   return (
     <div ref={containerRef} className="flex flex-col min-h-screen bg-background overflow-hidden selection:bg-secondary selection:text-primary relative">
       <Header />
