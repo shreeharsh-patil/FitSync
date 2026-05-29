@@ -1,9 +1,6 @@
 import "dotenv/config"
-import { PrismaClient, Difficulty, ExerciseCategory } from '@prisma/client'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
-
-const adapter = new PrismaBetterSqlite3({ url: "file:dev.db" })
-const prisma = new PrismaClient({ adapter })
+import { Difficulty, ExerciseCategory } from '@prisma/client'
+import prisma from '../src/lib/db'
 
 const exercises = [
   {

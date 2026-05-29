@@ -144,11 +144,9 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
 
   // Initialize Socket.io connection and listeners
   useEffect(() => {
-    fetch("/api/socket").finally(() => {
-      const socket = io({
-        path: "/api/socket",
-      });
+    const socketServerUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
 
+    const setupSocket = (socket: any) => {
       socketRef.current = socket;
 
       socket.on("connect", () => {
@@ -203,7 +201,21 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
           setTimeout(() => setShowNotificationToast(false), 4500);
         }
       });
-    });
+    };
+
+    if (socketServerUrl) {
+      const socket = io(socketServerUrl, {
+        transports: ["websocket"],
+      });
+      setupSocket(socket);
+    } else {
+      fetch("/api/socket").finally(() => {
+        const socket = io({
+          path: "/api/socket",
+        });
+        setupSocket(socket);
+      });
+    }
 
     return () => {
       if (socketRef.current) {
