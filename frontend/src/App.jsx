@@ -546,6 +546,132 @@ function App() {
     triggerToast(`💧 Water intake updated!`);
   };
 
+  const handleLogMeal = async (meal) => {
+    const mealPayload = {
+      name: meal.name,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fats: meal.fats,
+      type: meal.type || "Snack",
+      time: meal.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      img: meal.img || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-'
+    };
+
+    if (currentUser) {
+      try {
+        const res = await fetch(`/api/meals/${currentUser.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(mealPayload)
+        });
+        if (res.ok) {
+          const saved = await res.json();
+          setLoggedMeals(prev => [saved, ...prev]);
+        }
+      } catch (err) {
+        console.error("Failed to log meal:", err);
+      }
+    } else {
+      const offlineMeal = {
+        id: Date.now(),
+        ...mealPayload
+      };
+      setLoggedMeals(prev => [offlineMeal, ...prev]);
+    }
+    setCalorieIntake(prev => prev + mealPayload.calories);
+  };
+
+  const handleSaveRoutine = async (routineName, exercisesList, category = 'Custom Routine') => {
+    const mappedExercises = exercisesList.map(e => {
+      let repsStr = "";
+      if (typeof e.reps === 'string') {
+        repsStr = e.reps;
+      } else if (e.sets !== undefined && e.reps !== undefined) {
+        repsStr = `${e.sets} Sets x ${e.reps} Reps`;
+      } else {
+        repsStr = "3 Sets x 10 Reps";
+      }
+
+      let noteStr = "";
+      if (typeof e.note === 'string') {
+        noteStr = e.note;
+      } else if (e.weight !== undefined) {
+        noteStr = `${e.weight} kg`;
+      }
+
+      return {
+        name: e.name,
+        reps: repsStr,
+        note: noteStr
+      };
+    });
+
+    const routinePayload = {
+      name: routineName,
+      routine: category,
+      repinfo: `${exercisesList.length} Exercises`,
+      exercises: mappedExercises
+    };
+
+    if (currentUser) {
+      try {
+        const res = await fetch(`/api/routines/${currentUser.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(routinePayload)
+        });
+        if (res.ok) {
+          const saved = await res.json();
+          setRoutinesList(prev => [saved, ...prev]);
+        }
+      } catch (err) {
+        console.error("Failed to save routine:", err);
+      }
+    } else {
+      const offlineRoutine = {
+        id: Date.now(),
+        ...routinePayload
+      };
+      setRoutinesList(prev => [offlineRoutine, ...prev]);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (currentUser) {
+      try {
+        const res = await fetch(`/api/profile/${currentUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: userProfile.name,
+            level: userProfile.level,
+            height: userProfile.height,
+            weight: userProfile.weight,
+            targetBmi: userProfile.targetBmi,
+            avatar: userProfile.avatar,
+            goals: userProfile.goals
+          })
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          const newUserData = { ...currentUser, ...updated };
+          setCurrentUser(newUserData);
+          localStorage.setItem('currentUser', JSON.stringify(newUserData));
+          triggerToast('✨ Profile settings saved to database!');
+        } else {
+          triggerToast('❌ Failed to save profile settings.');
+        }
+      } catch (err) {
+        console.error("Failed to save profile:", err);
+        triggerToast('❌ Failed to save profile settings.');
+      }
+    } else {
+      triggerToast('✨ Profile preferences updated locally.');
+    }
+  };
+
+
   const stepsPercent = Math.min(100, Math.round((activeLog.steps / userProfile.goals.steps) * 100));
   const activeMinPercent = Math.min(100, Math.round((activeLog.activeMin / userProfile.goals.activeMin) * 100));
   
@@ -2139,6 +2265,7 @@ function App() {
             userProfile={userProfile}
             loggedMeals={loggedMeals}
             triggerToast={triggerToast}
+            onLogMeal={handleLogMeal}
           />
         )}
 
@@ -2153,6 +2280,7 @@ function App() {
                 userProfile={userProfile}
                 activeLog={activeLog}
                 triggerToast={triggerToast}
+                currentUser={currentUser}
                 posts={socialPosts}
                 setPosts={setSocialPosts}
               />
@@ -2318,7 +2446,13 @@ function App() {
                   className="w-full accent-secondary-fixed h-1 bg-surface-variant cursor-pointer"
                 />
 
-                <div className="mt-lg border-t border-white/5 pt-lg">
+                <div className="mt-lg border-t border-white/5 pt-lg flex flex-col gap-sm">
+                  <button
+                    onClick={handleUpdateProfile}
+                    className="w-full py-3 bg-primary text-on-primary hover:bg-white hover:text-primary transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-xs uppercase tracking-widest cursor-pointer mb-md"
+                  >
+                    Save Settings to Database
+                  </button>
                   <button
                     onClick={() => {
                       localStorage.removeItem('currentUser');
@@ -2366,21 +2500,7 @@ function App() {
             </button>
             <AIMealScanner 
               onLogNutrition={(meal) => {
-                setCalorieIntake(prev => prev + meal.calories);
-                
-                const newLoggedMeal = {
-                  id: loggedMeals.length + 1,
-                  name: meal.name,
-                  calories: meal.calories,
-                  protein: meal.protein,
-                  carbs: meal.carbs,
-                  fats: meal.fats,
-                  type: meal.type || "Snack",
-                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                  img: meal.img || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-'
-                };
-                
-                setLoggedMeals(prev => [newLoggedMeal, ...prev]);
+                handleLogMeal(meal);
                 triggerToast(`🥗 Logged AI Meal Scan: ${meal.name} (+${meal.calories} kcal)`);
                 setTimeout(() => setShowMealScanner(false), 2000);
               }} 
@@ -2401,14 +2521,7 @@ function App() {
             </button>
             <WorkoutBuilder 
               onSaveRoutine={(routineName, exercisesList) => {
-                setRoutinesList(prev => [
-                  { 
-                    name: routineName, 
-                    routine: 'Custom Routine', 
-                    repinfo: `${exercisesList.length} Exercises`
-                  },
-                  ...prev
-                ]);
+                handleSaveRoutine(routineName, exercisesList, 'Custom Routine');
                 triggerToast(`🏋️‍♂️ Custom routine '${routineName}' created!`);
                 setTimeout(() => setShowWorkoutBuilder(false), 1500);
               }} 
@@ -2429,14 +2542,7 @@ function App() {
             </button>
             <AIWorkoutGenerator 
               onSaveRoutine={(routineName, exercisesList) => {
-                setRoutinesList(prev => [
-                  { 
-                    name: routineName, 
-                    routine: 'AI Optimized', 
-                    repinfo: `${exercisesList.length} Exercises`
-                  },
-                  ...prev
-                ]);
+                handleSaveRoutine(routineName, exercisesList, 'AI Optimized');
                 triggerToast(`🏋️‍♂️ AI routine '${routineName}' saved!`);
                 setTimeout(() => setShowAIWorkoutGenerator(false), 1500);
               }}
@@ -2460,6 +2566,7 @@ function App() {
               userProfile={userProfile}
               setUserProfile={setUserProfile}
               triggerToast={triggerToast}
+              currentUser={currentUser}
             />
           </div>
         </div>

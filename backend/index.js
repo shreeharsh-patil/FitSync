@@ -1,4 +1,15 @@
 require('dotenv').config();
+
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION AT:', promise, 'REASON:', reason);
+  process.exit(1);
+});
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -26,6 +37,17 @@ const io = new Server(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Normalize request URL for Vercel deployment (which strips /api prefix)
+app.use((req, res, next) => {
+  const apiPrefixes = ['/auth', '/profile', '/logs', '/routines', '/meals', '/weight', '/posts'];
+  const hasPrefix = apiPrefixes.some(prefix => req.url.startsWith(prefix));
+  if (hasPrefix && !req.url.startsWith('/api')) {
+    req.url = '/api' + req.url;
+  }
+  next();
+});
+
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fitsync';
