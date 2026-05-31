@@ -15,7 +15,19 @@ import { Heart, Flame, RefreshCw, Check, Minus, Plus, Wifi, Battery, Play, Squar
  * @param {Function} onSyncHeartRate - Callback when heart rate syncs/updates.
  * @param {Function} onSyncSteps - Callback when steps are added.
  */
-export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
+export default function WatchSimulator({ 
+  isConnected = true, 
+  setIsConnected, 
+  currentSteps, 
+  currentActiveMin, 
+  dashboardWorkoutActive, 
+  dashboardWorkoutPaused, 
+  dashboardWorkoutSeconds, 
+  onSyncHeartRate, 
+  onSyncSteps, 
+  onStartWorkout, 
+  onStopWorkout 
+}) {
   // --- Smartwatch Simulated States ---
   const [heartRate, setHeartRate] = useState(72);
   const [steps, setSteps] = useState(6280);
@@ -24,7 +36,6 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
   // --- Interface States ---
   const [autoSync, setAutoSync] = useState(true);
   const [isSpiked, setIsSpiked] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState(false);
   const [watchTime, setWatchTime] = useState('10:09');
@@ -32,6 +43,36 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
   // --- Workout Session Simulator ---
   const [workoutActive, setWorkoutActive] = useState(false);
   const [workoutSeconds, setWorkoutSeconds] = useState(0);
+
+  // --- Real BLE Wearable States ---
+  const [bleDevice, setBleDevice] = useState(null);
+  const [bleError, setBleError] = useState(null);
+
+  // Sync steps/activeMin with dashboard when connected
+  useEffect(() => {
+    if (isConnected && currentSteps !== undefined) {
+      setSteps(currentSteps);
+    }
+  }, [currentSteps, isConnected]);
+
+  useEffect(() => {
+    if (isConnected && currentActiveMin !== undefined) {
+      setActiveMin(currentActiveMin);
+    }
+  }, [currentActiveMin, isConnected]);
+
+  // Sync workout status and elapsed seconds with dashboard when connected
+  useEffect(() => {
+    if (isConnected && dashboardWorkoutActive !== undefined) {
+      setWorkoutActive(dashboardWorkoutActive);
+    }
+  }, [dashboardWorkoutActive, isConnected]);
+
+  useEffect(() => {
+    if (isConnected && dashboardWorkoutSeconds !== undefined) {
+      setWorkoutSeconds(dashboardWorkoutSeconds);
+    }
+  }, [dashboardWorkoutSeconds, isConnected]);
 
   // Update watch clock
   useEffect(() => {
@@ -46,9 +87,9 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Workout Session Timer
+  // Workout Session Timer (only run locally if disconnected)
   useEffect(() => {
-    if (!workoutActive) return;
+    if (!workoutActive || isConnected) return;
 
     const interval = setInterval(() => {
       setWorkoutSeconds((prev) => {
@@ -62,10 +103,12 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [workoutActive]);
+  }, [workoutActive, isConnected]);
 
   // Handle auto-fluctuation of heart rate when normal (or spiked)
   useEffect(() => {
+    if (bleDevice) return;
+
     const hrInterval = setInterval(() => {
       setHeartRate((prev) => {
         let baseMin = 60;
@@ -86,7 +129,7 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
         if (newHr > baseMax) newHr = baseMax - Math.floor(Math.random() * 5);
 
         // Sync immediately if autoSync is on
-        if (autoSync && onSyncHeartRate) {
+        if (autoSync && onSyncHeartRate && isConnected) {
           onSyncHeartRate(newHr);
         }
 
@@ -95,18 +138,19 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
     }, 2500);
 
     return () => clearInterval(hrInterval);
-  }, [isSpiked, workoutActive, autoSync, onSyncHeartRate]);
+  }, [isSpiked, workoutActive, autoSync, onSyncHeartRate, isConnected, bleDevice]);
 
   // Sync to parent app when heartRate changes (if autoSync is on)
   useEffect(() => {
-    if (autoSync && onSyncHeartRate) {
+    if (bleDevice) return;
+    if (autoSync && onSyncHeartRate && isConnected) {
       onSyncHeartRate(heartRate);
     }
-  }, [heartRate, autoSync, onSyncHeartRate]);
+  }, [heartRate, autoSync, onSyncHeartRate, isConnected, bleDevice]);
 
   // Manual Trigger Sync
   const triggerManualSync = () => {
-    if (onSyncHeartRate) {
+    if (onSyncHeartRate && isConnected) {
       onSyncHeartRate(heartRate);
     }
     setSyncFeedback(true);
@@ -127,7 +171,7 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
   // Adjust Steps (passes delta to callback)
   const addStepsAmount = (amount) => {
     setSteps((prev) => prev + amount);
-    if (onSyncSteps) {
+    if (onSyncSteps && isConnected) {
       onSyncSteps(amount);
     }
     setSyncFeedback(true);
@@ -136,13 +180,21 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
 
   // Toggle Workout Active State
   const toggleWorkoutActive = () => {
-    setWorkoutActive((prev) => {
-      const next = !prev;
-      if (!next) {
-        setWorkoutSeconds(0);
+    if (isConnected) {
+      if (workoutActive) {
+        if (onStopWorkout) onStopWorkout();
+      } else {
+        if (onStartWorkout) onStartWorkout();
       }
-      return next;
-    });
+    } else {
+      setWorkoutActive((prev) => {
+        const next = !prev;
+        if (!next) {
+          setWorkoutSeconds(0);
+        }
+        return next;
+      });
+    }
   };
 
   // Simulate Workout Spike
@@ -154,8 +206,92 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
       setIsSpiked(true);
       setHeartRate(148);
       // Automatically activate workout screen mode
-      setWorkoutActive(true);
+      if (isConnected) {
+        if (!workoutActive && onStartWorkout) {
+          onStartWorkout();
+        }
+      } else {
+        setWorkoutActive(true);
+      }
     }
+  };
+
+  // --- Real Web Bluetooth Smartwatch Connection (Noise ColorFit / BLE device) ---
+  useEffect(() => {
+    return () => {
+      if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+      }
+    };
+  }, [bleDevice]);
+
+  const connectBleDevice = async () => {
+    setBleError(null);
+    if (!navigator.bluetooth) {
+      setBleError("Web Bluetooth is not supported in this browser. Try Chrome/Edge.");
+      return;
+    }
+
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [
+          { services: ['heart_rate'] },
+          { namePrefix: 'Noise' },
+          { namePrefix: 'ColorFit' },
+          { namePrefix: 'ColourFit' }
+        ],
+        optionalServices: ['heart_rate', 'battery_service']
+      });
+
+      setBleDevice(device);
+      
+      const server = await device.gatt.connect();
+
+      device.addEventListener('gattserverdisconnected', () => {
+        setBleDevice(null);
+        setBleError("Device disconnected.");
+      });
+
+      let service;
+      try {
+        service = await server.getPrimaryService('heart_rate');
+      } catch (e) {
+        throw new Error("Connected but standard BLE Heart Rate service not found.");
+      }
+      
+      const characteristic = await service.getCharacteristic('heart_rate_measurement');
+      await characteristic.startNotifications();
+      
+      characteristic.addEventListener('characteristicvaluechanged', (event) => {
+        const value = event.target.value;
+        const flags = value.getUint8(0);
+        const rate16Bits = flags & 0x1;
+        let heartRateVal = 0;
+        if (rate16Bits) {
+          heartRateVal = value.getUint16(1, true);
+        } else {
+          heartRateVal = value.getUint8(1);
+        }
+
+        setHeartRate(heartRateVal);
+        
+        if (onSyncHeartRate) {
+          onSyncHeartRate(heartRateVal);
+        }
+      });
+      
+    } catch (err) {
+      console.error(err);
+      setBleError(err.message || "Failed to connect to device.");
+      setBleDevice(null);
+    }
+  };
+
+  const disconnectBleDevice = () => {
+    if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected) {
+      bleDevice.gatt.disconnect();
+    }
+    setBleDevice(null);
   };
 
   // Format workout timer display
@@ -215,15 +351,23 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
             {/* Widget Title Header */}
             <div className="bg-surface-container/80 px-md py-3 border-b border-white/5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <Radio className={`w-4 h-4 text-primary-fixed ${isConnected ? 'animate-pulse' : 'text-on-surface-variant'}`} />
-                <span className="text-xs font-bold font-display-sm uppercase tracking-wider text-primary">FitSync Watch Sim</span>
+                <Radio className={`w-4 h-4 text-primary-fixed ${(isConnected || bleDevice) ? 'animate-pulse' : 'text-on-surface-variant'}`} />
+                <span className="text-xs font-bold font-display-sm uppercase tracking-wider text-primary truncate max-w-[120px]" title={bleDevice ? bleDevice.name : "FitSync Watch Sim"}>
+                  {bleDevice ? bleDevice.name : "FitSync Watch Sim"}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setIsConnected(!isConnected)}
-                  title={isConnected ? 'Disconnect Watch' : 'Connect Watch'}
+                  onClick={() => {
+                    if (bleDevice) {
+                      disconnectBleDevice();
+                    } else if (setIsConnected) {
+                      setIsConnected(!isConnected);
+                    }
+                  }}
+                  title={bleDevice ? 'Disconnect Real Wearable' : isConnected ? 'Disconnect Mock Watch' : 'Connect Mock Watch'}
                   className={`w-5 h-5 rounded-full flex items-center justify-center text-xs transition-colors hover:bg-white/5 cursor-pointer ${
-                    isConnected ? 'text-primary-fixed' : 'text-on-surface-variant'
+                    (isConnected || bleDevice) ? 'text-primary-fixed' : 'text-on-surface-variant'
                   }`}
                 >
                   <Bluetooth className="w-3.5 h-3.5" />
@@ -323,7 +467,8 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
                       {workoutActive && (
                         <div className="flex justify-between items-center text-[8px] text-red-400 border-t border-white/5 pt-0.5 mt-0.5 font-bold uppercase tracking-wider">
                           <span className="flex items-center gap-0.5">
-                            <Flame className="w-2.5 h-2.5 animate-pulse" /> Workout
+                            <Flame className={`w-2.5 h-2.5 ${dashboardWorkoutPaused && isConnected ? '' : 'animate-pulse'}`} />
+                            {dashboardWorkoutPaused && isConnected ? 'Paused' : 'Workout'}
                           </span>
                           <span>{formatWorkoutTime(workoutSeconds)}</span>
                         </div>
@@ -449,7 +594,7 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
                 </label>
                 <button 
                   onClick={triggerManualSync}
-                  disabled={!isConnected}
+                  disabled={!isConnected && !bleDevice}
                   className="flex items-center gap-1 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {syncFeedback ? (
@@ -464,6 +609,44 @@ export default function WatchSimulator({ onSyncHeartRate, onSyncSteps }) {
                     </>
                   )}
                 </button>
+              </div>
+
+              {/* Real BLE Wearable Connectivity Controls */}
+              <div className="flex flex-col gap-1.5 pt-sm border-t border-white/5">
+                <span className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1">
+                  <Bluetooth className="w-3 h-3 text-primary-fixed animate-pulse" /> Noise Wearable Bluetooth Sync
+                </span>
+                <div className="flex flex-col gap-xs mt-0.5">
+                  {bleDevice ? (
+                    <div className="flex flex-col gap-sm bg-surface-container-high/40 p-2.5 rounded-xl border border-primary-fixed/20">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-primary truncate max-w-[145px]">{bleDevice.name || 'ColourFit 3'}</span>
+                        <span className="text-[10px] text-green-400 font-bold flex items-center gap-1 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span> Live Synced
+                        </span>
+                      </div>
+                      <button
+                        onClick={disconnectBleDevice}
+                        className="w-full py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-[10px] font-bold text-red-300 active:scale-95 transition-all cursor-pointer"
+                      >
+                        Disconnect Smartwatch
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={connectBleDevice}
+                      className="w-full py-2 px-md rounded-xl bg-gradient-to-r from-primary to-primary-fixed text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-primary/10 hover:shadow-primary/20 hover:scale-[1.01] active:scale-98 transition-all cursor-pointer"
+                    >
+                      <Bluetooth className="w-3.5 h-3.5" />
+                      Connect ColourFit Plus 3
+                    </button>
+                  )}
+                  {bleError && (
+                    <span className="text-[9px] text-error font-semibold mt-1 leading-tight flex items-start gap-1">
+                      ⚠️ {bleError}
+                    </span>
+                  )}
+                </div>
               </div>
 
             </div>

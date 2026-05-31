@@ -328,12 +328,15 @@ function App() {
 
   // --- Simulated Heart Rate Sensor ---
   const [liveHeartRate, setLiveHeartRate] = useState(activeLog.bpm);
+  const [watchConnected, setWatchConnected] = useState(true);
 
   useEffect(() => {
     setLiveHeartRate(activeLog.bpm);
   }, [selectedDayNum]);
 
   useEffect(() => {
+    if (watchConnected) return;
+
     const hrInterval = setInterval(() => {
       setLiveHeartRate(prev => {
         let baseMin = 55;
@@ -356,7 +359,7 @@ function App() {
     }, 3000);
 
     return () => clearInterval(hrInterval);
-  }, [workoutActive, workoutPaused, selectedDayNum]);
+  }, [workoutActive, workoutPaused, selectedDayNum, watchConnected]);
 
   // Stopwatch Timer effect
   useEffect(() => {
@@ -2574,8 +2577,17 @@ function App() {
 
       {/* Smartwatch Companion Simulator */}
       <WatchSimulator 
+        isConnected={watchConnected}
+        setIsConnected={setWatchConnected}
+        currentSteps={activeLog.steps}
+        currentActiveMin={activeLog.activeMin}
+        dashboardWorkoutActive={workoutActive}
+        dashboardWorkoutPaused={workoutPaused}
+        dashboardWorkoutSeconds={timerSeconds}
         onSyncHeartRate={(bpm) => setLiveHeartRate(bpm)}
         onSyncSteps={(amount) => addSteps(amount)}
+        onStartWorkout={startWorkout}
+        onStopWorkout={stopWorkout}
       />
 
     </div>
