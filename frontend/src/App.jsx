@@ -63,7 +63,7 @@ function App() {
   }, []);
   
   // Dashboard Section Mode selector: switch between Performance details and Wellness status
-  const [dashboardMode, setDashboardMode] = useState('performance'); // 'performance' | 'wellness'
+  const [dashboardMode, setDashboardMode] = useState('wellness'); // 'performance' | 'wellness'
   
   // AI Tools & Scanners
   const [showMealScanner, setShowMealScanner] = useState(false);
