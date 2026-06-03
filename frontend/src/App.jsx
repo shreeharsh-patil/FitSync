@@ -676,6 +676,7 @@ function App() {
             height: userProfile.height,
             weight: userProfile.weight,
             targetBmi: userProfile.targetBmi,
+            fitnessGoal: userProfile.fitnessGoal,
             avatar: userProfile.avatar,
             goals: userProfile.goals
           })
@@ -2405,6 +2406,20 @@ function App() {
                     onChange={(e) => setUserProfile(prev => ({ ...prev, level: parseInt(e.target.value) || 1 }))}
                     className="bg-background border border-white/10 rounded-lg px-3 py-2 text-sm text-primary focus:outline-none focus:border-primary-fixed"
                   />
+                </div>
+                <div className="flex flex-col gap-1 col-span-1 sm:col-span-2">
+                  <label className="text-xs text-on-surface-variant font-semibold">Fitness Goal Focus</label>
+                  <select 
+                    value={userProfile.fitnessGoal || 'GENERAL'}
+                    onChange={(e) => setUserProfile(prev => ({ ...prev, fitnessGoal: e.target.value }))}
+                    className="bg-background border border-white/10 rounded-lg px-3 py-2.5 text-sm text-primary focus:outline-none focus:border-primary-fixed cursor-pointer"
+                  >
+                    <option value="GENERAL" className="bg-surface">General Fitness / Health</option>
+                    <option value="WEIGHT_LOSS" className="bg-surface">Weight Loss / Fat Burn</option>
+                    <option value="MUSCLE_GAIN" className="bg-surface">Muscle Gain / Hypertrophy</option>
+                    <option value="ENDURANCE" className="bg-surface">Cardiovascular Endurance</option>
+                    <option value="FLEXIBILITY" className="bg-surface">Flexibility & Joint Mobility</option>
+                  </select>
                 </div>
               </div>
 
