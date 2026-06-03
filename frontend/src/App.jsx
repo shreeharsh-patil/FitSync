@@ -660,6 +660,7 @@ function App() {
           const updated = await res.json();
           const newUserData = { ...currentUser, ...updated };
           setCurrentUser(newUserData);
+          setUserProfile(newUserData);
           localStorage.setItem('currentUser', JSON.stringify(newUserData));
           triggerToast('✨ Profile settings saved to database!');
         } else {

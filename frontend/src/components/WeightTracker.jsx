@@ -31,7 +31,7 @@ export default function WeightTracker({ userProfile, setUserProfile, triggerToas
           const res = await fetch(`/api/weight/${currentUser.id}`);
           if (res.ok) {
             const raw = await res.json();
-            if (raw && raw.length > 0) {
+            if (raw) {
               setHistory(raw.map(item => ({
                 id: item._id,
                 date: item.date,
@@ -55,7 +55,12 @@ export default function WeightTracker({ userProfile, setUserProfile, triggerToas
   };
 
   const currentWeightDisplay = unit === "kg" ? userProfile.weight : convertValue(userProfile.weight, "lbs");
-  const targetWeightDisplay = unit === "kg" ? 62.0 : convertValue(62.0, "lbs"); // Mock goal weight is 62kg
+  
+  // Calculate target weight dynamically from user profile height and target BMI
+  const targetWeight = userProfile.targetBmi && userProfile.height
+    ? parseFloat((userProfile.targetBmi * (userProfile.height / 100) * (userProfile.height / 100)).toFixed(1))
+    : 62.0;
+  const targetWeightDisplay = unit === "kg" ? targetWeight : convertValue(targetWeight, "lbs");
   
   const handleLogWeight = async (e) => {
     e.preventDefault();
