@@ -647,6 +647,23 @@ function App() {
     }
   };
 
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 1.5 * 1024 * 1024) {
+      triggerToast("⚠️ Image size should be less than 1.5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setUserProfile(prev => ({ ...prev, avatar: reader.result }));
+      triggerToast("📸 Image uploaded locally. Click save below to persist.");
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleUpdateProfile = async () => {
     if (currentUser) {
       try {
@@ -2419,13 +2436,35 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-on-surface-variant font-semibold">Avatar Image URL</label>
-                <input 
-                  type="text" value={userProfile.avatar}
-                  onChange={(e) => setUserProfile(prev => ({ ...prev, avatar: e.target.value }))}
-                  className="bg-background border border-white/10 rounded-lg px-3 py-2 text-xs text-on-surface-variant focus:outline-none focus:border-primary-fixed"
-                />
+              <div className="flex flex-col gap-2">
+                <label className="text-xs text-on-surface-variant font-semibold">Profile Avatar Image</label>
+                <div className="flex flex-col sm:flex-row items-center gap-md bg-background/30 p-sm rounded-xl border border-white/5">
+                  <img src={userProfile.avatar} alt="Profile preview" className="w-16 h-16 rounded-full object-cover border border-primary-fixed/20 shrink-0" />
+                  <div className="flex-grow flex flex-col gap-2 w-full">
+                    <input 
+                      type="text" value={userProfile.avatar}
+                      onChange={(e) => setUserProfile(prev => ({ ...prev, avatar: e.target.value }))}
+                      placeholder="Paste image URL..."
+                      className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-xs text-on-surface-variant focus:outline-none focus:border-primary-fixed"
+                    />
+                    <div className="flex items-center gap-xs">
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        id="avatar-upload-input"
+                      />
+                      <label 
+                        htmlFor="avatar-upload-input"
+                        className="px-3 py-1 bg-primary-fixed/10 hover:bg-primary-fixed/20 border border-primary-fixed/25 text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer flex items-center justify-center gap-1 active:scale-95 transition-all text-primary-fixed"
+                      >
+                        <span className="material-symbols-outlined text-xs">upload</span>
+                        Upload File
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-lg border-t border-white/5 pt-lg flex flex-col gap-md">
