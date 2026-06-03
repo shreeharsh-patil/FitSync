@@ -71,39 +71,7 @@ function App() {
   const [showAIWorkoutGenerator, setShowAIWorkoutGenerator] = useState(false);
   const [showWeightTrackerModal, setShowWeightTrackerModal] = useState(false);
   const [hasChattedWithAI, setHasChattedWithAI] = useState(false);
-  const [socialPosts, setSocialPosts] = useState([
-    {
-      id: 1,
-      author: "Sarah Miller",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0",
-      time: "2 hours ago",
-      tag: "Cardio",
-      content: "Smashed my morning tempo run around the reservoir! Cadence felt amazing and managed to shave off 12 seconds from my best mile pace. Progressive overload is paying off! 🏃‍♀️✨",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-",
-      reactions: { fire: 14, strong: 8, clap: 6 },
-      userReacted: { fire: false, strong: false, clap: false },
-      comments: [
-        { id: 1, author: "John Doe", text: "Incredible pace, Sarah! What shoes are you running in?", time: "1h ago" },
-        { id: 2, author: "Coach Marcus", text: "Form is looking extremely stable. Keep up the high cadence work.", time: "45m ago" }
-      ],
-      showComments: false
-    },
-    {
-      id: 2,
-      author: "John Doe",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuEtWq0z7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8",
-      time: "5 hours ago",
-      tag: "Strength",
-      content: "Hit a new Personal Record on bench press today: 110kg for 3 clean reps! Rest periods were longer, but the power output felt solid. Fueled by high protein meals all week! 💪🏋️‍♂️",
-      image: "",
-      reactions: { fire: 9, strong: 18, clap: 4 },
-      userReacted: { fire: false, strong: false, clap: false },
-      comments: [
-        { id: 1, author: "Sarah Miller", text: "Massive lift John! Clean reps too!", time: "4h ago" }
-      ],
-      showComments: false
-    }
-  ]);
+  const [socialPosts, setSocialPosts] = useState([]);
   const [routinesList, setRoutinesList] = useState([
     { name: 'Bench Press', routine: 'Chest & Triceps', repinfo: '4 Sets x 8 Reps' },
     { name: 'Incline Dumbbell Flys', routine: 'Chest Focus', repinfo: '3 Sets x 12 Reps' },
@@ -147,21 +115,60 @@ function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleShareToFeed = (content) => {
-    const newPost = {
-      id: socialPosts.length + 1,
+  const handleShareToFeed = async (content) => {
+    const postPayload = {
+      userId: currentUser?.id || "mock-user",
       author: userProfile.name,
       avatar: userProfile.avatar,
-      time: "Just now",
       tag: "Milestone",
       content: content,
-      image: "",
-      reactions: { fire: 0, strong: 0, clap: 0 },
-      userReacted: { fire: false, strong: false, clap: false },
-      comments: [],
-      showComments: false
+      image: ""
     };
-    setSocialPosts(prev => [newPost, ...prev]);
+
+    try {
+      if (currentUser) {
+        const res = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(postPayload)
+        });
+        if (res.ok) {
+          const saved = await res.json();
+          const mapPostData = (post, currentUserId) => {
+            const isReacted = (type) => {
+              if (!post.reactedUsers || !post.reactedUsers[type]) return false;
+              return currentUserId ? post.reactedUsers[type].includes(currentUserId) : false;
+            };
+            return {
+              ...post,
+              id: post._id || post.id,
+              time: post.createdAt ? new Date(post.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : (post.time || "Just now"),
+              userReacted: {
+                fire: isReacted("fire"),
+                strong: isReacted("strong"),
+                clap: isReacted("clap")
+              },
+              showComments: post.showComments || false
+            };
+          };
+          setSocialPosts(prev => [mapPostData(saved, currentUser.id), ...prev]);
+        }
+      } else {
+        const newPost = {
+          ...postPayload,
+          id: Date.now(),
+          time: "Just now",
+          reactions: { fire: 0, strong: 0, clap: 0 },
+          userReacted: { fire: false, strong: false, clap: false },
+          comments: [],
+          showComments: false
+        };
+        setSocialPosts(prev => [newPost, ...prev]);
+      }
+      triggerToast("✨ Share published to FitSync Feed!");
+    } catch (err) {
+      console.error("Failed to share achievement:", err);
+    }
   };
 
   // --- User Profile & Goals ---

@@ -116,6 +116,43 @@ const seedWeightLogs = async (userId) => {
   await WeightLog.insertMany(defaultWeightLogs.map(w => ({ ...w, userId })));
 };
 
+const seedPosts = async (userId) => {
+  const count = await Post.countDocuments();
+  if (count > 0) return;
+
+  const defaultPosts = [
+    {
+      userId,
+      author: "Sarah Miller",
+      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0",
+      tag: "Cardio",
+      content: "Smashed my morning tempo run around the reservoir! Cadence felt amazing and managed to shave off 12 seconds from my best mile pace. Progressive overload is paying off! 🏃‍♀️✨",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-",
+      reactions: { fire: 14, strong: 8, clap: 6 },
+      reactedUsers: { fire: [], strong: [], clap: [] },
+      comments: [
+        { author: "John Doe", text: "Incredible pace, Sarah! What shoes are you running in?", time: "1h ago" },
+        { author: "Coach Marcus", text: "Form is looking extremely stable. Keep up the high cadence work.", time: "45m ago" }
+      ]
+    },
+    {
+      userId,
+      author: "John Doe",
+      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuEtWq0z7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8",
+      tag: "Strength",
+      content: "Hit a new Personal Record on bench press today: 110kg for 3 clean reps! Rest periods were longer, but the power output felt solid. Fueled by high protein meals all week! 💪🏋️‍♂️",
+      image: "",
+      reactions: { fire: 9, strong: 18, clap: 4 },
+      reactedUsers: { fire: [], strong: [], clap: [] },
+      comments: [
+        { author: "Sarah Miller", text: "Massive lift John! Clean reps too!", time: "4h ago" }
+      ]
+    }
+  ];
+
+  await Post.insertMany(defaultPosts);
+};
+
 // ==========================================
 // REST API ENDPOINTS
 // ==========================================
@@ -142,6 +179,7 @@ app.post('/api/auth/register', async (req, res) => {
     await seedRoutines(user._id);
     await seedMeals(user._id);
     await seedWeightLogs(user._id);
+    await seedPosts(user._id);
 
     res.status(201).json({
       message: 'Registration successful',
