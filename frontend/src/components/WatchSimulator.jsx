@@ -320,7 +320,7 @@ export default function WatchSimulator({
         {!isMinimized && (
           <motion.div
             layoutId="watch-container"
-            className="w-[calc(100vw-32px)] max-w-[320px] max-h-[calc(100vh-140px)] lg:max-h-none overflow-y-auto overflow-x-hidden rounded-2xl glass-card border border-white/10 shadow-2xl flex flex-col animate-fade-in text-on-surface"
+            className="w-[calc(100vw-32px)] max-w-[320px] max-h-[calc(100vh-140px)] lg:max-h-[calc(100vh-48px)] overflow-y-auto overflow-x-hidden rounded-2xl glass-card border border-white/10 shadow-2xl flex flex-col animate-fade-in text-on-surface"
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
