@@ -35,7 +35,6 @@ export default function WatchSimulator({
   
   // --- Interface States ---
   const [autoSync, setAutoSync] = useState(true);
-  const [isSpiked, setIsSpiked] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState(false);
   const [watchTime, setWatchTime] = useState('10:09');
@@ -105,7 +104,7 @@ export default function WatchSimulator({
     return () => clearInterval(interval);
   }, [workoutActive, isConnected]);
 
-  // Handle auto-fluctuation of heart rate when normal (or spiked)
+  // Handle auto-fluctuation of heart rate when normal or active in workout
   useEffect(() => {
     if (bleDevice) return;
 
@@ -114,10 +113,7 @@ export default function WatchSimulator({
         let baseMin = 60;
         let baseMax = 80;
 
-        if (isSpiked) {
-          baseMin = 140;
-          baseMax = 175;
-        } else if (workoutActive) {
+        if (workoutActive) {
           baseMin = 125;
           baseMax = 155;
         }
@@ -138,7 +134,7 @@ export default function WatchSimulator({
     }, 2500);
 
     return () => clearInterval(hrInterval);
-  }, [isSpiked, workoutActive, autoSync, onSyncHeartRate, isConnected, bleDevice]);
+  }, [workoutActive, autoSync, onSyncHeartRate, isConnected, bleDevice]);
 
   // Sync to parent app when heartRate changes (if autoSync is on)
   useEffect(() => {
@@ -148,31 +144,31 @@ export default function WatchSimulator({
     }
   }, [heartRate, autoSync, onSyncHeartRate, isConnected, bleDevice]);
 
+  // Simulate natural steps accumulation when smartwatch is active/connected
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const stepsInterval = setInterval(() => {
+      const stepIncrement = workoutActive 
+        ? Math.floor(Math.random() * 11) + 15   // 15 to 25 steps during workout
+        : Math.floor(Math.random() * 4) + 1;     // 1 to 4 steps normally
+
+      setSteps((prev) => {
+        const nextSteps = prev + stepIncrement;
+        if (onSyncSteps) {
+          onSyncSteps(stepIncrement);
+        }
+        return nextSteps;
+      });
+    }, 4000);
+
+    return () => clearInterval(stepsInterval);
+  }, [isConnected, workoutActive, onSyncSteps]);
+
   // Manual Trigger Sync
   const triggerManualSync = () => {
     if (onSyncHeartRate && isConnected) {
       onSyncHeartRate(heartRate);
-    }
-    setSyncFeedback(true);
-    setTimeout(() => setSyncFeedback(false), 2000);
-  };
-
-  // Adjust Heart Rate
-  const adjustHeartRate = (amount) => {
-    setHeartRate((prev) => {
-      const nextHr = Math.max(40, Math.min(220, prev + amount));
-      if (nextHr < 140 && isSpiked) {
-        setIsSpiked(false);
-      }
-      return nextHr;
-    });
-  };
-
-  // Adjust Steps (passes delta to callback)
-  const addStepsAmount = (amount) => {
-    setSteps((prev) => prev + amount);
-    if (onSyncSteps && isConnected) {
-      onSyncSteps(amount);
     }
     setSyncFeedback(true);
     setTimeout(() => setSyncFeedback(false), 2000);
@@ -194,25 +190,6 @@ export default function WatchSimulator({
         }
         return next;
       });
-    }
-  };
-
-  // Simulate Workout Spike
-  const toggleWorkoutSpike = () => {
-    if (isSpiked) {
-      setIsSpiked(false);
-      setHeartRate(75);
-    } else {
-      setIsSpiked(true);
-      setHeartRate(148);
-      // Automatically activate workout screen mode
-      if (isConnected) {
-        if (!workoutActive && onStartWorkout) {
-          onStartWorkout();
-        }
-      } else {
-        setWorkoutActive(true);
-      }
     }
   };
 
@@ -329,8 +306,8 @@ export default function WatchSimulator({
           whileTap={{ scale: 0.95 }}
         >
           <span className="relative flex h-3.5 w-3.5">
-            <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping ${isSpiked || workoutActive ? 'bg-error' : 'bg-primary-fixed'}`}></span>
-            <span className={`relative inline-flex rounded-full h-3.5 w-3.5 ${isSpiked || workoutActive ? 'bg-error' : 'bg-primary-fixed'}`}></span>
+            <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping ${workoutActive ? 'bg-error' : 'bg-primary-fixed'}`}></span>
+            <span className={`relative inline-flex rounded-full h-3.5 w-3.5 ${workoutActive ? 'bg-error' : 'bg-primary-fixed'}`}></span>
           </span>
           <span className="font-label-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
             Watch Simulator ({heartRate} bpm)
@@ -447,7 +424,7 @@ export default function WatchSimulator({
                             transition={{ repeat: Infinity, duration: pulseDuration, ease: "easeInOut" }}
                             className="relative"
                           >
-                            <Heart className={`w-6 h-6 ${isSpiked || workoutActive ? 'text-red-500 fill-red-500 glow-lime' : 'text-rose-400 fill-rose-400'}`} />
+                            <Heart className={`w-6 h-6 ${workoutActive ? 'text-red-500 fill-red-500 glow-lime' : 'text-rose-400 fill-rose-400'}`} />
                           </motion.div>
                           <span className="font-stat-value text-lg font-bold leading-none text-zinc-100 mt-1">{heartRate}</span>
                           <span className="text-[7px] text-zinc-400 uppercase tracking-widest font-semibold font-label-sm">BPM</span>
@@ -494,82 +471,11 @@ export default function WatchSimulator({
             {/* Controls Panel */}
             <div className="p-md bg-surface-container flex flex-col gap-md">
               
-              {/* Heart Rate controls */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold text-on-surface-variant">Heart Rate Adjuster</span>
-                  <span className="text-xs font-bold text-primary">{heartRate} BPM</span>
-                </div>
-                <div className="flex items-center gap-sm">
-                  <button 
-                    onClick={() => adjustHeartRate(-5)}
-                    className="w-8 h-8 rounded-lg bg-surface-container-high border border-white/5 hover:bg-white/5 active:scale-95 flex items-center justify-center text-on-surface transition-all cursor-pointer"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <input 
-                    type="range" 
-                    min="40" 
-                    max="190" 
-                    value={heartRate}
-                    onChange={(e) => {
-                      const nextBpm = parseInt(e.target.value);
-                      setHeartRate(nextBpm);
-                      if (nextBpm < 140) setIsSpiked(false);
-                    }}
-                    className="flex-1 h-1 rounded-full accent-primary-fixed bg-surface-container-high cursor-pointer"
-                  />
-                  <button 
-                    onClick={() => adjustHeartRate(5)}
-                    className="w-8 h-8 rounded-lg bg-surface-container-high border border-white/5 hover:bg-white/5 active:scale-95 flex items-center justify-center text-on-surface transition-all cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Steps Add Increments */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-semibold text-on-surface-variant">Simulate Steps Intake</span>
-                <div className="grid grid-cols-3 gap-xs">
-                  <button 
-                    onClick={() => addStepsAmount(100)}
-                    className="py-1 px-2 rounded bg-surface-container-high hover:bg-white/5 border border-white/5 text-[11px] font-bold text-primary-fixed active:scale-95 transition-all cursor-pointer"
-                  >
-                    +100
-                  </button>
-                  <button 
-                    onClick={() => addStepsAmount(500)}
-                    className="py-1 px-2 rounded bg-surface-container-high hover:bg-white/5 border border-white/5 text-[11px] font-bold text-primary-fixed active:scale-95 transition-all cursor-pointer"
-                  >
-                    +500
-                  </button>
-                  <button 
-                    onClick={() => addStepsAmount(1000)}
-                    className="py-1 px-2 rounded bg-surface-container-high hover:bg-white/5 border border-white/5 text-[11px] font-bold text-primary-fixed active:scale-95 transition-all cursor-pointer"
-                  >
-                    +1.0k
-                  </button>
-                </div>
-              </div>
-
-              {/* Workout Spike Button & Session Control */}
-              <div className="grid grid-cols-2 gap-sm pt-sm border-t border-white/5">
-                <button
-                  onClick={toggleWorkoutSpike}
-                  className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 border cursor-pointer ${
-                    isSpiked 
-                      ? 'bg-red-500/20 text-red-300 border-red-500/40 hover:bg-red-500/30' 
-                      : 'bg-surface-container-high text-rose-400 border-rose-500/20 hover:bg-white/5'
-                  }`}
-                >
-                  <Flame className={`w-3.5 h-3.5 ${isSpiked ? 'animate-bounce text-red-400' : ''}`} />
-                  {isSpiked ? 'Spike Active' : 'HR Workout Spike'}
-                </button>
-
+              {/* Workout Session Control */}
+              <div className="pt-sm">
                 <button
                   onClick={toggleWorkoutActive}
-                  className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 border cursor-pointer ${
+                  className={`w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 border cursor-pointer ${
                     workoutActive 
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30' 
                       : 'bg-surface-container-high text-amber-400 border-amber-500/20 hover:bg-white/5'
@@ -578,12 +484,12 @@ export default function WatchSimulator({
                   {workoutActive ? (
                     <>
                       <Square className="w-3 h-3 fill-amber-300" />
-                      Stop Watch
+                      Stop Watch Simulator
                     </>
                   ) : (
                     <>
                       <Play className="w-3 h-3 fill-amber-400" />
-                      Start Watch
+                      Start Watch Simulator
                     </>
                   )}
                 </button>

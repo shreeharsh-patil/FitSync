@@ -1274,11 +1274,6 @@ function App() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex gap-2 border-t border-white/5 pt-sm mt-xs">
-                    <button onClick={() => addSteps(1000)} className="flex-1 py-1 text-[10px] bg-primary-fixed text-on-primary-fixed font-bold rounded-lg shadow active:scale-95 transition-transform">+1k Steps</button>
-                    <button onClick={() => addSteps(-1000)} className="flex-1 py-1 text-[10px] bg-white/5 text-on-surface-variant border border-white/10 rounded-lg active:scale-95 transition-transform">-1k</button>
-                  </div>
                 </div>
 
                 {/* Workout Stopwatch Card */}
@@ -1663,12 +1658,9 @@ function App() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-sm w-full text-center">
-                      <div className="p-md bg-surface-container/40 rounded-xl border border-white/5 relative group">
+                      <div className="p-md bg-surface-container/40 rounded-xl border border-white/5">
                         <p className="font-label-sm text-[10px] text-on-surface-variant mb-xs">Distance</p>
                         <p className="font-headline-lg text-md text-secondary-fixed-dim font-bold">{activeLog.km} <span className="text-[10px] font-normal">km</span></p>
-                        <div className="absolute inset-0 bg-surface-container flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
-                          <button onClick={() => addSteps(1000)} className="text-[9px] bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-bold">+1k</button>
-                        </div>
                       </div>
                       <div className="p-md bg-surface-container/40 rounded-xl border border-white/5 relative group">
                         <p className="font-label-sm text-[10px] text-on-surface-variant mb-xs">Active Time</p>
