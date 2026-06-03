@@ -318,7 +318,7 @@ export default function WatchSimulator({
   const pulseDuration = heartRate > 0 ? 60 / heartRate : 1;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-24 lg:bottom-6 right-4 lg:right-6 z-50 flex flex-col items-end">
       {/* Minimized Float Trigger */}
       {isMinimized && (
         <motion.button
@@ -343,7 +343,7 @@ export default function WatchSimulator({
         {!isMinimized && (
           <motion.div
             layoutId="watch-container"
-            className="w-80 rounded-2xl glass-card border border-white/10 shadow-2xl overflow-hidden flex flex-col animate-fade-in text-on-surface"
+            className="w-[calc(100vw-32px)] max-w-[320px] max-h-[calc(100vh-140px)] lg:max-h-none overflow-y-auto overflow-x-hidden rounded-2xl glass-card border border-white/10 shadow-2xl flex flex-col animate-fade-in text-on-surface"
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
