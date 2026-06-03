@@ -407,75 +407,83 @@ export default function WatchSimulator({
                   </div>
 
                   {/* Watch Face UI */}
-                  <div className="flex-1 flex flex-col justify-between mt-1 z-10">
-                    
-                    {/* Ring Progress Overlay or Workout Mode Banner */}
-                    <div className="relative h-[84px] w-full flex items-center justify-center">
+                  {(isConnected || bleDevice) ? (
+                    <div className="flex-1 flex flex-col justify-between mt-1 z-10">
                       
-                      {/* Apple Watch style concentric rings */}
-                      <svg className="w-20 h-20 transform -rotate-90">
-                        {/* Track Rings */}
-                        <circle cx="40" cy="40" r="35" stroke="rgba(195, 244, 0, 0.08)" strokeWidth="4.5" fill="transparent" />
-                        <circle cx="40" cy="40" r="28" stroke="rgba(125, 244, 255, 0.08)" strokeWidth="4.5" fill="transparent" />
+                      {/* Ring Progress Overlay or Workout Mode Banner */}
+                      <div className="relative h-[84px] w-full flex items-center justify-center">
                         
-                        {/* Active Progress Rings */}
-                        <circle 
-                          cx="40" cy="40" r="35" 
-                          stroke="#c3f400" 
-                          strokeWidth="4.5" 
-                          fill="transparent" 
-                          strokeDasharray={stepRing.circumference}
-                          strokeDashoffset={stepRing.strokeDashoffset}
-                          strokeLinecap="round"
-                        />
-                        <circle 
-                          cx="40" cy="40" r="28" 
-                          stroke="#7df4ff" 
-                          strokeWidth="4.5" 
-                          fill="transparent" 
-                          strokeDasharray={activeRing.circumference}
-                          strokeDashoffset={activeRing.strokeDashoffset}
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                        {/* Apple Watch style concentric rings */}
+                        <svg className="w-20 h-20 transform -rotate-90">
+                          {/* Track Rings */}
+                          <circle cx="40" cy="40" r="35" stroke="rgba(195, 244, 0, 0.08)" strokeWidth="4.5" fill="transparent" />
+                          <circle cx="40" cy="40" r="28" stroke="rgba(125, 244, 255, 0.08)" strokeWidth="4.5" fill="transparent" />
+                          
+                          {/* Active Progress Rings */}
+                          <circle 
+                            cx="40" cy="40" r="35" 
+                            stroke="#c3f400" 
+                            strokeWidth="4.5" 
+                            fill="transparent" 
+                            strokeDasharray={stepRing.circumference}
+                            strokeDashoffset={stepRing.strokeDashoffset}
+                            strokeLinecap="round"
+                          />
+                          <circle 
+                            cx="40" cy="40" r="28" 
+                            stroke="#7df4ff" 
+                            strokeWidth="4.5" 
+                            fill="transparent" 
+                            strokeDasharray={activeRing.circumference}
+                            strokeDashoffset={activeRing.strokeDashoffset}
+                            strokeLinecap="round"
+                          />
+                        </svg>
 
-                      {/* Ring Center: Workout / Heart Rate View */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pt-1.5">
-                        <motion.div
-                          animate={{ scale: [1, 1.25, 1] }}
-                          transition={{ repeat: Infinity, duration: pulseDuration, ease: "easeInOut" }}
-                          className="relative"
-                        >
-                          <Heart className={`w-6 h-6 ${isSpiked || workoutActive ? 'text-red-500 fill-red-500 glow-lime' : 'text-rose-400 fill-rose-400'}`} />
-                        </motion.div>
-                        <span className="font-stat-value text-lg font-bold leading-none text-zinc-100 mt-1">{heartRate}</span>
-                        <span className="text-[7px] text-zinc-400 uppercase tracking-widest font-semibold font-label-sm">BPM</span>
-                      </div>
-
-                    </div>
-
-                    {/* Live Stats Rows */}
-                    <div className="bg-zinc-900/60 rounded-xl p-1.5 px-2 border border-white/5 flex flex-col gap-0.5">
-                      <div className="flex justify-between items-center text-[10px]">
-                        <span className="text-zinc-400 font-label-sm">Steps</span>
-                        <span className="font-bold text-[#c3f400] font-stat-value">{steps.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[10px]">
-                        <span className="text-zinc-400 font-label-sm">Active Min</span>
-                        <span className="font-bold text-[#7df4ff] font-stat-value">{activeMin}m</span>
-                      </div>
-                      {workoutActive && (
-                        <div className="flex justify-between items-center text-[8px] text-red-400 border-t border-white/5 pt-0.5 mt-0.5 font-bold uppercase tracking-wider">
-                          <span className="flex items-center gap-0.5">
-                            <Flame className={`w-2.5 h-2.5 ${dashboardWorkoutPaused && isConnected ? '' : 'animate-pulse'}`} />
-                            {dashboardWorkoutPaused && isConnected ? 'Paused' : 'Workout'}
-                          </span>
-                          <span>{formatWorkoutTime(workoutSeconds)}</span>
+                        {/* Ring Center: Workout / Heart Rate View */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pt-1.5">
+                          <motion.div
+                            animate={{ scale: [1, 1.25, 1] }}
+                            transition={{ repeat: Infinity, duration: pulseDuration, ease: "easeInOut" }}
+                            className="relative"
+                          >
+                            <Heart className={`w-6 h-6 ${isSpiked || workoutActive ? 'text-red-500 fill-red-500 glow-lime' : 'text-rose-400 fill-rose-400'}`} />
+                          </motion.div>
+                          <span className="font-stat-value text-lg font-bold leading-none text-zinc-100 mt-1">{heartRate}</span>
+                          <span className="text-[7px] text-zinc-400 uppercase tracking-widest font-semibold font-label-sm">BPM</span>
                         </div>
-                      )}
-                    </div>
 
-                  </div>
+                      </div>
+
+                      {/* Live Stats Rows */}
+                      <div className="bg-zinc-900/60 rounded-xl p-1.5 px-2 border border-white/5 flex flex-col gap-0.5">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="text-zinc-400 font-label-sm">Steps</span>
+                          <span className="font-bold text-[#c3f400] font-stat-value">{steps.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="text-zinc-400 font-label-sm">Active Min</span>
+                          <span className="font-bold text-[#7df4ff] font-stat-value">{activeMin}m</span>
+                        </div>
+                        {workoutActive && (
+                          <div className="flex justify-between items-center text-[8px] text-red-400 border-t border-white/5 pt-0.5 mt-0.5 font-bold uppercase tracking-wider">
+                            <span className="flex items-center gap-0.5">
+                              <Flame className={`w-2.5 h-2.5 ${dashboardWorkoutPaused && isConnected ? '' : 'animate-pulse'}`} />
+                              {dashboardWorkoutPaused && isConnected ? 'Paused' : 'Workout'}
+                            </span>
+                            <span>{formatWorkoutTime(workoutSeconds)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col justify-center items-center mt-1 z-10 text-center gap-1.5 px-2">
+                      <Bluetooth className="w-8 h-8 text-zinc-700 animate-pulse mb-0.5" />
+                      <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Wearable Offline</span>
+                      <span className="text-[8px] text-zinc-600 leading-normal font-medium px-1">Connect mock watch or pair Noise wearable below to sync stats</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
