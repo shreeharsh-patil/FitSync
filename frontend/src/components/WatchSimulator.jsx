@@ -35,7 +35,7 @@ export default function WatchSimulator({
   
   // --- Interface States ---
   const [autoSync, setAutoSync] = useState(true);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
   const [syncFeedback, setSyncFeedback] = useState(false);
   const [watchTime, setWatchTime] = useState('10:09');
   
