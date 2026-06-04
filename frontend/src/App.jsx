@@ -122,6 +122,8 @@ function App() {
   const [showWorkoutBuilder, setShowWorkoutBuilder] = useState(false);
   const [showAIWorkoutGenerator, setShowAIWorkoutGenerator] = useState(false);
   const [showWeightTrackerModal, setShowWeightTrackerModal] = useState(false);
+  const [showChallengeBoardModal, setShowChallengeBoardModal] = useState(false);
+  const [selectedRunDetails, setSelectedRunDetails] = useState(null);
   const [hasChattedWithAI, setHasChattedWithAI] = useState(false);
   const [socialPosts, setSocialPosts] = useState([]);
   const [routinesList, setRoutinesList] = useState([
@@ -706,6 +708,75 @@ function App() {
       };
       setRoutinesList(prev => [offlineRoutine, ...prev]);
     }
+  };
+
+  const handleLogRoutineSets = async (routine) => {
+    let addedSets = 0;
+    let addedReps = 0;
+
+    if (routine.exercises && routine.exercises.length > 0) {
+      routine.exercises.forEach(ex => {
+        const match = ex.reps && ex.reps.match(/(\d+)\s*Sets/i);
+        const repsMatch = ex.reps && ex.reps.match(/(\d+)\s*Reps/i);
+        const setsCount = match ? parseInt(match[1]) : 3;
+        const repsCount = repsMatch ? parseInt(repsMatch[1]) : 10;
+        addedSets += setsCount;
+        addedReps += setsCount * repsCount;
+      });
+    } else {
+      const match = routine.repinfo && routine.repinfo.match(/(\d+)\s*Sets/i);
+      const repsMatch = routine.repinfo && routine.repinfo.match(/(\d+)\s*Reps/i);
+      const setsCount = match ? parseInt(match[1]) : 3;
+      const repsCount = repsMatch ? parseInt(repsMatch[1]) : 10;
+      addedSets += setsCount;
+      addedReps += setsCount * repsCount;
+    }
+
+    const addedMinutes = addedSets * 3;
+    const addedCalories = addedSets * 25;
+
+    const targetSets = activeLog.sets + addedSets;
+    const targetReps = activeLog.reps + addedReps;
+    const targetActiveMin = activeLog.activeMin + addedMinutes;
+    const targetCalories = activeLog.calories + addedCalories;
+
+    let targetMuscleObj = {};
+    const category = (routine.routine || 'Chest').toLowerCase();
+    if (category.includes('chest')) targetMuscleObj.chest = Math.min(100, (activeLog.chest || 0) + 15);
+    if (category.includes('triceps')) targetMuscleObj.triceps = Math.min(100, (activeLog.triceps || 0) + 15);
+    if (category.includes('shoulders')) targetMuscleObj.shoulders = Math.min(100, (activeLog.shoulders || 0) + 15);
+    if (category.includes('legs')) targetMuscleObj.legs = Math.min(100, (activeLog.legs || 0) + 15);
+    if (category.includes('back')) targetMuscleObj.back = Math.min(100, (activeLog.back || 0) + 15);
+    if (category.includes('arms')) targetMuscleObj.arms = Math.min(100, (activeLog.arms || 0) + 15);
+
+    updateActiveLog(log => ({
+      ...log,
+      sets: targetSets,
+      reps: targetReps,
+      activeMin: targetActiveMin,
+      calories: targetCalories,
+      ...targetMuscleObj
+    }));
+
+    if (currentUser) {
+      try {
+        await fetch(`/api/logs/${currentUser.id}/${selectedDayNum}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sets: targetSets,
+            reps: targetReps,
+            activeMin: targetActiveMin,
+            calories: targetCalories,
+            ...targetMuscleObj
+          })
+        });
+      } catch (err) {
+        console.error("Failed to sync routine sets log:", err);
+      }
+    }
+
+    triggerToast(`🏋️‍♂️ Routine logged: ${routine.name} (+${addedSets} Sets)`);
   };
 
   const handleAvatarUpload = (e) => {
@@ -2167,7 +2238,7 @@ function App() {
                             <td className="px-lg py-lg text-xs text-on-surface-variant font-mono">{run.pace}</td>
                             <td className="px-lg py-lg text-right">
                               <button 
-                                onClick={() => triggerToast(`Visual route map path loaded`)}
+                                onClick={() => setSelectedRunDetails(run)}
                                 className="material-symbols-outlined text-on-surface-variant hover:text-primary-fixed text-md cursor-pointer"
                               >
                                 open_in_new
@@ -2184,7 +2255,7 @@ function App() {
                     {runsList.map(run => (
                       <div 
                         key={run.id} 
-                        onClick={() => triggerToast(`Details loaded for ${run.name}`)}
+                        onClick={() => setSelectedRunDetails(run)}
                         className="p-md bg-white/5 rounded-xl flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer border border-white/5"
                       >
                         <div className="flex items-center gap-md">
@@ -2287,7 +2358,7 @@ function App() {
                             <p className="font-label-md text-xs text-primary font-bold">{ex.name}</p>
                             <p className="text-[9px] text-on-surface-variant">{(ex.routine || ex.repinfo)} • {ex.repinfo}</p>
                           </div>
-                          <button onClick={() => triggerToast(`Logged sets for ${ex.name}`)} className="w-7 h-7 rounded-full bg-primary-fixed/20 text-primary-fixed flex items-center justify-center cursor-pointer active:scale-90 transition-transform">
+                          <button onClick={() => handleLogRoutineSets(ex)} className="w-7 h-7 rounded-full bg-primary-fixed/20 text-primary-fixed flex items-center justify-center cursor-pointer active:scale-90 transition-transform">
                             <span className="material-symbols-outlined text-[14px]">check</span>
                           </button>
                         </div>
@@ -2408,7 +2479,13 @@ function App() {
                       </div>
 
                       <button 
-                        onClick={() => triggerToast(friend.active ? 'Score shared!' : 'Cheered buddy!')}
+                        onClick={() => {
+                          if (friend.active) {
+                            handleShareToFeed(`🚶‍♂️ I've hit a score of ${activeLog.steps.toLocaleString()} steps today on the FitSync steps leaderboard! Join me and sync your stats!`);
+                          } else {
+                            triggerToast(`🎉 Cheered ${friend.name}! Sent a high-five notification.`);
+                          }
+                        }}
                         className="text-[10px] bg-surface-variant hover:bg-white/10 border border-white/15 px-3 py-1 rounded-full text-on-surface-variant hover:text-white cursor-pointer active:scale-95 transition-transform"
                       >
                         {friend.active ? 'Share' : 'Cheer'}
@@ -2438,7 +2515,7 @@ function App() {
                 </div>
 
                 <button 
-                  onClick={() => triggerToast('Weekend challenge board loaded')}
+                  onClick={() => setShowChallengeBoardModal(true)}
                   className="w-full py-2 bg-secondary-fixed text-on-secondary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-xs cursor-pointer"
                 >
                   View Challenge Board
@@ -2694,6 +2771,264 @@ function App() {
               triggerToast={triggerToast}
               currentUser={currentUser}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Weekend Challenge Board Modal */}
+      {showChallengeBoardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/75 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in text-on-surface my-8">
+            <button 
+              onClick={() => setShowChallengeBoardModal(false)}
+              className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+
+            <div className="flex justify-between items-center mb-lg border-b border-white/5 pb-sm">
+              <div className="flex items-center gap-xs">
+                <span className="material-symbols-outlined text-secondary-fixed text-lg">groups</span>
+                <h3 className="font-headline-lg text-md md:text-lg text-primary font-bold">Challenge Board</h3>
+              </div>
+            </div>
+
+            <div className="space-y-lg text-left">
+              <div>
+                <h4 className="font-headline-lg text-sm text-white font-bold">Weekend Hydration Warriors</h4>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                  Active Team Challenge: Drink 8 glasses (2.0L) of water daily from Fri-Sun. Help the community hit the 80% target completion!
+                </p>
+              </div>
+
+              {/* Progress visual */}
+              <div className="p-md bg-white/5 rounded-xl border border-white/5 space-y-sm">
+                <div className="flex justify-between items-center text-xs font-semibold">
+                  <span className="text-on-surface-variant">Team Challenge Hydration Progress</span>
+                  <span className="text-secondary-fixed font-bold">
+                    {Math.min(100, Math.round(((68 + (activeLog.water > 6 ? (activeLog.water - 6) * 2 : 0)) / 100) * 100))}% Finished
+                  </span>
+                </div>
+                <div className="w-full bg-surface-variant h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    style={{ width: `${Math.min(100, 68 + (activeLog.water > 6 ? (activeLog.water - 6) * 2 : 0))}%` }}
+                    className="bg-gradient-to-r from-secondary-fixed-dim to-secondary-fixed h-full rounded-full transition-all duration-500 glow-cyan" 
+                  />
+                </div>
+                <p className="text-[10px] text-on-surface-variant text-center">
+                  Team Total: {Math.round(68 + (activeLog.water > 6 ? (activeLog.water - 6) * 2 : 0))} / 100 Liters logged this weekend
+                </p>
+              </div>
+
+              {/* Participants */}
+              <div className="space-y-xs">
+                <h5 className="text-xs font-bold text-white uppercase tracking-wider">Participants & Contributions</h5>
+                <div className="divide-y divide-white/5">
+                  {[
+                    { name: 'Sarah Miller', water: 8, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtXGk-Zp7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8tWq0' },
+                    { name: `${userProfile.name} (You)`, water: activeLog.water, avatar: userProfile.avatar, active: true },
+                    { name: 'John Doe', water: 5, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuEtWq0z7Hxto9p5Q1z3m6j9L5bVw6c7F6E_V4N3u8' },
+                    { name: 'Emily Chen', water: 9, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-' }
+                  ].map((p, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-2 text-xs">
+                      <div className="flex items-center gap-sm">
+                        <img src={p.avatar} alt={p.name} className="w-8 h-8 rounded-full object-cover border border-white/5 shrink-0" />
+                        <span className={`font-semibold ${p.active ? 'text-primary' : 'text-on-surface-variant'}`}>{p.name}</span>
+                      </div>
+                      <div className="font-bold text-white">
+                        {p.water} / 8 glasses
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Inactive challenges to Join */}
+              <div className="space-y-sm pt-sm border-t border-white/5">
+                <h5 className="text-xs font-bold text-white uppercase tracking-wider">Other Available Challenges</h5>
+                <div className="p-sm bg-white/5 rounded-xl border border-white/5 flex items-center justify-between">
+                  <div>
+                    <h6 className="text-xs font-bold text-primary-fixed">10k Daily Steps Target</h6>
+                    <p className="text-[10px] text-on-surface-variant mt-0.5">Reward: "Peak Performer" Badge</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => triggerToast('Joined 10k Steps Challenge!')}
+                    className="px-3 py-1 bg-primary-fixed/20 hover:bg-primary-fixed hover:text-on-primary-fixed transition-all text-[10px] font-bold uppercase rounded-lg cursor-pointer"
+                  >
+                    Join
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-sm pt-lg border-t border-white/5 mt-md">
+              <button
+                type="button"
+                onClick={() => {
+                  const payload = `💧 I have contributed ${activeLog.water} glasses to the Weekend Hydration Challenge! The team is currently at ${Math.round(68 + (activeLog.water > 6 ? (activeLog.water - 6) * 2 : 0))}% completion. Join us to help reach our 80% goal!`;
+                  handleShareToFeed(payload);
+                  setShowChallengeBoardModal(false);
+                }}
+                className="flex-1 py-2.5 bg-secondary-fixed text-on-secondary-fixed hover:bg-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 glow-cyan"
+              >
+                <span className="material-symbols-outlined text-sm">share</span>
+                Share Team Progress
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  addHydration(1);
+                  triggerToast('💧 Added contribution to challenge!');
+                }}
+                className="flex-1 py-2.5 bg-primary-fixed text-on-primary-fixed hover:bg-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 glow-lime"
+              >
+                <span className="material-symbols-outlined text-sm">water_drop</span>
+                Log 1 Glass
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Run Route Details Modal */}
+      {selectedRunDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/75 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in text-on-surface my-8">
+            <button 
+              onClick={() => setSelectedRunDetails(null)}
+              className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+
+            <div className="flex justify-between items-center mb-lg border-b border-white/5 pb-sm">
+              <div className="flex items-center gap-xs">
+                <span className="material-symbols-outlined text-primary-fixed text-lg">directions_run</span>
+                <h3 className="font-headline-lg text-md md:text-lg text-primary font-bold">{selectedRunDetails.name} Details</h3>
+              </div>
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase">{selectedRunDetails.date}</span>
+            </div>
+
+            <div className="space-y-lg text-left">
+              {/* Route Map Preview */}
+              <div className="p-sm bg-background/55 rounded-xl border border-white/5 relative overflow-hidden flex justify-center items-center h-48 group shadow-inner">
+                {/* Visual Route Line SVG */}
+                <svg className="w-full h-full text-primary-fixed" viewBox="0 0 200 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                  <path 
+                    d="M 20 80 C 40 40, 60 20, 80 50 C 100 80, 120 70, 140 30 C 160 -10, 170 30, 180 60" 
+                    className="animate-pulse"
+                    strokeDasharray="400"
+                    strokeDashoffset="0"
+                  />
+                  <circle cx="20" cy="80" r="5" fill="#e0e0e0" />
+                  <circle cx="180" cy="60" r="5" fill="#abd600" />
+                </svg>
+                <div className="absolute bottom-2 left-2 text-[8px] bg-surface-container-high/80 border border-white/10 px-2 py-0.5 rounded font-bold uppercase text-on-surface-variant tracking-widest select-none">
+                  🗺️ GPS Route Map Trace
+                </div>
+                <div className="absolute top-2 right-2 text-[8px] text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20 uppercase tracking-widest select-none">
+                  Live GPS
+                </div>
+              </div>
+
+              {/* Statistics Grid */}
+              <div className="grid grid-cols-4 gap-sm text-center">
+                <div className="p-sm bg-white/5 border border-white/5 rounded-xl">
+                  <p className="text-[8px] text-on-surface-variant uppercase font-semibold">Distance</p>
+                  <p className="text-sm font-bold text-primary">{selectedRunDetails.distance} <span className="text-[8px] font-normal">mi</span></p>
+                </div>
+                <div className="p-sm bg-white/5 border border-white/5 rounded-xl">
+                  <p className="text-[8px] text-on-surface-variant uppercase font-semibold">Duration</p>
+                  <p className="text-sm font-bold text-primary font-mono">{selectedRunDetails.duration}</p>
+                </div>
+                <div className="p-sm bg-white/5 border border-white/5 rounded-xl">
+                  <p className="text-[8px] text-on-surface-variant uppercase font-semibold">Avg Pace</p>
+                  <p className="text-sm font-bold text-primary font-mono">{selectedRunDetails.pace.replace(' /mi', '')}</p>
+                </div>
+                <div className="p-sm bg-white/5 border border-white/5 rounded-xl">
+                  <p className="text-[8px] text-on-surface-variant uppercase font-semibold">Heart Rate</p>
+                  <p className="text-sm font-bold text-primary">{selectedRunDetails.bpm} <span className="text-[8px] font-normal">bpm</span></p>
+                </div>
+              </div>
+
+              {/* Multi-slide details / charts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                {/* Elevation Profile Chart */}
+                <div className="bg-white/5 p-md border border-white/5 rounded-xl">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Elevation Profile</h4>
+                  <div className="h-20 flex items-end">
+                    <svg viewBox="0 0 100 30" className="w-full h-full text-secondary-fixed-dim" fill="currentColor">
+                      <path d="M 0 30 Q 15 12, 30 18 Q 45 28, 60 5 Q 75 25, 90 10 L 100 20 L 100 30 Z" opacity="0.15" />
+                      <path d="M 0 30 Q 15 12, 30 18 Q 45 28, 60 5 Q 75 25, 90 10 L 100 20" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    </svg>
+                  </div>
+                  <div className="flex justify-between text-[8px] text-on-surface-variant font-mono mt-1">
+                    <span>Gain: +284 ft</span>
+                    <span>Loss: -241 ft</span>
+                  </div>
+                </div>
+
+                {/* Heart Rate Zone Bars */}
+                <div className="bg-white/5 p-md border border-white/5 rounded-xl space-y-xs">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Heart Rate Zones</h4>
+                  <div className="space-y-1 text-[8px] font-bold uppercase tracking-wider">
+                    {/* Warm Up */}
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between">
+                        <span className="text-blue-400">Warm Up (Z1/Z2)</span>
+                        <span className="text-white">12 mins (22%)</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                        <div className="bg-blue-400 h-full w-[22%]" />
+                      </div>
+                    </div>
+                    {/* Aerobic */}
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between">
+                        <span className="text-green-400 font-bold text-primary">Aerobic (Z3)</span>
+                        <span className="text-white">32 mins (59%)</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                        <div className="bg-green-400 h-full w-[59%]" />
+                      </div>
+                    </div>
+                    {/* Threshold */}
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between">
+                        <span className="text-orange-400">Anaerobic (Z4/Z5)</span>
+                        <span className="text-white">10 mins (19%)</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                        <div className="bg-orange-400 h-full w-[19%]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-sm pt-lg border-t border-white/5 mt-md">
+              <button
+                type="button"
+                onClick={() => setSelectedRunDetails(null)}
+                className="flex-grow py-2.5 border border-white/10 rounded-xl text-xs font-bold text-on-surface-variant hover:bg-white/5 transition-all cursor-pointer"
+              >
+                Close Details
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const payload = `🏃‍♂️ Smashed a run: '${selectedRunDetails.name}'! Covered ${selectedRunDetails.distance} mi in ${selectedRunDetails.duration} with an average pace of ${selectedRunDetails.pace.replace(' /mi', '')}. Feeling strong!`;
+                  handleShareToFeed(payload);
+                  setSelectedRunDetails(null);
+                }}
+                className="flex-grow py-2.5 bg-primary-fixed text-on-primary-fixed font-bold hover:bg-white rounded-xl text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5 glow-lime"
+              >
+                <span className="material-symbols-outlined text-sm">share</span>
+                Share to Feed
+              </button>
+            </div>
           </div>
         </div>
       )}
