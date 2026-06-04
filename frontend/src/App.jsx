@@ -14,12 +14,69 @@ import WeightTracker from './components/WeightTracker';
 import AchievementsPanel from './components/AchievementsPanel';
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('currentUser');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   // --- Navigation & Core Views ---
   const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'login' | 'register' | 'app'
   const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'activity' | 'workouts' | 'community' | 'settings'
   const [activeWorkoutSubView, setActiveWorkoutSubView] = useState(null); // null | 'running'
+
+  // --- Navigation & Core Views URL Sync ---
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const savedUser = localStorage.getItem('currentUser');
+      const isLoggedIn = !!savedUser || !!currentUser;
+
+      if (!isLoggedIn) {
+        if (hash === '#/login') {
+          setCurrentView('login');
+        } else if (hash === '#/register') {
+          setCurrentView('register');
+        } else {
+          setCurrentView('landing');
+          if (hash && hash !== '#/' && hash !== '#/landing') {
+            window.history.replaceState(null, '', '#/');
+          }
+        }
+      } else {
+        // Logged in
+        if (hash === '#/login' || hash === '#/register' || hash === '#/' || hash === '#/landing' || !hash) {
+          setCurrentView('app');
+          setCurrentTab('home');
+          setActiveWorkoutSubView(null);
+          window.history.replaceState(null, '', '#/home');
+        } else {
+          setCurrentView('app');
+          if (hash === '#/workouts/running') {
+            setCurrentTab('workouts');
+            setActiveWorkoutSubView('running');
+          } else {
+            const route = hash.replace('#/', '');
+            if (['home', 'activity', 'workouts', 'community', 'nutrition', 'settings'].includes(route)) {
+              setCurrentTab(route);
+              setActiveWorkoutSubView(null);
+            } else {
+              // fallback
+              setCurrentTab('home');
+              setActiveWorkoutSubView(null);
+              window.history.replaceState(null, '', '#/home');
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange();
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [currentUser]);
 
   const fetchUserData = async (userId) => {
     try {
@@ -52,15 +109,10 @@ function App() {
   };
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      setCurrentUser(parsed);
-      setUserProfile(parsed);
-      fetchUserData(parsed.id);
-      setCurrentView('app');
+    if (currentUser) {
+      fetchUserData(currentUser.id);
     }
-  }, []);
+  }, [currentUser]);
   
   // Dashboard Section Mode selector: switch between Performance details and Wellness status
   const [dashboardMode, setDashboardMode] = useState('wellness'); // 'performance' | 'wellness'
@@ -171,21 +223,30 @@ function App() {
     }
   };
 
-  // --- User Profile & Goals ---
-  const [userProfile, setUserProfile] = useState({
-    name: 'Alex Rivers',
-    level: 42,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuANOmh7jFGIMlEymlm5qyXZ_-gkcHgYS-46pUy9xs-ZWni1tGrbTMaJs_S6GEFNakfHaGCFTG5voxDH5DqKKzXEr33PUXAcNGMVgM-Azc3_Ld7gMfOq24fAjo6YPDdSZ4av83pzCU7lVk4mv3YNeD07eh5iv_813c2EpNwEUAP7sPkoGkbfOpE5MEJYuZefdAOoqx1zj0hYiPh2pzz3MFndBE-BB2Bj3nAb6LRi3gPLW3LsWF5nhYJeBTr4x0MmbNrpGQs0AC6-kAjW',
-    height: 175, // cm
-    weight: 68.0, // kg
-    targetBmi: 21.5,
-    goals: {
-      steps: 10000,
-      calories: 700,
-      hydration: 8,
-      sleep: 8.0,
-      activeMin: 60
+  const [userProfile, setUserProfile] = useState(() => {
+    const saved = localStorage.getItem('currentUser');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved user in state initialization:", e);
+      }
     }
+    return {
+      name: 'Alex Rivers',
+      level: 42,
+      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuANOmh7jFGIMlEymlm5qyXZ_-gkcHgYS-46pUy9xs-ZWni1tGrbTMaJs_S6GEFNakfHaGCFTG5voxDH5DqKKzXEr33PUXAcNGMVgM-Azc3_Ld7gMfOq24fAjo6YPDdSZ4av83pzCU7lVk4mv3YNeD07eh5iv_813c2EpNwEUAP7sPkoGkbfOpE5MEJYuZefdAOoqx1zj0hYiPh2pzz3MFndBE-BB2Bj3nAb6LRi3gPLW3LsWF5nhYJeBTr4x0MmbNrpGQs0AC6-kAjW',
+      height: 175, // cm
+      weight: 68.0, // kg
+      targetBmi: 21.5,
+      goals: {
+        steps: 10000,
+        calories: 700,
+        hydration: 8,
+        sleep: 8.0,
+        activeMin: 60
+      }
+    };
   });
 
   // --- Dynamic Wellness State (FitSync Status) ---
@@ -737,18 +798,24 @@ function App() {
   };
 
   if (currentView === 'landing') {
-    return <LandingPage onViewChange={setCurrentView} />;
+    return <LandingPage onViewChange={(view) => {
+      if (view === 'landing') window.location.hash = '#/';
+      else window.location.hash = '#/' + view;
+    }} />;
   }
   if (currentView === 'login') {
     return (
       <LoginPage 
-        onViewChange={setCurrentView} 
+        onViewChange={(view) => {
+          if (view === 'landing') window.location.hash = '#/';
+          else window.location.hash = '#/' + view;
+        }} 
         onLoginSuccess={(user) => {
           setCurrentUser(user);
           setUserProfile(user);
           localStorage.setItem('currentUser', JSON.stringify(user));
           fetchUserData(user.id);
-          setCurrentView('app');
+          window.location.hash = '#/home';
           triggerToast(`👋 Welcome back, ${user.name}!`);
         }} 
       />
@@ -757,13 +824,16 @@ function App() {
   if (currentView === 'register') {
     return (
       <RegisterPage 
-        onViewChange={setCurrentView} 
+        onViewChange={(view) => {
+          if (view === 'landing') window.location.hash = '#/';
+          else window.location.hash = '#/' + view;
+        }} 
         onRegisterSuccess={(user) => {
           setCurrentUser(user);
           setUserProfile(user);
           localStorage.setItem('currentUser', JSON.stringify(user));
           fetchUserData(user.id);
-          setCurrentView('app');
+          window.location.hash = '#/home';
           triggerToast(`✨ Welcome to FitSync, ${user.name}!`);
         }} 
       />
@@ -964,7 +1034,7 @@ function App() {
         <nav className="flex flex-col gap-2 flex-grow">
           {/* Dashboard */}
           <button 
-            onClick={() => { setCurrentTab('home'); setActiveWorkoutSubView(null); }}
+            onClick={() => { window.location.hash = '#/home'; setActiveWorkoutSubView(null); }}
             className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
               currentTab === 'home' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
@@ -977,7 +1047,7 @@ function App() {
 
           {/* Detailed Analytics */}
           <button 
-            onClick={() => { setCurrentTab('activity'); setActiveWorkoutSubView(null); }}
+            onClick={() => { window.location.hash = '#/activity'; setActiveWorkoutSubView(null); }}
             className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
               currentTab === 'activity' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
@@ -990,7 +1060,7 @@ function App() {
 
           {/* Workouts */}
           <button 
-            onClick={() => { setCurrentTab('workouts'); }}
+            onClick={() => { window.location.hash = '#/workouts'; }}
             className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
               currentTab === 'workouts' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
@@ -1003,7 +1073,7 @@ function App() {
 
           {/* Social (Community) */}
           <button 
-            onClick={() => { setCurrentTab('community'); setActiveWorkoutSubView(null); }}
+            onClick={() => { window.location.hash = '#/community'; setActiveWorkoutSubView(null); }}
             className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
               currentTab === 'community' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
@@ -1016,7 +1086,7 @@ function App() {
 
           {/* Nutrition Hub */}
           <button 
-            onClick={() => { setCurrentTab('nutrition'); setActiveWorkoutSubView(null); }}
+            onClick={() => { window.location.hash = '#/nutrition'; setActiveWorkoutSubView(null); }}
             className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
               currentTab === 'nutrition' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
@@ -1029,7 +1099,7 @@ function App() {
 
           {/* Preferences (Settings) */}
           <button 
-            onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}
+            onClick={() => { window.location.hash = '#/settings'; setActiveWorkoutSubView(null); }}
             className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
               currentTab === 'settings' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
@@ -1042,7 +1112,7 @@ function App() {
         </nav>
 
         {/* User Card Drawer Footer */}
-        <div className="mt-auto pt-lg border-t border-white/5 flex items-center gap-md cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all" onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}>
+        <div className="mt-auto pt-lg border-t border-white/5 flex items-center gap-md cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all" onClick={() => { window.location.hash = '#/settings'; setActiveWorkoutSubView(null); }}>
           <div className="w-10 h-10 rounded-full bg-surface-variant overflow-hidden border border-primary-fixed/20 shrink-0">
             <img src={userProfile.avatar} alt="Alex Avatar" className="w-full h-full object-cover" />
           </div>
@@ -1059,7 +1129,7 @@ function App() {
       <nav className="fixed bottom-0 left-0 w-full rounded-t-xl z-40 bg-surface/90 backdrop-blur-xl border-t border-white/5 shadow-[0_-4px_20px_rgba(171,214,0,0.15)] flex justify-around items-center h-20 pb-safe px-base lg:hidden">
         {/* Home */}
         <button 
-          onClick={() => { setCurrentTab('home'); setActiveWorkoutSubView(null); }}
+          onClick={() => { window.location.hash = '#/home'; setActiveWorkoutSubView(null); }}
           className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
             currentTab === 'home' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
@@ -1074,7 +1144,7 @@ function App() {
 
         {/* Workouts */}
         <button 
-          onClick={() => { setCurrentTab('workouts'); }}
+          onClick={() => { window.location.hash = '#/workouts'; }}
           className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
             currentTab === 'workouts' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
@@ -1089,7 +1159,7 @@ function App() {
 
         {/* Nutrition */}
         <button 
-          onClick={() => { setCurrentTab('nutrition'); setActiveWorkoutSubView(null); }}
+          onClick={() => { window.location.hash = '#/nutrition'; setActiveWorkoutSubView(null); }}
           className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
             currentTab === 'nutrition' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
@@ -1104,7 +1174,7 @@ function App() {
 
         {/* Activity/Analytics */}
         <button 
-          onClick={() => { setCurrentTab('activity'); setActiveWorkoutSubView(null); }}
+          onClick={() => { window.location.hash = '#/activity'; setActiveWorkoutSubView(null); }}
           className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
             currentTab === 'activity' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
@@ -1119,7 +1189,7 @@ function App() {
 
         {/* Community */}
         <button 
-          onClick={() => { setCurrentTab('community'); setActiveWorkoutSubView(null); }}
+          onClick={() => { window.location.hash = '#/community'; setActiveWorkoutSubView(null); }}
           className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
             currentTab === 'community' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
@@ -1134,7 +1204,7 @@ function App() {
 
         {/* Settings */}
         <button 
-          onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}
+          onClick={() => { window.location.hash = '#/settings'; setActiveWorkoutSubView(null); }}
           className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
             currentTab === 'settings' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
@@ -1158,7 +1228,7 @@ function App() {
           <div className="flex items-center gap-sm">
             {activeWorkoutSubView && (
               <button 
-                onClick={() => setActiveWorkoutSubView(null)}
+                onClick={() => { window.location.hash = '#/workouts'; }}
                 className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-primary hover:bg-white/10 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-md">arrow_back</span>
@@ -1166,7 +1236,7 @@ function App() {
             )}
             {!activeWorkoutSubView && (
               <div 
-                onClick={() => { setCurrentTab('settings'); setActiveWorkoutSubView(null); }}
+                onClick={() => { window.location.hash = '#/settings'; setActiveWorkoutSubView(null); }}
                 className="w-8 h-8 rounded-full overflow-hidden bg-surface-variant ring-1 ring-white/20 lg:hidden cursor-pointer shrink-0"
               >
                 <img src={userProfile.avatar} alt="Profile" className="w-full h-full object-cover" />
@@ -1692,7 +1762,7 @@ function App() {
                         <p className="font-label-sm text-[10px] text-on-surface-variant mb-xs">Active Time</p>
                         <p className="font-headline-lg text-md text-primary-fixed font-bold">{activeLog.activeMin} <span className="text-[10px] font-normal">min</span></p>
                         <div className="absolute inset-0 bg-surface-container flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
-                          <button onClick={() => setCurrentTab('workouts')} className="text-[9px] bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded font-bold">Timer</button>
+                          <button onClick={() => { window.location.hash = '#/workouts'; }} className="text-[9px] bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded font-bold">Timer</button>
                         </div>
                       </div>
                     </div>
@@ -2150,7 +2220,7 @@ function App() {
                     <div className="flex flex-col gap-sm">
                       {/* Running Selector */}
                       <div 
-                        onClick={() => setActiveWorkoutSubView('running')}
+                        onClick={() => { window.location.hash = '#/workouts/running'; }}
                         className="p-md bg-surface-container/60 hover:bg-surface-container border border-white/5 hover:border-primary-fixed/30 rounded-xl cursor-pointer transition-all flex items-center justify-between"
                       >
                         <div className="flex items-center gap-md">
@@ -2167,7 +2237,7 @@ function App() {
 
                       {/* Strength Selector */}
                       <div 
-                        onClick={() => { setActiveWorkoutSubView(null); setCurrentTab('home'); setDashboardMode('performance'); }}
+                        onClick={() => { window.location.hash = '#/home'; setDashboardMode('performance'); }}
                         className="p-md bg-surface-container/60 hover:bg-surface-container border border-white/5 hover:border-primary-fixed/30 rounded-xl cursor-pointer transition-all flex items-center justify-between"
                       >
                         <div className="flex items-center gap-md">
@@ -2514,8 +2584,7 @@ function App() {
                     onClick={() => {
                       localStorage.removeItem('currentUser');
                       setCurrentUser(null);
-                      setCurrentView('landing');
-                      setCurrentTab('home');
+                      window.location.hash = '#/';
                       triggerToast('👋 Signed out successfully.');
                     }}
                     className="w-full py-3 bg-error text-on-error hover:bg-white hover:text-primary transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-xs uppercase tracking-widest cursor-pointer"

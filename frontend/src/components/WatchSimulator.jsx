@@ -144,26 +144,6 @@ export default function WatchSimulator({
     }
   }, [heartRate, autoSync, onSyncHeartRate, isConnected, bleDevice]);
 
-  // Simulate natural steps accumulation when smartwatch is active/connected
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const stepsInterval = setInterval(() => {
-      const stepIncrement = workoutActive 
-        ? Math.floor(Math.random() * 11) + 15   // 15 to 25 steps during workout
-        : Math.floor(Math.random() * 4) + 1;     // 1 to 4 steps normally
-
-      setSteps((prev) => {
-        const nextSteps = prev + stepIncrement;
-        if (onSyncSteps) {
-          onSyncSteps(stepIncrement);
-        }
-        return nextSteps;
-      });
-    }, 4000);
-
-    return () => clearInterval(stepsInterval);
-  }, [isConnected, workoutActive, onSyncSteps]);
 
   // Manual Trigger Sync
   const triggerManualSync = () => {
@@ -523,6 +503,35 @@ export default function WatchSimulator({
                     </>
                   )}
                 </button>
+              </div>
+
+              {/* Manual Steps Simulation */}
+              <div className="pt-sm border-t border-white/5 flex flex-col gap-xs">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Simulate Activity</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const amount = 500;
+                      setSteps(prev => prev + amount);
+                      if (onSyncSteps) onSyncSteps(amount);
+                    }}
+                    disabled={!isConnected}
+                    className="flex-1 py-1.5 rounded-lg bg-surface-container-high hover:bg-white/5 border border-white/10 text-[10px] font-bold text-[#c3f400] active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    +500 Steps
+                  </button>
+                  <button
+                    onClick={() => {
+                      const amount = 1000;
+                      setSteps(prev => prev + amount);
+                      if (onSyncSteps) onSyncSteps(amount);
+                    }}
+                    disabled={!isConnected}
+                    className="flex-1 py-1.5 rounded-lg bg-surface-container-high hover:bg-white/5 border border-white/10 text-[10px] font-bold text-[#c3f400] active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    +1,000 Steps
+                  </button>
+                </div>
               </div>
 
               {/* Real BLE Wearable Connectivity Controls */}
