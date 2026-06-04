@@ -210,7 +210,7 @@ function App() {
       } else {
         const newPost = {
           ...postPayload,
-          id: Date.now(),
+          id: Date.now().toString(),
           time: "Just now",
           reactions: { fire: 0, strong: 0, clap: 0 },
           userReacted: { fire: false, strong: false, clap: false },
@@ -1292,7 +1292,8 @@ function App() {
       {/* ============================================================== */}
       {/* MAIN CANVAS BODY CONTAINER */}
       {/* ============================================================== */}
-      <main className="flex-grow lg:ml-64 min-h-screen px-4 py-6 md:p-6 lg:p-10 pt-24 lg:pt-10 pb-32 lg:pb-10 max-w-7xl mx-auto flex flex-col gap-lg">
+      <div className="lg:pl-64 w-full flex flex-col min-h-screen">
+        <main className="flex-grow min-h-screen px-4 py-6 md:p-6 lg:p-10 pt-24 lg:pt-10 pb-32 lg:pb-10 max-w-7xl w-full mx-auto flex flex-col gap-lg">
         
         {/* --- Unified Header Block --- */}
         <header className="fixed top-0 left-0 w-full h-16 bg-surface/90 backdrop-blur-md z-30 flex items-center justify-between px-md border-b border-white/5 shadow-sm lg:relative lg:top-auto lg:left-auto lg:w-auto lg:h-auto lg:bg-transparent lg:backdrop-blur-none lg:border-none lg:shadow-none lg:p-0 lg:mb-sm">
@@ -2675,6 +2676,7 @@ function App() {
         )}
 
       </main>
+    </div>
 
       {/* Global Floating Action Button for Mobile/Tablet views */}
       <button 

@@ -308,7 +308,7 @@ export default function LoginPage({ onViewChange, onLoginSuccess }) {
               <img
                 alt="High performance training"
                 className="absolute inset-0 w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH10kfcnCjyz1ANrDojoEV5rNZg6WILWcy-fyg6fdfYu6WXy6wR6sx5teXXIUXgbFQiNRRwJ-WWgeLfd5GOeLoUfsU5qFE2mr9OGI4pv8CJYX-YiTIZ0U46KDnTIb5cQ05qs5CwZXUjtxpvMeb5QAPycKJdudlAh2AMPVxwMonDm9TRw6XrNn1K-BhiiVFKZYv9PESbHbDBl2nyO3gsQS9ja2IEeAsdixksE5kCWo-oaSGiIY1SGonMkrSBcAiBa5QmvzTZON846Jn"
+                src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=800&q=80"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-[#051424]/90 via-[#051424]/40 to-transparent"></div>
 
