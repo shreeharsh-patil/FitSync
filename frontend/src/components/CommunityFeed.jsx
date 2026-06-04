@@ -12,6 +12,54 @@ import {
   Heart
 } from "lucide-react";
 
+// Robust high-quality realistic fallback posts representing FitSync community
+const DEFAULT_POSTS = [
+  {
+    id: "default_1",
+    author: "Sarah Miller",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80",
+    tag: "Milestone",
+    content: "Just smashed my 10k personal record today! Kept a steady 5:12/km pace all the way. Feeling absolutely unstoppable! 🏃‍♀️🔥",
+    image: "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=800&q=80",
+    time: "2 hours ago",
+    reactions: { fire: 8, strong: 5, clap: 12 },
+    reactedUsers: { fire: [], strong: [], clap: [] },
+    comments: [
+      { id: 1, author: "John Doe", text: "Incredible pace, Sarah! Keep it up!", time: "1 hour ago" },
+      { id: 2, author: "Coach Alex", text: "Consistent pacing pays off. Great form!", time: "45 mins ago" }
+    ],
+    showComments: false
+  },
+  {
+    id: "default_2",
+    author: "John Doe",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80",
+    tag: "Nutrition",
+    content: "Meal prep Sunday complete! Fueling the week with grilled chicken breast, roasted sweet potatoes, and steamed broccoli. Consistency is key! 🥑🥦🍗",
+    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=800&q=80",
+    time: "5 hours ago",
+    reactions: { fire: 4, strong: 6, clap: 3 },
+    reactedUsers: { fire: [], strong: [], clap: [] },
+    comments: [
+      { id: 1, author: "Sarah Miller", text: "Looks delicious! Do you use any specific seasoning?", time: "4 hours ago" }
+    ],
+    showComments: false
+  },
+  {
+    id: "default_3",
+    author: "Coach Alex",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
+    tag: "Activity",
+    content: "Remember, fitness is not a destination; it's a way of life. If you're struggling to stay motivated, focus on just showing up today. A 15-minute workout is infinitely better than 0 minutes. Let's get it! 💪⚡",
+    image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
+    time: "1 day ago",
+    reactions: { fire: 15, strong: 18, clap: 14 },
+    reactedUsers: { fire: [], strong: [], clap: [] },
+    comments: [],
+    showComments: false
+  }
+];
+
 export default function CommunityFeed({ userProfile, activeLog, triggerToast, currentUser, posts, setPosts }) {
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedTag, setSelectedTag] = useState("Activity");
@@ -20,9 +68,9 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast, cu
 
   // Preset image selections representing routes or meals
   const presetImages = [
-    { name: "Running Route", url: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-" },
-    { name: "Healthy Breakfast", url: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV7IXAaqBntuTh8n7T6_8zYT_lyrU9CJR0qksXGrpxzmanxR-ftEcKBdgBYWhgomr8ygc0XK39Kj92CSTVap9WBNynJi2_Bmyk-L0n0nk1wPj7Lkg-G5ZceQ9jocykOIl2nqmB6wX0ErPs9zvZgbMQrXyiTZsOLrCDkV9cLiedjkp3AiGS7gdu5V4bPz-vqCxWqqler075pyCTnrgGmZi-WnjuAK19L4WQdOKEgvGo97GplawSu5Qq8XA8BUezD2DzC3CEOgFbzOf-" },
-    { name: "Fitness Gear", url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAEmDrGdLfIwA0XhRe8akzIq5_19R6qy8f6OQQ2SsdNh0Bdr3hmgVqzZMc0OdskpFldYarwSViE4nMzz0chEp4XcSp5eJr1QuAcYF8XyohE8tHMyLIIk0lFQlfQ9QmoQp-IsZTmIgjMYnHsT96rJB-dNMYk3dIhK4Rf7EOxtg4KicxgflERqInMjM-DLJ06JKkrb7aAD7WMiera2f139VgbFaepMCOf3pEaBET0EQqQmy479aU4yaCiadKx8iFD60lOVIPQJ9mPKYc2" }
+    { name: "Running Route", url: "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=800&q=80" },
+    { name: "Healthy Breakfast", url: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=800&q=80" },
+    { name: "Fitness Gear", url: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80" }
   ];
 
   const mapPostData = (post, currentUserId) => {
@@ -50,10 +98,15 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast, cu
         const res = await fetch("/api/posts");
         if (res.ok) {
           const raw = await res.json();
-          setPosts(raw.map(p => mapPostData(p, currentUser?.id)));
+          const dbPosts = raw.map(p => mapPostData(p, currentUser?.id));
+          const defaultMapped = DEFAULT_POSTS.map(p => mapPostData(p, currentUser?.id));
+          setPosts([...dbPosts, ...defaultMapped]);
+        } else {
+          setPosts(DEFAULT_POSTS.map(p => mapPostData(p, currentUser?.id)));
         }
       } catch (err) {
         console.error("Failed to load community feed posts:", err);
+        setPosts(DEFAULT_POSTS.map(p => mapPostData(p, currentUser?.id)));
       }
     };
     loadPosts();
@@ -86,7 +139,7 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast, cu
       } else {
         const newPost = {
           ...postPayload,
-          id: Date.now(),
+          id: Date.now().toString(),
           time: "Just now",
           reactions: { fire: 0, strong: 0, clap: 0 },
           userReacted: { fire: false, strong: false, clap: false },
@@ -105,8 +158,9 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast, cu
   };
 
   const handleReaction = async (postId, reactionType) => {
+    const isDefaultPost = postId && postId.toString().startsWith("default_");
     try {
-      if (currentUser) {
+      if (currentUser && !isDefaultPost) {
         const res = await fetch(`/api/posts/${postId}/react`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -119,23 +173,36 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast, cu
           );
         }
       } else {
-        // Fallback local updates
+        // Fallback local updates for guest users OR default posts
         setPosts(prevPosts => 
           prevPosts.map(post => {
             if (post.id === postId) {
               const reacted = post.userReacted[reactionType];
               const updatedReactions = { ...post.reactions };
               updatedReactions[reactionType] = reacted 
-                ? updatedReactions[reactionType] - 1 
+                ? Math.max(0, updatedReactions[reactionType] - 1) 
                 : updatedReactions[reactionType] + 1;
               
               const updatedUserReacted = { ...post.userReacted };
               updatedUserReacted[reactionType] = !reacted;
 
+              // Update the reactedUsers locally for UI state representation
+              const updatedReactedUsers = post.reactedUsers ? { ...post.reactedUsers } : { fire: [], strong: [], clap: [] };
+              if (!updatedReactedUsers[reactionType]) {
+                updatedReactedUsers[reactionType] = [];
+              }
+              const userId = currentUser?.id || "mock-user";
+              if (reacted) {
+                updatedReactedUsers[reactionType] = updatedReactedUsers[reactionType].filter(uid => uid !== userId);
+              } else {
+                updatedReactedUsers[reactionType] = [...updatedReactedUsers[reactionType], userId];
+              }
+
               return {
                 ...post,
                 reactions: updatedReactions,
-                userReacted: updatedUserReacted
+                userReacted: updatedUserReacted,
+                reactedUsers: updatedReactedUsers
               };
             }
             return post;
@@ -159,8 +226,9 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast, cu
     const text = commentInputs[postId] || "";
     if (!text.trim()) return;
 
+    const isDefaultPost = postId && postId.toString().startsWith("default_");
     try {
-      if (currentUser) {
+      if (currentUser && !isDefaultPost) {
         const res = await fetch(`/api/posts/${postId}/comment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -176,16 +244,17 @@ export default function CommunityFeed({ userProfile, activeLog, triggerToast, cu
         setPosts(prevPosts =>
           prevPosts.map(post => {
             if (post.id === postId) {
+              const newComment = {
+                id: (post.comments ? post.comments.length : 0) + 1,
+                author: userProfile.name,
+                text: text,
+                time: "Just now"
+              };
               return {
                 ...post,
                 comments: [
-                  ...post.comments,
-                  {
-                    id: post.comments.length + 1,
-                    author: userProfile.name,
-                    text: text,
-                    time: "Just now"
-                  }
+                  ...(post.comments || []),
+                  newComment
                 ]
               };
             }
