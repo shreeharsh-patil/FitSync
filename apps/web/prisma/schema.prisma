@@ -56,6 +56,7 @@ model User {
   dateOfBirth     DateTime?
   bio             String?
   isPublic        Boolean   @default(true)
+  notificationPreferences String?  @default("{\"workouts\":true,\"hydration\":true,\"community\":false,\"aiDeloads\":true}")
   stripeCustomerId String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

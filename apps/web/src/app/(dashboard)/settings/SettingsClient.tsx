@@ -10,7 +10,6 @@ import {
   Shield,
   CreditCard,
   Smartphone,
-  Globe,
   HelpCircle,
   ChevronRight,
   Eye,
@@ -19,58 +18,50 @@ import {
   CheckCircle2,
   Trash2,
   Sparkles,
-  Activity,
   X,
-  Lock, LogOut,
+  Lock,
+  LogOut,
+  Send,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateUserSettings, updateUserPassword, deleteUserAccount } from "@/lib/actions";
+import { updateUserSettings, updateUserPassword, deleteUserAccount, updateNotificationPreferences, sendSupportTicket } from "@/lib/actions";
 import { signOut } from "next-auth/react";
 
 interface SettingsClientProps {
   user: any;
+  subscription: { plan: string; status: string; currentPeriodEnd: string } | null;
+  billingHistory: { date: string; plan: string; amount: string }[];
+  notificationPreferences: { workouts: boolean; hydration: boolean; community: boolean; aiDeloads: boolean };
 }
 
-export function SettingsClient({ user }: SettingsClientProps) {
+export function SettingsClient({ user, subscription, billingHistory, notificationPreferences: initialNotifPrefs }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState<"account" | "notifications" | "security" | "billing" | "apps" | "help">("account");
 
-  // Account Information form states
   const [fullName, setFullName] = useState(user.name || "");
   const [username, setUsername] = useState(user.username || "");
   const [bio, setBio] = useState(user.bio || "");
   const [isPublic, setIsPublic] = useState(user.isPublic ?? true);
   const [isSavingAccount, setIsSavingAccount] = useState(false);
 
-  // Password Security states
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // Notification toggles
-  const [notifications, setNotifications] = useState({
-    workouts: true,
-    hydration: true,
-    community: false,
-    aiDeloads: true,
-  });
+  const [notifications, setNotifications] = useState(initialNotifPrefs);
 
-  // App Tracker sync states
-  const [syncedApps, setSyncedApps] = useState<Record<string, { synced: boolean; loading: boolean; lastSync?: string }>>({
-    apple: { synced: true, loading: false, lastSync: "10 mins ago" },
-    strava: { synced: false, loading: false },
-    garmin: { synced: false, loading: false },
-  });
-
-  // Danger zone account deletion states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Toast status alert states
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"success" | "error">("success");
   const [showAlert, setShowAlert] = useState(false);
+
+  const [supportSubject, setSupportSubject] = useState("");
+  const [supportMessage, setSupportMessage] = useState("");
+  const [isSendingTicket, setIsSendingTicket] = useState(false);
 
   const triggerAlert = (message: string, type: "success" | "error" = "success") => {
     setAlertMessage(message);
@@ -120,26 +111,6 @@ export function SettingsClient({ user }: SettingsClientProps) {
     setIsUpdatingPassword(false);
   };
 
-  const handleSyncApp = (appKey: string) => {
-    setSyncedApps((prev) => ({
-      ...prev,
-      [appKey]: { ...prev[appKey], loading: true },
-    }));
-
-    // Simulate standard OAuth fetching handshake
-    setTimeout(() => {
-      setSyncedApps((prev) => ({
-        ...prev,
-        [appKey]: {
-          synced: !prev[appKey].synced,
-          loading: false,
-          lastSync: !prev[appKey].synced ? "Just now ⚡" : undefined,
-        },
-      }));
-      triggerAlert(`${appKey === "apple" ? "Apple Health" : appKey === "strava" ? "Strava" : "Garmin"} sync status updated!`, "success");
-    }, 1200);
-  };
-
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     const res = await deleteUserAccount(user.id);
@@ -155,32 +126,45 @@ export function SettingsClient({ user }: SettingsClientProps) {
     }
   };
 
-  const toggleNotification = (key: keyof typeof notifications) => {
-    setNotifications((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      triggerAlert("Notification preferences updated dynamically! 🔔", "success");
-      return next;
-    });
+  const toggleNotification = async (key: keyof typeof notifications) => {
+    const next = { ...notifications, [key]: !notifications[key] };
+    setNotifications(next);
+    await updateNotificationPreferences(user.id, next);
+    triggerAlert("Notification preferences updated", "success");
+  };
+
+  const handleSendSupportTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supportSubject.trim() || !supportMessage.trim()) return;
+    setIsSendingTicket(true);
+    const res = await sendSupportTicket(user.id, { subject: supportSubject, message: supportMessage });
+    if (res.success) {
+      triggerAlert(res.success, "success");
+      setSupportSubject("");
+      setSupportMessage("");
+    } else {
+      triggerAlert(res.error || "Failed to send support ticket", "error");
+    }
+    setIsSendingTicket(false);
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12">
-      {/* Toast Alert popup banner */}
       {showAlert && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-6 fade-in duration-300 max-w-sm">
-          <Card 
+          <Card
             className={cn(
               "p-4 backdrop-blur-xl border rounded-2xl shadow-2xl flex items-center gap-3 text-left",
-              alertType === "success" 
-                ? "bg-slate-950/90 border-secondary/40 shadow-secondary/5 text-white" 
+              alertType === "success"
+                ? "bg-slate-950/90 border-secondary/40 shadow-secondary/5 text-white"
                 : "bg-red-950/90 border-red-500/40 shadow-red-500/5 text-white"
             )}
           >
-            <div 
+            <div
               className={cn(
                 "h-8 w-8 rounded-xl flex shrink-0 items-center justify-center border",
-                alertType === "success" 
-                  ? "bg-secondary/15 border-secondary/35 text-secondary animate-pulse" 
+                alertType === "success"
+                  ? "bg-secondary/15 border-secondary/35 text-secondary"
                   : "bg-red-500/15 border-red-500/35 text-red-400"
               )}
             >
@@ -192,7 +176,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
               </p>
               <p className="text-xs font-semibold text-white mt-1.5 leading-normal">{alertMessage}</p>
             </div>
-            <button 
+            <button
               onClick={() => setShowAlert(false)}
               className="text-muted-foreground hover:text-white shrink-0 ml-1 p-0.5 rounded-full hover:bg-white/5"
             >
@@ -202,7 +186,6 @@ export function SettingsClient({ user }: SettingsClientProps) {
         </div>
       )}
 
-      {/* Header section */}
       <div>
         <h1 className="text-4xl font-bold font-heading tracking-tight text-white text-left">
           Settings
@@ -213,8 +196,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        
-        {/* Navigation Sidebar */}
+
         <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible pb-3 md:pb-0 gap-2 shrink-0 scrollbar-none">
           <SettingsTab
             icon={<User className="h-4 w-4" />}
@@ -254,10 +236,8 @@ export function SettingsClient({ user }: SettingsClientProps) {
           />
         </div>
 
-        {/* Content Area */}
         <div className="md:col-span-3 space-y-8">
-          
-          {/* TAB 1: Account Information */}
+
           {activeTab === "account" && (
             <Card className="p-6 sm:p-8 md:p-10 glass border-white/5 rounded-[2.5rem] space-y-8 text-left animate-in fade-in duration-200">
               <div className="space-y-1">
@@ -330,7 +310,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                   <LogOut className="h-4 w-4" />
                   Sign Out
                 </Button>
-                <Button 
+                <Button
                   onClick={handleSaveAccountInfo}
                   disabled={isSavingAccount}
                   className="bg-secondary text-primary font-bold px-8 h-12 rounded-xl shadow-lg shadow-secondary/15 flex items-center gap-2"
@@ -342,7 +322,6 @@ export function SettingsClient({ user }: SettingsClientProps) {
             </Card>
           )}
 
-          {/* TAB 2: Notifications */}
           {activeTab === "notifications" && (
             <Card className="p-6 sm:p-8 md:p-10 glass border-white/5 rounded-[2.5rem] space-y-8 text-left animate-in fade-in duration-200">
               <div className="space-y-1">
@@ -356,14 +335,14 @@ export function SettingsClient({ user }: SettingsClientProps) {
 
               <div className="space-y-4">
                 {[
-                  { key: "workouts", title: "Workout Reminders", desc: "Notify me when dynamic routines are scheduled for today." },
-                  { key: "hydration", title: "Hydration Alerts", desc: "Push periodic hydration reminder cues during training cycles." },
-                  { key: "community", title: "Social Feeds Digests", desc: "Send comment updates, likes, and community challenge alerts." },
-                  { key: "aiDeloads", title: "AI Coach Protocols", desc: "Notify me when optimal recovery/deload indexes are reached." }
+                  { key: "workouts" as const, title: "Workout Reminders", desc: "Notify me when dynamic routines are scheduled for today." },
+                  { key: "hydration" as const, title: "Hydration Alerts", desc: "Push periodic hydration reminder cues during training cycles." },
+                  { key: "community" as const, title: "Social Feeds Digests", desc: "Send comment updates, likes, and community challenge alerts." },
+                  { key: "aiDeloads" as const, title: "AI Coach Protocols", desc: "Notify me when optimal recovery/deload indexes are reached." }
                 ].map((item) => (
-                  <div 
+                  <div
                     key={item.key}
-                    onClick={() => toggleNotification(item.key as keyof typeof notifications)}
+                    onClick={() => toggleNotification(item.key)}
                     className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:border-secondary/20 transition-all group"
                   >
                     <div className="space-y-1 pr-4">
@@ -372,11 +351,11 @@ export function SettingsClient({ user }: SettingsClientProps) {
                     </div>
                     <div className={cn(
                       "h-6 w-6 rounded-lg border flex shrink-0 items-center justify-center transition-all",
-                      notifications[item.key as keyof typeof notifications] 
-                        ? "bg-secondary border-secondary text-primary" 
+                      notifications[item.key]
+                        ? "bg-secondary border-secondary text-primary"
                         : "border-white/20 hover:border-secondary/40 bg-white/5"
                     )}>
-                      {notifications[item.key as keyof typeof notifications] && <CheckCircle2 className="h-4.5 w-4.5 text-primary stroke-[3px]" />}
+                      {notifications[item.key] && <CheckCircle2 className="h-4.5 w-4.5 text-primary stroke-[3px]" />}
                     </div>
                   </div>
                 ))}
@@ -384,11 +363,9 @@ export function SettingsClient({ user }: SettingsClientProps) {
             </Card>
           )}
 
-          {/* TAB 3: Security & Privacy */}
           {activeTab === "security" && (
             <div className="space-y-8 animate-in fade-in duration-200">
-              
-              {/* Privacy settings */}
+
               <Card className="p-6 sm:p-8 md:p-10 glass border-white/5 rounded-[2.5rem] space-y-8 text-left">
                 <div className="space-y-1">
                   <h2 className="text-xl font-bold font-heading text-white">
@@ -399,7 +376,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                   </p>
                 </div>
 
-                <div 
+                <div
                   onClick={async () => {
                     const next = !isPublic;
                     setIsPublic(next);
@@ -413,7 +390,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                       {isPublic ? "Public Profile Status" : "Private Profile Status"}
                     </p>
                     <p className="text-[10px] text-muted-foreground font-semibold leading-relaxed">
-                      {isPublic 
+                      {isPublic
                         ? "Your posts, PR logs, and comments are visible to the dynamic community family."
                         : "Your logs are hidden, only you can consult progress analytics curves."
                       }
@@ -421,8 +398,8 @@ export function SettingsClient({ user }: SettingsClientProps) {
                   </div>
                   <div className={cn(
                     "h-6 w-6 rounded-lg border flex shrink-0 items-center justify-center transition-all",
-                    isPublic 
-                      ? "bg-secondary border-secondary text-primary" 
+                    isPublic
+                      ? "bg-secondary border-secondary text-primary"
                       : "border-white/20 hover:border-secondary/40 bg-white/5"
                   )}>
                     {isPublic && <CheckCircle2 className="h-4.5 w-4.5 text-primary stroke-[3px]" />}
@@ -430,7 +407,6 @@ export function SettingsClient({ user }: SettingsClientProps) {
                 </div>
               </Card>
 
-              {/* Password Section */}
               <Card className="p-6 sm:p-8 md:p-10 glass border-white/5 rounded-[2.5rem] space-y-8 text-left">
                 <div className="space-y-1">
                   <h2 className="text-xl font-bold font-heading text-white">
@@ -463,7 +439,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
                       New Password
@@ -500,7 +476,6 @@ export function SettingsClient({ user }: SettingsClientProps) {
                 </div>
               </Card>
 
-              {/* Danger Zone account deletion */}
               <div className="p-6 sm:p-8 rounded-[2.5rem] bg-red-500/5 border border-red-500/20 space-y-5 text-left">
                 <div className="space-y-1">
                   <h2 className="text-xl font-bold font-heading text-red-500">
@@ -521,7 +496,6 @@ export function SettingsClient({ user }: SettingsClientProps) {
             </div>
           )}
 
-          {/* TAB 4: Billing */}
           {activeTab === "billing" && (
             <Card className="p-6 sm:p-8 md:p-10 glass border-white/5 rounded-[2.5rem] space-y-8 text-left animate-in fade-in duration-200">
               <div className="space-y-1">
@@ -533,56 +507,56 @@ export function SettingsClient({ user }: SettingsClientProps) {
                 </p>
               </div>
 
-              <div className="p-6 bg-secondary/5 border border-secondary/15 rounded-3xl space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[8px] font-bold bg-secondary text-primary uppercase tracking-widest px-2 py-0.5 rounded font-mono">
-                      Active membership
-                    </span>
-                    <h3 className="text-2xl font-bold text-white mt-2">
-                      FitSync Premium Coach Plan
-                    </h3>
+              {subscription ? (
+                <div className="p-6 bg-secondary/5 border border-secondary/15 rounded-3xl space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[8px] font-bold bg-secondary text-primary uppercase tracking-widest px-2 py-0.5 rounded font-mono">
+                        Active membership
+                      </span>
+                      <h3 className="text-2xl font-bold text-white mt-2">
+                        {subscription.plan}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Renews on {new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                      </p>
+                    </div>
+                    <Sparkles className="h-8 w-8 text-secondary" />
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-4">
+                  <div className="text-center py-4">
+                    <CreditCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <h3 className="text-lg font-bold text-white">No Active Subscription</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Renews automatically on June 23, 2026 ($9.99/mo)
+                      You are currently on the free plan.
                     </p>
                   </div>
-                  <Sparkles className="h-8 w-8 text-secondary animate-pulse" />
                 </div>
-              </div>
+              )}
 
-              <div className="space-y-4">
-                <h3 className="font-bold text-sm text-white">Billing History</h3>
-                <div className="space-y-2.5">
-                  {[
-                    { date: "May 23, 2026", amount: "$9.99", id: "INV-9824A" },
-                    { date: "April 23, 2026", amount: "$9.99", id: "INV-9712B" },
-                  ].map((inv) => (
-                    <div 
-                      key={inv.id}
-                      className="flex justify-between items-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl text-xs"
-                    >
-                      <span className="font-semibold text-white">{inv.date}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="font-mono text-muted-foreground">{inv.id}</span>
-                        <span className="font-bold text-secondary">{inv.amount}</span>
+              {billingHistory.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-bold text-sm text-white">Billing History</h3>
+                  <div className="space-y-2.5">
+                    {billingHistory.map((inv, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl text-xs"
+                      >
+                        <span className="font-semibold text-white">{new Date(inv.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                        <div className="flex items-center gap-4">
+                          <span className="font-bold text-secondary">{inv.amount}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              <div className="pt-4 border-t border-white/5 flex justify-end">
-                <Button 
-                  onClick={() => triggerAlert("Stripe Checkout Portal synchronization is active!", "success")}
-                  className="bg-secondary text-primary font-bold px-8 h-12 rounded-xl shadow-lg shadow-secondary/15"
-                >
-                  Manage Stripe Invoices
-                </Button>
-              </div>
+              )}
             </Card>
           )}
 
-          {/* TAB 5: Connected Trackers */}
           {activeTab === "apps" && (
             <Card className="p-6 sm:p-8 md:p-10 glass border-white/5 rounded-[2.5rem] space-y-8 text-left animate-in fade-in duration-200">
               <div className="space-y-1">
@@ -596,65 +570,49 @@ export function SettingsClient({ user }: SettingsClientProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                  { key: "apple", title: "Apple Health", desc: "Heart rate and sleep parameters logs.", color: "from-red-500/10" },
-                  { key: "strava", title: "Strava Sync", desc: "GPS running coordinates and cardio tracks.", color: "from-orange-500/10" },
-                  { key: "garmin", title: "Garmin Connect", desc: "Calorie burns and strength logs metrics.", color: "from-blue-500/10" }
-                ].map((app) => {
-                  const state = syncedApps[app.key];
-                  return (
-                    <div 
-                      key={app.key}
-                      className={cn(
-                        "p-6 rounded-[2rem] border bg-gradient-to-br transition-all flex flex-col justify-between min-h-[220px] group",
-                        app.color,
-                        state.synced 
-                          ? "border-secondary/20 bg-secondary/[0.01]" 
-                          : "border-white/5 bg-white/5 hover:border-white/10"
-                      )}
-                    >
-                      <div className="space-y-3">
-                        <div className="h-10 w-10 rounded-xl bg-slate-900/60 flex items-center justify-center text-white border border-white/5 group-hover:scale-105 transition-transform">
-                          <Smartphone className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-white">{app.title}</h4>
-                          <p className="text-[10px] text-muted-foreground leading-normal mt-1">{app.desc}</p>
-                        </div>
+                  { key: "apple", title: "Apple Health", desc: "Heart rate and sleep parameters logs.", color: "from-red-500/10", icon: "🍎" },
+                  { key: "strava", title: "Strava Sync", desc: "GPS running coordinates and cardio tracks.", color: "from-orange-500/10", icon: "🏃" },
+                  { key: "garmin", title: "Garmin Connect", desc: "Calorie burns and strength logs metrics.", color: "from-blue-500/10", icon: "⌚" }
+                ].map((app) => (
+                  <div
+                    key={app.key}
+                    className={cn(
+                      "p-6 rounded-[2rem] border bg-gradient-to-br transition-all flex flex-col justify-between min-h-[220px] group",
+                      app.color,
+                      "border-white/5 bg-white/5 hover:border-white/10"
+                    )}
+                  >
+                    <div className="space-y-3">
+                      <div className="h-10 w-10 rounded-xl bg-slate-900/60 flex items-center justify-center text-white border border-white/5 group-hover:scale-105 transition-transform">
+                        <Smartphone className="h-5 w-5" />
                       </div>
-
-                      <div className="space-y-3.5 pt-4">
-                        <div className="flex justify-between items-center text-[8px] font-mono font-bold uppercase tracking-wider">
-                          <span className={cn(state.synced ? "text-secondary" : "text-muted-foreground")}>
-                            {state.synced ? "Active Synchronized" : "Disconnected"}
-                          </span>
-                          {state.lastSync && (
-                            <span className="text-muted-foreground">Sync: {state.lastSync}</span>
-                          )}
-                        </div>
-
-                        <Button
-                          onClick={() => handleSyncApp(app.key)}
-                          disabled={state.loading}
-                          variant={state.synced ? "outline" : "secondary"}
-                          className="w-full text-xs font-bold rounded-xl h-10 gap-2 shadow-inner"
-                        >
-                          {state.loading ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : state.synced ? (
-                            "Disconnect App"
-                          ) : (
-                            "Synchronize"
-                          )}
-                        </Button>
+                      <div>
+                        <h4 className="font-bold text-sm text-white">{app.title}</h4>
+                        <p className="text-[10px] text-muted-foreground leading-normal mt-1">{app.desc}</p>
                       </div>
                     </div>
-                  );
-                })}
+
+                    <div className="space-y-3.5 pt-4">
+                      <div className="flex justify-between items-center text-[8px] font-mono font-bold uppercase tracking-wider">
+                        <span className="text-muted-foreground">
+                          Coming Soon
+                        </span>
+                      </div>
+
+                      <Button
+                        disabled
+                        variant="outline"
+                        className="w-full text-xs font-bold rounded-xl h-10 gap-2 border-white/10 opacity-50 cursor-not-allowed"
+                      >
+                        Connect App
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </Card>
           )}
 
-          {/* TAB 6: Help & Support */}
           {activeTab === "help" && (
             <Card className="p-6 sm:p-8 md:p-10 glass border-white/5 rounded-[2.5rem] space-y-8 text-left animate-in fade-in duration-200">
               <div className="space-y-1">
@@ -662,35 +620,50 @@ export function SettingsClient({ user }: SettingsClientProps) {
                   Help & Support
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Consult standard FAQ grids or log a priority ticket for priority assistance.
+                  Send us a message and our team will get back to you.
                 </p>
               </div>
 
-              <div className="space-y-4">
-                {[
-                  { q: "How is my streak level count verified?", a: "Streaks increase for each consecutive day you log an active workout or dynamic macro balance inside your metrics history sheet." },
-                  { q: "Can I synchronize Strava GPS records?", a: "Yes, navigate to the Connected Apps tab, and toggle Strava synchronization. GPS records are parsed automatically." },
-                  { q: "How do I upgrade to the premium coaching plan?", a: "Subscription invoices and tiers can be managed under the Billing tab, running payments through standard secure Stripe checkouts." }
-                ].map((faq, idx) => (
-                  <div key={idx} className="p-5 bg-white/5 border border-white/5 rounded-2xl space-y-2">
-                    <p className="text-xs font-bold text-white flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4 text-secondary shrink-0" />
-                      {faq.q}
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-relaxed font-semibold pl-6">
-                      {faq.a}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                    Subject
+                  </label>
+                  <Input
+                    value={supportSubject}
+                    onChange={(e) => setSupportSubject(e.target.value)}
+                    placeholder="Brief summary of your issue..."
+                    className="bg-white/5 border-white/10 h-12 rounded-xl focus-visible:ring-secondary/40 text-white text-sm"
+                  />
+                </div>
 
-              <div className="pt-4 border-t border-white/5 flex justify-end">
-                <Button 
-                  onClick={() => triggerAlert("Support ticket generated dynamically. Check notifications!", "success")}
-                  className="bg-secondary text-primary font-bold px-8 h-12 rounded-xl shadow-lg shadow-secondary/15"
-                >
-                  Generate Support Ticket
-                </Button>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                    Message
+                  </label>
+                  <textarea
+                    value={supportMessage}
+                    onChange={(e) => setSupportMessage(e.target.value)}
+                    placeholder="Describe your issue in detail..."
+                    rows={5}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus-visible:ring-secondary/40 focus:outline-none focus:ring-2 resize-none placeholder:text-muted-foreground"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSendSupportTicket}
+                    disabled={isSendingTicket || !supportSubject.trim() || !supportMessage.trim()}
+                    className="bg-secondary text-primary font-bold px-8 h-12 rounded-xl shadow-lg shadow-secondary/15 gap-2"
+                  >
+                    {isSendingTicket ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    Send Message
+                  </Button>
+                </div>
               </div>
             </Card>
           )}
@@ -698,7 +671,6 @@ export function SettingsClient({ user }: SettingsClientProps) {
         </div>
       </div>
 
-      {/* Danger Zone Account Deletion Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <Card className="w-full max-w-md glass border-red-500/20 p-8 space-y-6 relative rounded-[2.5rem] shadow-2xl text-left">
@@ -711,7 +683,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
 
             <div className="space-y-3.5">
               <div className="h-12 w-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20 shadow-inner mb-4">
-                <Trash2 className="h-6 w-6 animate-pulse" />
+                <Trash2 className="h-6 w-6" />
               </div>
               <h3 className="text-2xl font-bold font-heading text-red-500">Expunge Athlete Profile?</h3>
               <p className="text-xs text-muted-foreground leading-relaxed font-semibold">

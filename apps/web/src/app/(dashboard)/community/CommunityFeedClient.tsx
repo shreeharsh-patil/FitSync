@@ -15,6 +15,7 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { io } from "socket.io-client";
 import { followUser, unfollowUser, createPostAction, createCommentAction, toggleLikePostAction } from "@/lib/actions";
 
@@ -40,46 +41,60 @@ interface PostItem {
   isLikedByUser: boolean;
 }
 
+interface Challenge {
+  id: string;
+  title: string;
+  participantCount: number;
+}
+
 interface CommunityFeedClientProps {
   user?: any;
   otherUsers?: { id: string; name: string; role: string; avatar: string }[];
   initialFollowingIds?: string[];
   initialPosts?: PostItem[];
+  challenges?: Challenge[];
+  initialJoinedChallengeIds?: string[];
 }
 
-export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds = [], initialPosts = [] }: CommunityFeedClientProps) {
-  const displayName = user?.name || "Alex Rivers";
+export function CommunityFeedClient({
+  user,
+  otherUsers = [],
+  initialFollowingIds = [],
+  initialPosts = [],
+  challenges = [],
+  initialJoinedChallengeIds = [],
+}: CommunityFeedClientProps) {
+  const displayName = user?.name || "Athlete";
   const avatarInitials = displayName
     .split(" ")
     .map((n: string) => n[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase() || "AR";
+    .toUpperCase() || "AT";
   const userGoal = user?.fitnessGoal
     ? `${user.fitnessGoal.charAt(0).toUpperCase() + user.fitnessGoal.slice(1).toLowerCase()} Athlete`
     : "Premium Athlete";
 
-  const [followingIds, setFollowingIds] = useState<string[]>(initialFollowingIds || []);
+  const [followingIds, setFollowingIds] = useState<string[]>(initialFollowingIds);
 
-  const handleFollowToggle = async (targetUserId: string, isMock = false) => {
+  const handleFollowToggle = async (targetUserId: string) => {
     const isCurrentlyFollowing = followingIds.includes(targetUserId);
 
     if (isCurrentlyFollowing) {
       setFollowingIds((prev) => prev.filter((id) => id !== targetUserId));
-      if (!isMock && user?.id) {
+      if (user?.id) {
         await unfollowUser(user.id, targetUserId);
       }
     } else {
       setFollowingIds((prev) => [...prev, targetUserId]);
-      if (!isMock && user?.id) {
+      if (user?.id) {
         await followUser(user.id, targetUserId);
       }
     }
 
-    // Emit real-time follow WebSocket event
     if (socketRef.current) {
       socketRef.current.emit("user-follow", {
-        followerId: user?.id || "mock-follower-id",
+        followerId: user?.id,
         followerName: displayName,
         followingId: targetUserId,
         isFollowing: !isCurrentlyFollowing,
@@ -87,69 +102,27 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
     }
   };
 
-  const [posts, setPosts] = useState<PostItem[]>(() => {
-    if (initialPosts && initialPosts.length > 0) {
-      return initialPosts;
-    }
-    return [
-      {
-        id: "1",
-        author: "Sarah Connor",
-        role: "Powerlifter",
-        avatar: "S",
-        time: "2 hours ago",
-        content: "Just crushed the \"Leg Day Destroyer\" routine! Added 10kg to my squat PR. Feeling strong but definitely going to be sore tomorrow. 🔥💪",
-        workoutName: "Leg Day Destroyer",
-        workoutMeta: "Volume: 12,400 kg • Duration: 1h 15m",
-        likesCount: 24,
-        commentsCount: 2,
-        isLikedByUser: false,
-        comments: [
-          { author: "Markus Vane", avatar: "M", content: "Insane squat volume Sarah! Standard overload.", time: "1 hour ago" },
-          { author: "Elena Rossi", avatar: "E", content: "Crushing it! Remember dynamic stretching tonight.", time: "45 mins ago" },
-        ],
-      },
-      {
-        id: "2",
-        author: "Markus Vane",
-        role: "Performance Coach",
-        avatar: "M",
-        time: "5 hours ago",
-        content: "Highly recommend checking your cellular hydration metrics today. The summer heat requires at least 3.5L of water intake to maintain maximal muscle contractility. Hydration is performance! 💧🏋️‍♂️",
-        likesCount: 18,
-        commentsCount: 1,
-        isLikedByUser: false,
-        comments: [
-          { author: "Sarah Connor", avatar: "S", content: "Logged 2.5L so far, tracking on the nutrition dashboard!", time: "3 hours ago" },
-        ],
-      },
-    ];
-  });
+  const [posts, setPosts] = useState<PostItem[]>(initialPosts);
 
-  // Form composer state
   const [newPostContent, setNewPostContent] = useState("");
 
-  // Comments state per post
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [newCommentText, setNewCommentText] = useState<Record<string, string>>({});
 
-  // Challenge Join states
-  const [joinedChallenges, setJoinedChallenges] = useState<Record<string, boolean>>({
-    shred: true,
-    core: false,
-  });
+  const [joinedChallengeIds, setJoinedChallengeIds] = useState<string[]>(initialJoinedChallengeIds);
 
-  // Real-time Follow Notification states
   const [followNotification, setFollowNotification] = useState("");
   const [showNotificationToast, setShowNotificationToast] = useState(false);
 
   const socketRef = useRef<any>(null);
 
-  // Initialize Socket.io connection and listeners
   useEffect(() => {
     const socketServerUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
 
-    const setupSocket = (socket: any) => {
+    if (socketServerUrl) {
+      const socket = io(socketServerUrl, {
+        transports: ["websocket"],
+      });
       socketRef.current = socket;
 
       socket.on("connect", () => {
@@ -167,10 +140,7 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
         setPosts((prev) =>
           prev.map((p) => {
             if (p.id === data.postId) {
-              return {
-                ...p,
-                likesCount: data.likesCount,
-              };
+              return { ...p, likesCount: data.likesCount };
             }
             return p;
           })
@@ -195,28 +165,12 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
         );
       });
 
-      // Listen for dynamic real-time athlete connections
       socket.on("user-follow-received", (data: { followerId: string; followerName: string; followingId: string; isFollowing: boolean }) => {
-        console.log("Real-time follow event received:", data);
         if (data.followingId === user?.id && data.isFollowing) {
-          setFollowNotification(`${data.followerName} just started following your training protocol! 🚀⚡`);
+          setFollowNotification(`${data.followerName} just started following your training protocol!`);
           setShowNotificationToast(true);
           setTimeout(() => setShowNotificationToast(false), 4500);
         }
-      });
-    };
-
-    if (socketServerUrl) {
-      const socket = io(socketServerUrl, {
-        transports: ["websocket"],
-      });
-      setupSocket(socket);
-    } else {
-      fetch("/api/socket").finally(() => {
-        const socket = io({
-          path: "/api/socket",
-        });
-        setupSocket(socket);
       });
     }
 
@@ -249,11 +203,9 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
     const contentToPost = newPostContent;
     setNewPostContent("");
 
-    // Persist to Postgres database
     if (user?.id) {
       const result = await createPostAction(user.id, contentToPost);
       if (result.success && result.post) {
-        // Update the temporary ID with the real database ID
         setPosts((prev) =>
           prev.map((p) => (p.id === tempId ? { ...p, id: result.post.id } : p))
         );
@@ -261,7 +213,6 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
       }
     }
 
-    // Emit real-time post creation event
     if (socketRef.current) {
       socketRef.current.emit("new-post", newPost);
     }
@@ -276,7 +227,6 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
           nextLikedState = isLiked;
           const nextCount = isLiked ? p.likesCount + 1 : p.likesCount - 1;
 
-          // Emit real-time like update event
           if (socketRef.current) {
             socketRef.current.emit("toggle-like", {
               postId,
@@ -294,7 +244,6 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
       })
     );
 
-    // Persist like to Postgres
     await toggleLikePostAction(postId, nextLikedState);
   };
 
@@ -319,7 +268,6 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id === postId) {
-          // Emit real-time comment creation event
           if (socketRef.current) {
             socketRef.current.emit("new-comment", {
               postId,
@@ -337,39 +285,33 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
       })
     );
 
-    // Reset comment input
     setNewCommentText((prev) => ({
       ...prev,
       [postId]: "",
     }));
 
-    // Persist to database
     if (user?.id) {
       await createCommentAction(user.id, postId, text);
     }
   };
 
-  const handleJoinChallenge = (key: string) => {
-    setJoinedChallenges((prev) => ({
-      ...prev,
-      [key]: true,
-    }));
+  const handleJoinChallenge = (challengeId: string) => {
+    setJoinedChallengeIds((prev) => [...prev, challengeId]);
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
-      {/* Real-time Follow Notification Toast */}
       {showNotificationToast && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-6 fade-in duration-300 max-w-sm">
           <Card className="p-4 bg-slate-950/90 backdrop-blur-xl border border-secondary/40 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.25)] flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-secondary/20 flex shrink-0 items-center justify-center text-secondary border border-secondary/30">
-              <Sparkles className="h-5 w-5 animate-pulse" />
+              <Sparkles className="h-5 w-5" />
             </div>
             <div className="text-left flex-1 min-w-0">
               <p className="text-[9px] font-bold text-secondary uppercase tracking-widest leading-none">Athlete Connection</p>
               <p className="text-xs font-semibold text-white mt-1.5 leading-normal">{followNotification}</p>
             </div>
-            <button 
+            <button
               onClick={() => setShowNotificationToast(false)}
               className="text-muted-foreground hover:text-white shrink-0 ml-1 p-0.5 rounded-full hover:bg-white/5"
             >
@@ -379,9 +321,7 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
         </div>
       )}
 
-      {/* Main Feed */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Post Composer */}
         <Card className="p-6 glass border-white/5 rounded-[2rem]">
           <form onSubmit={handleComposePost} className="flex gap-4">
             <div className="h-12 w-12 rounded-full bg-secondary flex shrink-0 items-center justify-center font-bold text-primary shadow-lg shadow-secondary/15">
@@ -416,190 +356,190 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
           </form>
         </Card>
 
-        {/* Posts List */}
-        {posts.map((post) => (
-          <Card key={post.id} className="p-6 glass border-white/5 rounded-[2rem] space-y-4 shadow-xl">
-            {/* Post Header */}
-            <div className="flex justify-between items-start">
-              <div className="flex gap-3 items-center">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-secondary/30 to-accent/30 flex items-center justify-center font-bold text-white shadow-md">
-                  {post.avatar}
-                </div>
-                <div>
-                  <p className="font-bold text-white text-sm">{post.author}</p>
-                  <p className="text-[9px] text-muted-foreground uppercase font-mono tracking-widest mt-0.5">
-                    {post.role} • {post.time}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Post Body */}
-            <p className="text-sm leading-relaxed text-muted-foreground font-medium">{post.content}</p>
-
-            {/* Linked Workout Module */}
-            {post.workoutName && (
-              <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex items-center gap-4 group cursor-pointer hover:border-secondary/20 transition-colors">
-                <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-105 transition-transform">
-                  <Flame className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="font-bold text-sm text-white group-hover:text-secondary transition-colors">
-                    {post.workoutName}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {post.workoutMeta}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Post Footer Action Buttons */}
-            <div className="flex items-center gap-6 pt-2 border-t border-white/5">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleLikeToggle(post.id)}
-                className={`gap-2 px-0 hover:bg-transparent font-bold ${
-                  post.isLikedByUser ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-white"
-                }`}
-              >
-                <Heart className={`h-4 w-4 ${post.isLikedByUser ? "fill-red-500 text-red-500" : ""}`} />
-                <span>{post.likesCount}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleToggleComments(post.id)}
-                className="text-muted-foreground hover:text-white gap-2 px-0 hover:bg-transparent font-bold"
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>{post.commentsCount}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-white gap-2 px-0 hover:bg-transparent font-bold ml-auto"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Comments Expanded Area */}
-            {expandedComments[post.id] && (
-              <div className="pt-4 border-t border-white/5 space-y-4 bg-black/10 p-4 rounded-2xl animate-fade-in">
-                {/* Existing Comments */}
-                <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                  {post.comments.map((comment, cIdx) => (
-                    <div key={cIdx} className="flex gap-3 text-xs">
-                      <div className="h-7 w-7 rounded-full bg-white/5 flex shrink-0 items-center justify-center font-bold text-white">
-                        {comment.avatar}
-                      </div>
-                      <div className="flex-1 bg-white/5 border border-white/5 rounded-xl p-2.5 space-y-1">
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-bold text-white">{comment.author}</span>
-                          <span className="text-[8px] text-muted-foreground font-mono">{comment.time}</span>
-                        </div>
-                        <p className="text-muted-foreground leading-normal">{comment.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Comment Input Composer */}
-                <div className="flex gap-3">
-                  <div className="h-8 w-8 rounded-full bg-secondary flex shrink-0 items-center justify-center font-bold text-primary text-[10px]">
-                    {avatarInitials}
-                  </div>
-                  <div className="flex-1 flex gap-2">
-                    <Input
-                      placeholder="Write a comment..."
-                      value={newCommentText[post.id] || ""}
-                      onChange={(e) =>
-                        setNewCommentText((prev) => ({
-                          ...prev,
-                          [post.id]: e.target.value,
-                        }))
-                      }
-                      className="bg-white/5 h-8 border-none text-xs"
-                    />
-                    <Button
-                      onClick={() => handleCommentSubmit(post.id)}
-                      disabled={!(newCommentText[post.id] || "").trim()}
-                      className="h-8 bg-secondary text-primary font-bold text-xs rounded-lg px-4 shadow-md shadow-secondary/15"
-                    >
-                      Comment
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </Card>
-        ))}
-      </div>
-
-      {/* Community Widgets Sidebar */}
-      <div className="space-y-6">
-        {/* Active Challenges Widget */}
-        <Card className="p-6 glass border-white/5 rounded-[2.5rem] space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold font-heading text-lg text-white">Active Challenges</h2>
-            <Award className="h-5 w-5 text-yellow-400" />
+        {posts.length === 0 ? (
+          <div className="text-center py-16">
+            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-white">No posts yet</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Be the first to share your workout achievements!
+            </p>
           </div>
-
-          <div className="space-y-4">
-            {/* Shred challenge */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 relative overflow-hidden group">
-              <div className="relative z-10 space-y-2">
-                <p className="font-bold text-sm text-white">Summer Shred 100km</p>
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest leading-none">
-                  45km / 100km completed
-                </p>
-                <div className="h-2 w-full bg-background rounded-full overflow-hidden">
-                  <div className="h-full bg-yellow-500 w-[45%]" />
+        ) : (
+          posts.map((post) => (
+            <Card key={post.id} className="p-6 glass border-white/5 rounded-[2rem] space-y-4 shadow-xl">
+              <div className="flex justify-between items-start">
+                <div className="flex gap-3 items-center">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-secondary/30 to-accent/30 flex items-center justify-center font-bold text-white shadow-md">
+                    {post.avatar}
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm">{post.author}</p>
+                    <p className="text-[9px] text-muted-foreground uppercase font-mono tracking-widest mt-0.5">
+                      {post.role} &bull; {post.time}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Core challenge */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-secondary/20 transition-all group">
-              <div className="space-y-3">
-                <div className="flex justify-between items-start">
+              <p className="text-sm leading-relaxed text-muted-foreground font-medium">{post.content}</p>
+
+              {post.workoutName && (
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex items-center gap-4 group cursor-pointer hover:border-secondary/20 transition-colors">
+                  <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-105 transition-transform">
+                    <Flame className="h-6 w-6" />
+                  </div>
                   <div>
                     <p className="font-bold text-sm text-white group-hover:text-secondary transition-colors">
-                      30-Day Core Builder
+                      {post.workoutName}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {joinedChallenges.core ? "Participating • Day 1" : "Join 1,204 active athletes"}
+                      {post.workoutMeta}
                     </p>
                   </div>
-                  {joinedChallenges.core && <Sparkles className="h-4 w-4 text-secondary animate-pulse" />}
                 </div>
+              )}
 
-                {joinedChallenges.core ? (
-                  <div className="h-2 w-full bg-background rounded-full overflow-hidden">
-                    <div className="h-full bg-secondary w-[3%]" />
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => handleJoinChallenge("core")}
-                    variant="link"
-                    className="p-0 h-auto text-secondary text-xs font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform"
-                  >
-                    Join Challenge
-                    <ChevronRight className="h-3 w-3" />
-                  </Button>
-                )}
+              <div className="flex items-center gap-6 pt-2 border-t border-white/5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleLikeToggle(post.id)}
+                  className={`gap-2 px-0 hover:bg-transparent font-bold ${
+                    post.isLikedByUser ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-white"
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${post.isLikedByUser ? "fill-red-500 text-red-500" : ""}`} />
+                  <span>{post.likesCount}</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleToggleComments(post.id)}
+                  className="text-muted-foreground hover:text-white gap-2 px-0 hover:bg-transparent font-bold"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>{post.commentsCount}</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-white gap-2 px-0 hover:bg-transparent font-bold ml-auto"
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
               </div>
-            </div>
-          </div>
-        </Card>
 
-        {/* Suggested Contacts Widget */}
+              {expandedComments[post.id] && (
+                <div className="pt-4 border-t border-white/5 space-y-4 bg-black/10 p-4 rounded-2xl">
+                  <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                    {post.comments.map((comment, cIdx) => (
+                      <div key={cIdx} className="flex gap-3 text-xs">
+                        <div className="h-7 w-7 rounded-full bg-white/5 flex shrink-0 items-center justify-center font-bold text-white">
+                          {comment.avatar}
+                        </div>
+                        <div className="flex-1 bg-white/5 border border-white/5 rounded-xl p-2.5 space-y-1">
+                          <div className="flex justify-between items-baseline">
+                            <span className="font-bold text-white">{comment.author}</span>
+                            <span className="text-[8px] text-muted-foreground font-mono">{comment.time}</span>
+                          </div>
+                          <p className="text-muted-foreground leading-normal">{comment.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <div className="h-8 w-8 rounded-full bg-secondary flex shrink-0 items-center justify-center font-bold text-primary text-[10px]">
+                      {avatarInitials}
+                    </div>
+                    <div className="flex-1 flex gap-2">
+                      <Input
+                        placeholder="Write a comment..."
+                        value={newCommentText[post.id] || ""}
+                        onChange={(e) =>
+                          setNewCommentText((prev) => ({
+                            ...prev,
+                            [post.id]: e.target.value,
+                          }))
+                        }
+                        className="bg-white/5 h-8 border-none text-xs"
+                      />
+                      <Button
+                        onClick={() => handleCommentSubmit(post.id)}
+                        disabled={!(newCommentText[post.id] || "").trim()}
+                        className="h-8 bg-secondary text-primary font-bold text-xs rounded-lg px-4 shadow-md shadow-secondary/15"
+                      >
+                        Comment
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          ))
+        )}
+      </div>
+
+      <div className="space-y-6">
+        {challenges.length > 0 && (
+          <Card className="p-6 glass border-white/5 rounded-[2.5rem] space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold font-heading text-lg text-white">Active Challenges</h2>
+              <Award className="h-5 w-5 text-yellow-400" />
+            </div>
+
+            <div className="space-y-4">
+              {challenges.map((challenge) => {
+                const isJoined = joinedChallengeIds.includes(challenge.id);
+                return (
+                  <div
+                    key={challenge.id}
+                    className={cn(
+                      "p-4 rounded-2xl border transition-all group",
+                      isJoined
+                        ? "bg-gradient-to-br from-yellow-500/10 to-transparent border-yellow-500/20"
+                        : "bg-white/5 border-white/5 hover:border-secondary/20"
+                    )}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-sm text-white group-hover:text-secondary transition-colors">
+                          {challenge.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {isJoined
+                            ? "Participating"
+                            : `Join ${challenge.participantCount} active athletes`}
+                        </p>
+                      </div>
+                      {isJoined && <Sparkles className="h-4 w-4 text-secondary" />}
+                    </div>
+
+                    {!isJoined && (
+                      <Button
+                        onClick={() => handleJoinChallenge(challenge.id)}
+                        variant="link"
+                        className="p-0 h-auto text-secondary text-xs font-bold flex items-center gap-1 mt-3 group-hover:translate-x-1 transition-transform"
+                      >
+                        Join Challenge
+                        <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
         <Card className="p-6 glass border-white/5 rounded-[2.5rem] space-y-6">
           <h2 className="font-bold font-heading text-lg text-white">Suggested Athletes</h2>
           <div className="space-y-4">
-            {otherUsers.length > 0 ? (
+            {otherUsers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No other athletes found yet.
+              </p>
+            ) : (
               otherUsers.map((ath) => (
                 <SuggestedAthlete
                   key={ath.id}
@@ -608,36 +548,9 @@ export function CommunityFeedClient({ user, otherUsers = [], initialFollowingIds
                   role={ath.role}
                   avatar={ath.avatar}
                   isFollowing={followingIds.includes(ath.id)}
-                  onToggle={() => handleFollowToggle(ath.id, false)}
+                  onToggle={() => handleFollowToggle(ath.id)}
                 />
               ))
-            ) : (
-              <>
-                <SuggestedAthlete
-                  id="mock-elena"
-                  name="Elena Rossi"
-                  role="Sports Psychologist"
-                  avatar="E"
-                  isFollowing={followingIds.includes("mock-elena")}
-                  onToggle={() => handleFollowToggle("mock-elena", true)}
-                />
-                <SuggestedAthlete
-                  id="mock-sarah"
-                  name="Dr. Sarah Chen"
-                  role="Sports Scientist"
-                  avatar="S"
-                  isFollowing={followingIds.includes("mock-sarah")}
-                  onToggle={() => handleFollowToggle("mock-sarah", true)}
-                />
-                <SuggestedAthlete
-                  id="mock-julian"
-                  name="Chef Julian"
-                  role="FitSync Culinary"
-                  avatar="J"
-                  isFollowing={followingIds.includes("mock-julian")}
-                  onToggle={() => handleFollowToggle("mock-julian", true)}
-                />
-              </>
             )}
           </div>
         </Card>

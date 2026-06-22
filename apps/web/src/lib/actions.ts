@@ -737,6 +737,54 @@ export async function sendMessage(senderId: string, receiverId: string, content:
   }
 }
 
+export async function updateNotificationPreferences(
+  userId: string,
+  preferences: { workouts: boolean; hydration: boolean; community: boolean; aiDeloads: boolean }
+) {
+  try {
+    await db.user.update({
+      where: { id: userId },
+      data: { notificationPreferences: JSON.stringify(preferences) },
+    });
+    revalidatePath("/settings");
+    return { success: "Notification preferences updated" };
+  } catch (error) {
+    console.error("Update notification preferences error:", error);
+    return { error: "Failed to update notification preferences" };
+  }
+}
+
+export async function sendSupportTicket(
+  userId: string,
+  data: { subject: string; message: string }
+) {
+  try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    });
+
+    await db.notification.create({
+      data: {
+        userId,
+        type: "support_ticket",
+        data: JSON.stringify({
+          subject: data.subject,
+          message: data.message,
+          userName: user?.name,
+          userEmail: user?.email,
+        }),
+      },
+    });
+
+    revalidatePath("/settings");
+    return { success: "Support ticket submitted successfully! We'll get back to you soon." };
+  } catch (error) {
+    console.error("Support ticket error:", error);
+    return { error: "Failed to submit support ticket" };
+  }
+}
+
 export async function getDashboardMetrics(userId: string) {
   try {
     const now = new Date();
