@@ -650,7 +650,169 @@ export async function toggleLikePostAction(postId: string, increment: boolean) {
   }
 }
 
+export async function getConversations(userId: string) {
+  try {
+    const messages = await db.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId },
+          { receiverId: userId },
+        ],
+      },
+      include: {
+        sender: { select: { id: true, name: true, image: true } },
+        receiver: { select: { id: true, name: true, image: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
+    const contactMap = new Map<string, { name: string; lastMessage: string; time: Date }>();
 
+    for (const msg of messages) {
+      const contactId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+      const contactName = msg.senderId === userId ? (msg.receiver.name || "Athlete") : (msg.sender.name || "Athlete");
+
+      if (!contactMap.has(contactId)) {
+        contactMap.set(contactId, {
+          name: contactName,
+          lastMessage: msg.content,
+          time: msg.createdAt,
+        });
+      }
+    }
+
+    return Array.from(contactMap.entries()).map(([id, data]) => ({
+      id,
+      name: data.name,
+      lastMessage: data.lastMessage,
+      time: data.time.toISOString(),
+    }));
+  } catch (error) {
+    console.error("Get conversations error:", error);
+    return [];
+  }
+}
+
+export async function getMessages(userId: string, contactId: string) {
+  try {
+    const messages = await db.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId, receiverId: contactId },
+          { senderId: contactId, receiverId: userId },
+        ],
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return messages.map((msg) => ({
+      id: msg.id,
+      senderId: msg.senderId,
+      senderName: msg.senderId === userId ? "Me" : "Contact",
+      receiverId: msg.receiverId,
+      content: msg.content,
+      time: new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      isSelf: msg.senderId === userId,
+    }));
+  } catch (error) {
+    console.error("Get messages error:", error);
+    return [];
+  }
+}
+
+export async function sendMessage(senderId: string, receiverId: string, content: string) {
+  try {
+    const msg = await db.message.create({
+      data: {
+        senderId,
+        receiverId,
+        content,
+      },
+    });
+    revalidatePath("/messages");
+    return { success: true, message: msg };
+  } catch (error) {
+    console.error("Send message error:", error);
+    return { success: false, error: "Failed to send message" };
+  }
+}
+
+export async function getDashboardMetrics(userId: string) {
+  try {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    const weekLogs = await db.workoutLog.findMany({
+      where: { userId, logDate: { gte: startOfWeek } },
+    });
+    const monthLogs = await db.workoutLog.findMany({
+      where: { userId, logDate: { gte: startOfMonth } },
+    });
+    const yearLogs = await db.workoutLog.findMany({
+      where: { userId, logDate: { gte: startOfYear } },
+    });
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weekVolumes = dayNames.map((_, idx) => {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + idx);
+      const dayStr = day.toISOString().split("T")[0];
+      const logs = weekLogs.filter((l) => l.logDate.toISOString().split("T")[0] === dayStr);
+      return logs.reduce((sum, l) => sum + (l.caloriesBurned || 0), 0);
+    });
+
+    const weeklyVolume = weekVolumes.reduce((a, b) => a + b, 0);
+    const monthlyVolume = monthLogs.reduce((sum, l) => sum + (l.caloriesBurned || 0), 0);
+    const yearlyVolume = yearLogs.reduce((sum, l) => sum + (l.caloriesBurned || 0), 0);
+
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayLogs = await db.nutritionLog.findMany({
+      where: { userId, logDate: { gte: todayStart } },
+    });
+    const todayCalories = todayLogs.reduce((sum, l) => sum + l.totalCalories, 0);
+
+    const workout = await db.workout.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      weekVolumes,
+      weeklyVolume,
+      monthlyVolume,
+      yearlyVolume,
+      todayCalories,
+      activeRoutineName: workout?.name || null,
+    };
+  } catch (error) {
+    console.error("Get dashboard metrics error:", error);
+    return {
+      weekVolumes: [0, 0, 0, 0, 0, 0, 0],
+      weeklyVolume: 0,
+      monthlyVolume: 0,
+      yearlyVolume: 0,
+      todayCalories: 0,
+      activeRoutineName: null,
+    };
+  }
+}
+
+export async function getUserAchievements(userId: string) {
+  try {
+    const achievements = await db.achievement.findMany({
+      where: { userId },
+      orderBy: { earnedAt: "desc" },
+    });
+    return achievements;
+  } catch (error) {
+    console.error("Get achievements error:", error);
+    return [];
+  }
+}
 
 

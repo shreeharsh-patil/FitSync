@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import db from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "./DashboardClient";
-import { getUserActivityAndStreak } from "@/lib/actions";
+import { getUserActivityAndStreak, getDashboardMetrics } from "@/lib/actions";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -19,15 +19,20 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Query user's workouts to find active routine
   const userWorkouts = await db.workout.findMany({
     where: { userId: session.user.id },
     take: 1,
   });
   const activeWorkoutId = userWorkouts[0]?.id;
 
-  // Query user's activity streak details dynamically
   const streakDetails = await getUserActivityAndStreak(session.user.id);
+  const metrics = await getDashboardMetrics(session.user.id);
+
+  const allWorkoutLogs = await db.workoutLog.findMany({
+    where: { userId: session.user.id },
+    orderBy: { logDate: "desc" },
+    take: 100,
+  });
 
   return (
     <div className="space-y-8 sm:space-y-12">
@@ -35,8 +40,9 @@ export default async function DashboardPage() {
         user={user} 
         activeWorkoutId={activeWorkoutId} 
         streakDetails={streakDetails}
+        metrics={metrics}
+        workoutLogs={allWorkoutLogs}
       />
     </div>
   );
 }
-

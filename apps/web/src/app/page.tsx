@@ -29,25 +29,25 @@ export default function LandingPage() {
   ]);
   const [isTyping, setIsTyping] = useState(false);
 
-  const mockReplies = [
+  const demoQuestions = [
     {
-      q: "Explain progressive overload index",
-      r: "Progressive overload is the foundation of hypertrophy. Aim to increase total mechanical tension weekly by incrementing load by 2.5% to 5%, or adding sets/reps. Maintain concentric control."
+      q: "Explain progressive overload",
+      r: "Progressive overload is the foundation of hypertrophy. Aim to increase total mechanical tension weekly by incrementing load by 2.5% to 5%, or adding sets/reps."
     },
     {
-      q: "Suggest cellular recovery protocols",
-      r: "Optimal recovery targets a parasympathetic shift. Implement:\n1. 10 mins myofascial release\n2. 3:1 hydration ratio (water to electrolytes)\n3. 8 hours sleep with dark temperature at 18°C."
+      q: "Suggest recovery protocols",
+      r: "Optimal recovery targets a parasympathetic shift. Implement:\n1. 10 mins myofascial release\n2. 3:1 hydration ratio (water to electrolytes)\n3. 8 hours sleep in a cool, dark environment."
     },
     {
-      q: "Calculate protein macro targets",
-      r: "To optimize protein synthesis: consume 2.0g per kg of bodyweight, distributed in 4 equal feeding windows of 35-40g every 3.5 hours. Prioritize post-workout synchronization."
+      q: "Calculate protein targets",
+      r: "To optimize protein synthesis: consume 2.0g per kg of bodyweight, distributed in 4 equal feeding windows of 35-40g every 3.5 hours."
     }
   ];
 
   const handleSimulateQuestion = (index: number) => {
     if (isTyping) return;
-    const q = mockReplies[index].q;
-    const r = mockReplies[index].r;
+    const q = demoQuestions[index].q;
+    const r = demoQuestions[index].r;
     
     // Add user message
     setChatMessages(prev => [...prev, { role: "user", content: q }]);
@@ -383,8 +383,8 @@ export default function LandingPage() {
                 </p>
                 
                 {/* Pre-set simulation buttons */}
-                <div className="flex flex-col gap-3 pt-2">
-                  {mockReplies.map((item, idx) => (
+                  <div className="flex flex-col gap-3 pt-2">
+                    {demoQuestions.map((item, idx) => (
                     <motion.button
                       key={idx}
                       whileHover={{ scale: 1.02, x: 5 }}

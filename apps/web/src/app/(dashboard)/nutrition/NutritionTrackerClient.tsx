@@ -427,9 +427,11 @@ export function NutritionTrackerClient({ initialLogs, userId }: NutritionTracker
                 <div className="h-10 w-10 rounded-xl bg-secondary/20 flex items-center justify-center text-secondary border border-secondary/30">
                   <Zap className="h-5 w-5 fill-secondary" />
                 </div>
-                <h3 className="text-xl font-bold font-heading text-white">AI Performance Insight</h3>
+                <h3 className="text-xl font-bold font-heading text-white">Performance Insight</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed font-semibold italic">
-                  "Your protein distribution is peaking at the optimal anabolic window post-session. Maintaining this synchronicity will increase hypertrophic adaptation by estimated 8% over this cycle."
+                  {totalCalories > 0 
+                    ? `You've logged ${totalCalories.toLocaleString()} calories today. ${totalProtein > 0 ? `Protein: ${totalProtein}g. ` : ""}Keep tracking your meals for personalized AI insights.`
+                    : "Log your meals to receive AI-powered nutritional insights tailored to your training goals."}
                 </p>
                 <div className="pt-2">
                   <span className="text-[9px] font-bold text-secondary uppercase tracking-[0.2em] bg-secondary/10 px-3 py-1 rounded-full border border-secondary/20">

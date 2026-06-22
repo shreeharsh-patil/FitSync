@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { getWorkouts } from "@/lib/actions";
+import db from "@/lib/db";
 import { redirect } from "next/navigation";
 
 export default async function WorkoutPage() {
@@ -15,6 +16,10 @@ export default async function WorkoutPage() {
   }
 
   const workouts = await getWorkouts(session.user.id);
+  const exercises = await db.exercise.findMany({
+    take: 4,
+    orderBy: { name: "asc" },
+  });
 
   return (
     <div className="space-y-8">
@@ -36,7 +41,6 @@ export default async function WorkoutPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Active Plans */}
         <div className="lg:col-span-2 space-y-6">
           <h2 className="text-xl font-bold font-heading">Your Active Plans</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -71,19 +75,24 @@ export default async function WorkoutPage() {
             )}
           </div>
         </div>
-        {/* Exercise Database Quick Search */}
+
         <div className="space-y-6">
           <h2 className="text-xl font-bold font-heading">Exercise Database</h2>
           <Card className="p-6 glass border-secondary/20 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search 500+ exercises..." className="pl-10" />
+              <Input placeholder="Search exercises..." className="pl-10" />
             </div>
             <div className="space-y-3">
-              <QuickExercise name="Barbell Bench Press" category="Chest" />
-              <QuickExercise name="Deadlift" category="Back" />
-              <QuickExercise name="Squats" category="Legs" />
-              <QuickExercise name="Overhead Press" category="Shoulders" />
+              {exercises.length > 0 ? (
+                exercises.map((ex) => (
+                  <QuickExercise key={ex.id} name={ex.name} category={ex.category} />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Run database seed to populate exercises
+                </p>
+              )}
             </div>
             <Link href="/workout/exercises" className="block w-full">
               <Button
@@ -134,7 +143,7 @@ function PlanCard({
           </div>
           <div className="flex items-center gap-1.5">
             <Zap className="h-4 w-4 text-accent/70" />
-            {exercises} Modules
+            {exercises} Exercises
           </div>
         </div>
       </Card>

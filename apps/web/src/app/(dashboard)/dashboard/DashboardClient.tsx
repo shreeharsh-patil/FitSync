@@ -20,7 +20,6 @@ import {
   Sparkles,
   Loader2,
   Award,
-  Clock,
   Compass,
   CheckCircle2,
   Share2,
@@ -37,6 +36,15 @@ interface DashboardClientProps {
     streak: number;
     activeDates: string[];
   };
+  metrics?: {
+    weekVolumes: number[];
+    weeklyVolume: number;
+    monthlyVolume: number;
+    yearlyVolume: number;
+    todayCalories: number;
+    activeRoutineName: string | null;
+  };
+  workoutLogs?: any[];
 }
 
 const containerVariants = {
@@ -62,7 +70,7 @@ const itemVariants = {
   },
 } as const;
 
-export function DashboardClient({ user, activeWorkoutId, streakDetails }: DashboardClientProps) {
+export function DashboardClient({ user, activeWorkoutId, streakDetails, metrics, workoutLogs }: DashboardClientProps) {
   const firstName = user.name?.split(" ")[0] || "Athlete";
 
   // Active chart filters
@@ -142,21 +150,21 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
       case "month":
         return {
           labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-          values: [48200, 72500, 51000, 94200],
-          unit: "kg",
+          values: [metrics?.monthlyVolume ? Math.round(metrics.monthlyVolume / 4) : 0, 0, 0, 0],
+          unit: "kcal",
         };
       case "year":
         return {
-          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-          values: [185000, 132000, 204000, 168000, 192000, 215000],
-          unit: "kg",
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+          values: [metrics?.yearlyVolume ? Math.round(metrics.yearlyVolume) : 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          unit: "kcal",
         };
       case "week":
       default:
         return {
           labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-          values: [14200, 9500, 16800, 0, 18500, 12200, 20400],
-          unit: "kg",
+          values: metrics?.weekVolumes || [0, 0, 0, 0, 0, 0, 0],
+          unit: "kcal",
         };
     }
   };
@@ -316,18 +324,18 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
                         Navigation Shortcuts
                       </p>
                       <div className="grid grid-cols-1 gap-1.5">
-                        {filteredShortcuts.map((item) => (
-                          <Link key={item.name} href={item.href} onClick={() => setShowSearchDropdown(false)}>
+                        {filteredShortcuts.map((shortcut) => (
+                          <Link key={shortcut.name} href={shortcut.href} onClick={function() { setShowSearchDropdown(false); }}>
                             <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all group">
                               <div className="h-9 w-9 rounded-xl bg-secondary/15 flex items-center justify-center text-secondary border border-secondary/10 group-hover:scale-105 transition-transform">
-                                <item.icon className="h-4.5 w-4.5" />
+                                 <shortcut.icon className="h-4.5 w-4.5" />
                               </div>
                               <div className="text-left">
                                 <p className="text-xs font-bold text-white group-hover:text-secondary transition-colors">
-                                  {item.name}
+                                  {shortcut.name}
                                 </p>
                                 <p className="text-[9px] text-muted-foreground mt-0.5">
-                                  {item.desc}
+                                  {shortcut.desc}
                                 </p>
                               </div>
                             </div>
@@ -430,16 +438,16 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
           href={activeWorkoutId ? `/workout/${activeWorkoutId}` : "/workout/builder"}
           icon={<Dumbbell className="h-6 w-6 text-blue-400" />}
           label="Active Routine"
-          value="Upper Body A"
+          value={metrics?.activeRoutineName || "No Plan"}
           subtext={activeWorkoutId ? "Click to start session" : "Click to build routine"}
           gradient="from-blue-500/10 to-transparent"
         />
         <SummaryCard
           href="/nutrition"
           icon={<Utensils className="h-6 w-6 text-secondary" />}
-          label="Energy Balance"
-          value="1,240 kcal"
-          subtext="Remaining today"
+          label="Today's Calories"
+          value={metrics?.todayCalories ? `${metrics.todayCalories.toLocaleString()} kcal` : "0 kcal"}
+          subtext="Logged today"
           gradient="from-secondary/10 to-transparent"
         />
         <SummaryCard
@@ -451,11 +459,11 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
           gradient="from-accent/10 to-transparent"
         />
         <SummaryCard
-          href="/community"
+          href="/workout"
           icon={<Trophy className="h-6 w-6 text-yellow-400" />}
-          label="Platform Rank"
-          value="Top 5%"
-          subtext="Community Leaderboard"
+          label="Weekly Volume"
+          value={metrics?.weeklyVolume ? `${metrics.weeklyVolume.toLocaleString()} kcal` : "0 kcal"}
+          subtext="This week"
           gradient="from-yellow-500/10 to-transparent"
         />
       </motion.div>
@@ -602,14 +610,16 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
             </motion.div>
             <h3 className="text-xl font-bold font-heading text-white">AI Coach Insights</h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-semibold">
-              "Your progressive overload indices are peaking beautifully. However, cardiovascular log ratios suggest executing a dynamic recovery protocol tomorrow is optimal for peak strength on Monday."
+              {workoutLogs && workoutLogs.length > 0
+                ? `You have logged ${workoutLogs.length} workout sessions. Keep up the consistency for optimal results. Visit the AI Coach for personalized advice.`
+                : "Start logging your workouts to receive personalized AI coaching insights tailored to your training data."}
             </p>
           </div>
           
           <div className="space-y-3.5 pt-4 relative z-10">
             <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-white bg-slate-950/40 p-2.5 border border-white/5 rounded-xl">
               <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
-              <span>Recommended: stretching protocols</span>
+              <span>{workoutLogs && workoutLogs.length > 0 ? `${workoutLogs.length} total sessions logged` : "Start your first workout"}</span>
             </div>
             <Link href="/ai-coach" className="block w-full">
               <Button
@@ -738,9 +748,9 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails }: Dashbo
               <div className="h-10 w-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 border border-indigo-500/30">
                 <Compass className="h-5.5 w-5.5" />
               </div>
-              <h3 className="text-lg font-bold font-heading text-white">Pro Tip Protocol</h3>
+              <h3 className="text-lg font-bold font-heading text-white">Pro Tip</h3>
               <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
-                Staggered workout tracking logs show that training before 10:00 AM results in a 15% increase in progressive load success. Sleep latency scores hint tomorrow is a strength-peaking day!
+                Consistency is the foundation of all progress. Log your workouts daily, track your nutrition, and prioritize recovery. Small wins compound into extraordinary results.
               </p>
             </div>
           </Card>

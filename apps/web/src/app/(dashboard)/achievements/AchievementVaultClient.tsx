@@ -22,15 +22,28 @@ import { cn } from "@/lib/utils";
 
 interface AchievementVaultClientProps {
   user: any;
+  dbUser: any;
+  achievements: any[];
+  streak: number;
 }
+
+const BADGE_DEFINITIONS = [
+  { type: "first_workout", name: "First Steps", desc: "Completed your first workout session.", icon: Zap, color: "text-secondary", bgColor: "bg-secondary/15", borderColor: "border-secondary/30" },
+  { type: "five_workouts", name: "Getting Serious", desc: "Completed 5 workout sessions.", icon: Trophy, color: "text-yellow-400", bgColor: "bg-yellow-500/15", borderColor: "border-yellow-500/30" },
+  { type: "ten_workouts", name: "Dedicated Athlete", desc: "Completed 10 workout sessions.", icon: Award, color: "text-accent", bgColor: "bg-accent/15", borderColor: "border-accent/30" },
+  { type: "first_meal", name: "Fuel Up", desc: "Logged your first meal.", icon: Sparkles, color: "text-green-400", bgColor: "bg-green-500/15", borderColor: "border-green-500/30" },
+  { type: "streak_3", name: "Consistency Spark", desc: "Maintained a 3-day workout streak.", icon: Flame, color: "text-orange-400", bgColor: "bg-orange-500/15", borderColor: "border-orange-500/30" },
+  { type: "streak_7", name: "Full Week", desc: "Maintained a 7-day workout streak.", icon: Target, color: "text-blue-400", bgColor: "bg-blue-500/15", borderColor: "border-blue-500/30" },
+  { type: "streak_30", name: "Monthly Warrior", desc: "Maintained a 30-day workout streak.", icon: Flame, color: "text-red-400", bgColor: "bg-red-500/15", borderColor: "border-red-500/30" },
+  { type: "first_post", name: "Social Butterfly", desc: "Made your first community post.", icon: Users, color: "text-purple-400", bgColor: "bg-purple-500/15", borderColor: "border-purple-500/30" },
+  { type: "weight_logged", name: "Metric Tracker", desc: "Logged your body weight for the first time.", icon: TrendingUp, color: "text-cyan-400", bgColor: "bg-cyan-500/15", borderColor: "border-cyan-500/30" },
+];
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
+    transition: { staggerChildren: 0.1 },
   },
 } as const;
 
@@ -39,91 +52,33 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-    },
+    transition: { type: "spring", stiffness: 100, damping: 15 },
   },
 } as const;
 
-export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
+export function AchievementVaultClient({ user, dbUser, achievements, streak }: AchievementVaultClientProps) {
   const [selectedCategory, setSelectedCategory] = useState<"all" | "performance" | "consistency" | "social">("all");
 
-  const badges = [
-    {
-      id: "1",
-      name: "Standard Overload",
-      desc: "Completed 5 consecutive workouts with increased load.",
-      category: "performance",
-      unlocked: true,
-      unlockedDate: "May 24, 2026",
-      icon: Zap,
-      color: "text-secondary",
-      bgColor: "bg-secondary/15",
-      borderColor: "border-secondary/30",
-    },
-    {
-      id: "2",
-      name: "Centurion Club",
-      desc: "Logged over 100 sets in a single training week.",
-      category: "performance",
-      unlocked: true,
-      unlockedDate: "May 18, 2026",
-      icon: Trophy,
-      color: "text-yellow-400",
-      bgColor: "bg-yellow-500/15",
-      borderColor: "border-yellow-500/30",
-    },
-    {
-      id: "3",
-      name: "Early Riser Protocol",
-      desc: "Complete 10 workouts before 07:00 AM.",
-      category: "consistency",
-      unlocked: false,
-      progress: 70,
-      icon: Target,
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/15",
-      borderColor: "border-blue-500/30",
-    },
-    {
-      id: "4",
-      name: "Social Catalyst",
-      desc: "Your training logs reached 500+ athlete likes.",
-      category: "social",
-      unlocked: true,
-      unlockedDate: "May 12, 2026",
-      icon: Users,
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/15",
-      borderColor: "border-purple-500/30",
-    },
-    {
-      id: "5",
-      name: "Hypertrophy Master",
-      desc: "Achieve a calculated volume of 500,000kg in a month.",
-      category: "performance",
-      unlocked: false,
-      progress: 35,
-      icon: Award,
-      color: "text-accent",
-      bgColor: "bg-accent/15",
-      borderColor: "border-accent/30",
-    },
-    {
-      id: "6",
-      name: "Cellular Synchronicity",
-      desc: "Maintain perfect macro ratios for 14 consecutive days.",
-      category: "consistency",
-      unlocked: true,
-      unlockedDate: "May 28, 2026",
-      icon: Sparkles,
-      color: "text-green-400",
-      bgColor: "bg-green-500/15",
-      borderColor: "border-green-500/30",
-    },
-  ];
+  const unlockedTypes = new Set(achievements.map((a: any) => a.badgeType));
+  const unlockedCount = achievements.length;
+
+  const badges = BADGE_DEFINITIONS.map((def, idx) => {
+    const unlocked = unlockedTypes.has(def.type);
+    const achievementData = achievements.find((a: any) => a.badgeType === def.type);
+    return {
+      id: String(idx),
+      name: def.name,
+      desc: def.desc,
+      category: idx < 3 ? "performance" : idx < 6 ? "consistency" : "social",
+      unlocked,
+      unlockedDate: achievementData ? new Date(achievementData.earnedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : undefined,
+      progress: unlocked ? 100 : 0,
+      icon: def.icon,
+      color: def.color,
+      bgColor: def.bgColor,
+      borderColor: def.borderColor,
+    };
+  });
 
   const filteredBadges = badges.filter(
     (b) => selectedCategory === "all" || b.category === selectedCategory
@@ -136,9 +91,7 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
       variants={containerVariants}
       className="space-y-12 pb-24"
     >
-      {/* Top Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Streak HUD */}
         <motion.div variants={itemVariants}>
           <Card className="p-8 bg-gradient-to-br from-secondary/20 to-slate-900 border-secondary/30 border-[2px] rounded-[3rem] h-full relative overflow-hidden group shadow-2xl shadow-secondary/5">
             <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-secondary/15 blur-3xl rounded-full animate-pulse" />
@@ -148,20 +101,23 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
                   <Flame className="h-8 w-8 animate-pulse fill-secondary" />
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-secondary uppercase tracking-widest leading-none">Athlete: {user?.name || "Alex"}</p>
-                  <p className="text-2xl font-bold text-white mt-1">1.5x XP</p>
+                  <p className="text-[10px] font-bold text-secondary uppercase tracking-widest leading-none">
+                    Athlete: {user?.name || dbUser?.name || "You"}
+                  </p>
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="text-4xl font-extrabold font-heading text-white tracking-tighter">12 Days</h3>
+                <h3 className="text-4xl font-extrabold font-heading text-white tracking-tighter">{streak} Days</h3>
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Active Training Streak</p>
               </div>
               <div className="pt-4 border-t border-white/5">
-                <p className="text-[10px] text-secondary font-bold uppercase tracking-widest">3 Days to Next Level Up</p>
+                <p className="text-[10px] text-secondary font-bold uppercase tracking-widest">
+                  {streak >= 30 ? "Legendary Status" : streak >= 7 ? "Consistent Athlete" : streak >= 3 ? "Building Momentum" : "Start Your Streak"}
+                </p>
                 <div className="h-1.5 w-full bg-black/40 rounded-full mt-2 overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: "75%" }}
+                    animate={{ width: `${Math.min(100, (streak / 30) * 100)}%` }}
                     className="h-full bg-secondary" 
                   />
                 </div>
@@ -170,7 +126,6 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
           </Card>
         </motion.div>
 
-        {/* Platform Ranking HUD */}
         <motion.div variants={itemVariants}>
           <Card className="p-8 glass border-white/5 rounded-[3rem] h-full relative overflow-hidden group shadow-2xl">
             <div className="space-y-6 relative z-10">
@@ -180,29 +135,28 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Platform</p>
-                  <p className="text-2xl font-bold text-white mt-1">Global</p>
+                  <p className="text-2xl font-bold text-white mt-1">Personal</p>
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="text-4xl font-extrabold font-heading text-white tracking-tighter">Top 5%</h3>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Athlete Performance Rank</p>
+                <h3 className="text-4xl font-extrabold font-heading text-white tracking-tighter">
+                  {unlockedCount === 0 ? "Getting Started" : unlockedCount >= 5 ? "Elite" : "Rising"}
+                </h3>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                  {unlockedCount} Badge{unlockedCount !== 1 ? "s" : ""} Unlocked
+                </p>
               </div>
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase">Points</p>
-                  <p className="text-lg font-bold text-white">12,450</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground/30" />
-                <div className="text-right">
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase">Rank</p>
-                  <p className="text-lg font-bold text-white">#1,204</p>
+              <div className="pt-4 border-t border-white/5">
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className={cn("h-2 flex-1 rounded-full", i <= Math.ceil((unlockedCount / BADGE_DEFINITIONS.length) * 5) ? "bg-accent" : "bg-white/5")} />
+                  ))}
                 </div>
               </div>
             </div>
           </Card>
         </motion.div>
 
-        {/* Badge Count HUD */}
         <motion.div variants={itemVariants}>
           <Card className="p-8 glass border-white/5 rounded-[3rem] h-full relative overflow-hidden group shadow-2xl">
             <div className="space-y-6 relative z-10">
@@ -212,16 +166,18 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Unlocked</p>
-                  <p className="text-2xl font-bold text-white mt-1">18/45</p>
+                  <p className="text-2xl font-bold text-white mt-1">{unlockedCount}/{BADGE_DEFINITIONS.length}</p>
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="text-4xl font-extrabold font-heading text-white tracking-tighter">Gold Tier</h3>
+                <h3 className="text-4xl font-extrabold font-heading text-white tracking-tighter">
+                  {unlockedCount >= 7 ? "Platinum" : unlockedCount >= 4 ? "Gold" : unlockedCount >= 2 ? "Silver" : "Bronze"} Tier
+                </h3>
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Achievement Protocol</p>
               </div>
               <div className="pt-4 border-t border-white/5 flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className={cn("h-2 flex-1 rounded-full", i <= 3 ? "bg-yellow-500" : "bg-white/5")} />
+                  <div key={i} className={cn("h-2 flex-1 rounded-full", i <= Math.ceil((unlockedCount / BADGE_DEFINITIONS.length) * 5) ? "bg-yellow-500" : "bg-white/5")} />
                 ))}
               </div>
             </div>
@@ -229,11 +185,10 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
         </motion.div>
       </div>
 
-      {/* Badges Filter & Grid */}
       <div className="space-y-8">
         <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-between gap-6">
           <h2 className="text-2xl font-bold font-heading text-white flex items-center gap-3">
-            Unlocked Badges
+            Badges
             <Sparkles className="h-5 w-5 text-secondary" />
           </h2>
 
@@ -276,7 +231,7 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
                     <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
                       <div className="bg-slate-900/90 border border-white/10 p-4 rounded-2xl shadow-2xl flex flex-col items-center gap-2">
                         <Lock className="h-6 w-6 text-muted-foreground" />
-                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">Locked Module</span>
+                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">Locked</span>
                       </div>
                     </div>
                   )}
@@ -308,7 +263,9 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
                     <div className="pt-4 border-t border-white/5">
                       {badge.unlocked ? (
                         <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Unlocked {badge.unlockedDate}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                            Unlocked {badge.unlockedDate || "Recently"}
+                          </span>
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/5">
                             <Share2 className="h-4 w-4 text-secondary" />
                           </Button>
@@ -316,11 +273,7 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
                       ) : (
                         <div className="space-y-2">
                           <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest mb-1">
-                            <span className="text-muted-foreground">Progression</span>
-                            <span className="text-secondary">{badge.progress}%</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-secondary w-[70%]" style={{ width: `${badge.progress}%` }} />
+                            <span className="text-muted-foreground">Keep Training</span>
                           </div>
                         </div>
                       )}
@@ -332,81 +285,6 @@ export function AchievementVaultClient({ user }: AchievementVaultClientProps) {
           </AnimatePresence>
         </div>
       </div>
-
-      {/* Platform Milestones Timeline */}
-      <motion.div variants={itemVariants} className="space-y-8">
-        <h2 className="text-2xl font-bold font-heading text-white px-4">
-          Synchronicity Timeline
-        </h2>
-        <Card className="p-10 glass border-white/5 rounded-[3rem] relative overflow-hidden">
-          <div className="space-y-12 relative z-10">
-            <TimelineItem 
-              date="Today, 08:30 AM"
-              title="Hypertrophy Protocol Executed"
-              desc="Successfully logged Upper Body A session with a total volume of 18,500 kg."
-              icon={Flame}
-              color="text-secondary"
-            />
-            <TimelineItem 
-              date="Yesterday"
-              title="Metric Sync: Weight transformation"
-              desc="Recorded current body weight at 78.4kg. Trend indicates optimized caloric deficit."
-              icon={Target}
-              color="text-accent"
-            />
-            <TimelineItem 
-              date="May 26, 2026"
-              title="Social Matrix Connection"
-              desc="Your 'Bench Press PR' post reached 100+ athlete views in the community feed."
-              icon={Users}
-              color="text-blue-400"
-            />
-            <TimelineItem 
-              date="May 24, 2026"
-              title="Standard Overload Badge Unlocked"
-              desc="Achieved for maintaining progressive overload indices across 5 target modules."
-              icon={Award}
-              isLast
-              color="text-yellow-400"
-            />
-          </div>
-        </Card>
-      </motion.div>
     </motion.div>
-  );
-}
-
-function TimelineItem({ 
-  date, 
-  title, 
-  desc, 
-  icon: Icon, 
-  isLast = false,
-  color,
-}: { 
-  date: string; 
-  title: string; 
-  desc: string; 
-  icon: any; 
-  isLast?: boolean;
-  color: string;
-}) {
-  return (
-    <div className="flex gap-8 relative group">
-      {!isLast && (
-        <div className="absolute left-[27px] top-10 bottom-[-48px] w-0.5 bg-white/5 group-hover:bg-secondary/20 transition-colors" />
-      )}
-      <div className={cn(
-        "h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 relative z-10 group-hover:border-secondary/30 transition-all shadow-inner",
-        color
-      )}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <div className="space-y-2 pt-1">
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{date}</p>
-        <h4 className="text-xl font-bold text-white group-hover:text-secondary transition-colors">{title}</h4>
-        <p className="text-sm text-muted-foreground leading-relaxed font-medium max-w-2xl">{desc}</p>
-      </div>
-    </div>
   );
 }

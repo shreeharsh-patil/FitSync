@@ -288,15 +288,10 @@ export function ProgressTrackerClient({ initialEntries, userId }: ProgressTracke
             </div>
 
             <div className="space-y-4 relative z-10">
-              <MeasurementItem label="Body Fat Percentage" value={latestEntry?.bodyFatPct ? `${latestEntry.bodyFatPct}%` : "--"} trend="Current Matrix" />
-              <MeasurementItem label="Chest Circumference" value="104 cm" trend="Target: 106cm" />
-              <MeasurementItem label="Waist Line" value="82 cm" trend="Target: 80cm" />
-              <MeasurementItem label="Hips Protocol" value="96 cm" trend="Target: 94cm" />
+              <MeasurementItem label="Body Fat Percentage" value={latestEntry?.bodyFatPct ? `${latestEntry.bodyFatPct}%` : "--"} trend="Log your first body fat measurement" />
+              <MeasurementItem label="Current Weight" value={latestEntry?.weight ? `${latestEntry.weight} kg` : "--"} trend="Log weight to track progress" />
+              <MeasurementItem label="Height" value={latestEntry?.measurements ? JSON.parse(latestEntry.measurements)?.chest || "--" : "--"} trend="Track body dimensions" />
             </div>
-            
-            <Button variant="outline" className="w-full h-12 rounded-xl border-white/10 hover:bg-white/5 font-bold text-xs uppercase tracking-widest mt-4">
-              Update All Body Dimensions
-            </Button>
           </Card>
           
           <Card className="p-8 bg-gradient-to-br from-secondary/10 to-primary/20 border border-white/5 rounded-[3rem] shadow-xl relative overflow-hidden group">
