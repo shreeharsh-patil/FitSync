@@ -89,6 +89,7 @@ model User {
   bookings        Booking[]
   testimonials    Testimonial[]
 
+  goals           Goal[]
   trainerFollows  TrainerFollow[]
   recipes         Recipe[]
   mealPlans       MealPlan[]
@@ -97,6 +98,9 @@ model User {
   trainerSessions  CoachingSession[] @relation("TrainerSessions")
   clientSessions   CoachingSession[] @relation("ClientSessions")
   orgMemberships   OrgMember[]
+  integrations     UserIntegration[]
+  healthData       HealthData[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Account {
@@ -589,4 +593,47 @@ model OrgMember {
   user         User     @relation(fields: [userId], references: [id])
 
   @@unique([orgId, userId])
+}
+
+model PushSubscription {
+  id           String   @id @default(uuid())
+  userId       String
+  endpoint     String   @unique
+  p256dh       String
+  auth         String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model UserIntegration {
+  id              String   @id @default(uuid())
+  userId          String
+  provider        String   // APPLE_HEALTH, GOOGLE_FIT, FITBIT, GARMIN, WHOOP
+  accessToken     String?
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  scope           String?
+  isConnected     Boolean  @default(false)
+  lastSyncAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, provider])
+}
+
+model HealthData {
+  id          String   @id @default(uuid())
+  userId      String
+  source      String   // integration provider name
+  dataType    String   // STEPS, HEART_RATE, SLEEP, CALORIES, WORKOUT, WEIGHT
+  value       Float
+  unit        String
+  startTime   DateTime
+  endTime     DateTime?
+  metadata    String?  // JSON
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, dataType, startTime])
 }

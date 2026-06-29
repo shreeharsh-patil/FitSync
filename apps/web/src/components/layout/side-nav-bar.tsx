@@ -33,6 +33,8 @@ const navItems = [
   { name: "Community", href: "/community", icon: Users },
   { name: "Messages", href: "/messages", icon: MessageCircle },
   { name: "AI Coach", href: "/ai-coach", icon: MessageSquare },
+  { name: "Trainers", href: "/trainers", icon: GraduationCap },
+  { name: "Trainer Hub", href: "/trainer/dashboard", icon: Store },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
