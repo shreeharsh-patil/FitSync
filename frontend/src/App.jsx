@@ -19,6 +19,9 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
+  // Ref for click-outside detection on notification drawer
+  const notificationRef = useRef(null);
+
   // --- Navigation & Core Views ---
   const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'login' | 'register' | 'app'
   const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'activity' | 'workouts' | 'community' | 'settings'
@@ -168,6 +171,18 @@ function App() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  // Close notification drawer on outside click
+  useEffect(() => {
+    if (!showNotificationDrawer) return;
+    const handleClickOutside = (e) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) {
+        setShowNotificationDrawer(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showNotificationDrawer]);
 
   const handleShareToFeed = async (content) => {
     const postPayload = {
@@ -924,8 +939,8 @@ function App() {
 
       {/* --- Workout Logging Dialog Modal --- */}
       {showLogWorkoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md">
-          <div className="w-full max-w-md bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md" onClick={() => setShowLogWorkoutModal(false)}>
+          <div className="w-full max-w-md bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-lg border-b border-white/5 pb-sm">
               <h3 className="font-headline-lg text-headline-lg text-primary">Log Exercise Set</h3>
               <button 
@@ -997,7 +1012,7 @@ function App() {
                 </div>
               </div>
 
-              <button type="submit" className="w-full py-2.5 mt-lg bg-primary-fixed text-on-primary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-sm">
+              <button type="submit" className="w-full py-2.5 mt-lg bg-primary-fixed text-on-primary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-sm cursor-pointer">
                 Log to Session #{activeLog.workout === 'Rest Day' ? 'Special' : '24'}
               </button>
             </form>
@@ -1007,8 +1022,8 @@ function App() {
 
       {/* --- Log Run Dialog Modal --- */}
       {showLogRunModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md">
-          <div className="w-full max-w-md bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md" onClick={() => setShowLogRunModal(false)}>
+          <div className="w-full max-w-md bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-lg border-b border-white/5 pb-sm">
               <h3 className="font-headline-lg text-headline-lg text-primary">Log Running Activity</h3>
               <button 
@@ -1085,7 +1100,7 @@ function App() {
                 </select>
               </div>
 
-              <button type="submit" className="w-full py-2.5 mt-lg bg-primary-fixed text-on-primary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-sm">
+              <button type="submit" className="w-full py-2.5 mt-lg bg-primary-fixed text-on-primary-fixed hover:bg-white transition-all font-semibold rounded-lg shadow-lg active:scale-95 text-sm cursor-pointer">
                 Register Run & Track Mileage
               </button>
             </form>
@@ -1106,7 +1121,7 @@ function App() {
           {/* Dashboard */}
           <button 
             onClick={() => { window.location.hash = '#/home'; setActiveWorkoutSubView(null); }}
-            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
+            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 cursor-pointer ${
               currentTab === 'home' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
                 : 'text-on-surface-variant hover:bg-surface-variant/30'
@@ -1119,7 +1134,7 @@ function App() {
           {/* Detailed Analytics */}
           <button 
             onClick={() => { window.location.hash = '#/activity'; setActiveWorkoutSubView(null); }}
-            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
+            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 cursor-pointer ${
               currentTab === 'activity' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
                 : 'text-on-surface-variant hover:bg-surface-variant/30'
@@ -1132,7 +1147,7 @@ function App() {
           {/* Workouts */}
           <button 
             onClick={() => { window.location.hash = '#/workouts'; }}
-            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
+            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 cursor-pointer ${
               currentTab === 'workouts' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
                 : 'text-on-surface-variant hover:bg-surface-variant/30'
@@ -1145,7 +1160,7 @@ function App() {
           {/* Social (Community) */}
           <button 
             onClick={() => { window.location.hash = '#/community'; setActiveWorkoutSubView(null); }}
-            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
+            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 cursor-pointer ${
               currentTab === 'community' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
                 : 'text-on-surface-variant hover:bg-surface-variant/30'
@@ -1158,7 +1173,7 @@ function App() {
           {/* Nutrition Hub */}
           <button 
             onClick={() => { window.location.hash = '#/nutrition'; setActiveWorkoutSubView(null); }}
-            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
+            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 cursor-pointer ${
               currentTab === 'nutrition' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
                 : 'text-on-surface-variant hover:bg-surface-variant/30'
@@ -1171,7 +1186,7 @@ function App() {
           {/* Preferences (Settings) */}
           <button 
             onClick={() => { window.location.hash = '#/settings'; setActiveWorkoutSubView(null); }}
-            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
+            className={`w-full flex items-center gap-md px-4 py-3 rounded-lg transition-all hover:translate-x-1 cursor-pointer ${
               currentTab === 'settings' 
                 ? 'bg-primary-container text-on-primary-container font-bold shadow-md' 
                 : 'text-on-surface-variant hover:bg-surface-variant/30'
@@ -1201,7 +1216,7 @@ function App() {
         {/* Home */}
         <button 
           onClick={() => { window.location.hash = '#/home'; setActiveWorkoutSubView(null); }}
-          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 cursor-pointer ${
             currentTab === 'home' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
               : 'text-on-surface-variant hover:text-primary'
@@ -1216,7 +1231,7 @@ function App() {
         {/* Workouts */}
         <button 
           onClick={() => { window.location.hash = '#/workouts'; }}
-          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 cursor-pointer ${
             currentTab === 'workouts' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
               : 'text-on-surface-variant hover:text-primary'
@@ -1231,7 +1246,7 @@ function App() {
         {/* Nutrition */}
         <button 
           onClick={() => { window.location.hash = '#/nutrition'; setActiveWorkoutSubView(null); }}
-          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 cursor-pointer ${
             currentTab === 'nutrition' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
               : 'text-on-surface-variant hover:text-primary'
@@ -1246,7 +1261,7 @@ function App() {
         {/* Activity/Analytics */}
         <button 
           onClick={() => { window.location.hash = '#/activity'; setActiveWorkoutSubView(null); }}
-          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 cursor-pointer ${
             currentTab === 'activity' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
               : 'text-on-surface-variant hover:text-primary'
@@ -1261,7 +1276,7 @@ function App() {
         {/* Community */}
         <button 
           onClick={() => { window.location.hash = '#/community'; setActiveWorkoutSubView(null); }}
-          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 cursor-pointer ${
             currentTab === 'community' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
               : 'text-on-surface-variant hover:text-primary'
@@ -1276,7 +1291,7 @@ function App() {
         {/* Settings */}
         <button 
           onClick={() => { window.location.hash = '#/settings'; setActiveWorkoutSubView(null); }}
-          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 ${
+          className={`flex flex-col items-center gap-xs transition-all px-4 py-1.5 cursor-pointer ${
             currentTab === 'settings' 
               ? 'text-primary bg-primary/10 rounded-xl font-bold' 
               : 'text-on-surface-variant hover:text-primary'
@@ -1358,7 +1373,7 @@ function App() {
             )}
 
             {/* Notification Bell */}
-            <div className="relative">
+            <div className="relative" ref={notificationRef}>
               <button 
                 onClick={() => {
                   setShowNotificationDrawer(!showNotificationDrawer);
@@ -1366,7 +1381,7 @@ function App() {
                     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
                   }
                 }}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-variant/30 hover:bg-white/5 transition-all border border-white/5 active:scale-95"
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-variant/30 hover:bg-white/5 transition-all border border-white/5 active:scale-95 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-primary-fixed text-lg">notifications</span>
                 {notifications.some(n => !n.read) && (
@@ -1378,7 +1393,7 @@ function App() {
                 <div className="absolute right-0 mt-2 w-72 bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 py-2 animate-fade-in">
                   <div className="px-4 py-1.5 border-b border-white/5 flex justify-between items-center">
                     <span className="text-xs text-primary font-bold uppercase tracking-wider">Alerts Log</span>
-                    <button className="text-[10px] text-secondary-fixed hover:underline" onClick={() => setNotifications([])}>Clear</button>
+                    <button className="text-[10px] text-secondary-fixed hover:underline cursor-pointer" onClick={() => setNotifications([])}>Clear</button>
                   </div>
                   <div className="max-h-56 overflow-y-auto">
                     {notifications.length === 0 ? (
@@ -1468,15 +1483,15 @@ function App() {
 
                   <div className="flex gap-2 border-t border-white/5 pt-sm mt-xs">
                     {!workoutActive ? (
-                      <button onClick={startWorkout} className="w-full py-1 text-[10px] bg-primary-fixed text-on-primary-fixed font-bold rounded-lg flex items-center justify-center gap-0.5 active:scale-95 transition-transform">
+                      <button onClick={startWorkout} className="w-full py-1 text-[10px] bg-primary-fixed text-on-primary-fixed font-bold rounded-lg flex items-center justify-center gap-0.5 active:scale-95 transition-transform cursor-pointer">
                         <span className="material-symbols-outlined text-xs">play_arrow</span> Start Workout
                       </button>
                     ) : (
                       <>
-                        <button onClick={pauseWorkout} className="flex-grow py-1 text-[10px] bg-white/5 text-primary-fixed border border-white/10 font-semibold rounded-lg active:scale-95 transition-transform">
+                        <button onClick={pauseWorkout} className="flex-grow py-1 text-[10px] bg-white/5 text-primary-fixed border border-white/10 font-semibold rounded-lg active:scale-95 transition-transform cursor-pointer hover:bg-white/10">
                           {workoutPaused ? 'Resume' : 'Pause'}
                         </button>
-                        <button onClick={stopWorkout} className="py-1 px-3 text-[10px] bg-error/20 text-error border border-error/30 font-bold rounded-lg active:scale-95 transition-transform">
+                        <button onClick={stopWorkout} className="py-1 px-3 text-[10px] bg-error/20 text-error border border-error/30 font-bold rounded-lg active:scale-95 transition-transform cursor-pointer hover:bg-error/30">
                           End
                         </button>
                       </>
@@ -2660,8 +2675,41 @@ function App() {
                   </button>
                   <button
                     onClick={() => {
+                      // Clear persisted auth
                       localStorage.removeItem('currentUser');
+                      
+                      // Reset auth state
                       setCurrentUser(null);
+                      
+                      // Reset user profile to defaults
+                      setUserProfile({
+                        name: 'Athlete',
+                        level: 1,
+                        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuANOmh7jFGIMlEymlm5qyXZ_-gkcHgYS-46pUy9xs-ZWni1tGrbTMaJs_S6GEFNakfHaGCFTG5voxDH5DqKKzXEr33PUXAcNGMVgM-Azc3_Ld7gMfOq24fAjo6YPDdSZ4av83pzCU7lVk4mv3YNeD07eh5iv_813c2EpNwEUAP7sPkoGkbfOpE5MEJYuZefdAOoqx1zj0hYiPh2pzz3MFndBE-BB2Bj3nAb6LRi3gPLW3LsWF5nhYJeBTr4x0MmbNrpGQs0AC6-kAjW',
+                        height: 175,
+                        weight: 68.0,
+                        targetBmi: 21.5,
+                        goals: { steps: 10000, calories: 700, hydration: 8, sleep: 8.0, activeMin: 60 }
+                      });
+
+                      // Reset workout state
+                      setWorkoutActive(false);
+                      setWorkoutPaused(false);
+                      setTimerSeconds(0);
+
+                      // Reset modals and UI state
+                      setShowMealScanner(false);
+                      setShowWorkoutBuilder(false);
+                      setShowAIWorkoutGenerator(false);
+                      setShowWeightTrackerModal(false);
+                      setShowChallengeBoardModal(false);
+                      setShowNotificationDrawer(false);
+                      setShowLogWorkoutModal(false);
+                      setShowLogRunModal(false);
+                      setSelectedRunDetails(null);
+                      setHasChattedWithAI(false);
+
+                      // Navigate to landing
                       window.location.hash = '#/';
                       triggerToast('👋 Signed out successfully.');
                     }}
@@ -2695,8 +2743,8 @@ function App() {
 
       {/* AI Meal Scanner Modal Dialog */}
       {showMealScanner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md">
-          <div className="relative w-full max-w-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md" onClick={() => setShowMealScanner(false)}>
+          <div className="relative w-full max-w-xl" onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setShowMealScanner(false)}
               className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
@@ -2716,8 +2764,8 @@ function App() {
 
       {/* Custom Workout Routine Builder Modal Dialog */}
       {showWorkoutBuilder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto" onClick={() => setShowWorkoutBuilder(false)}>
+          <div className="relative w-full max-w-2xl my-8" onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setShowWorkoutBuilder(false)}
               className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
@@ -2737,8 +2785,8 @@ function App() {
 
       {/* AI Workout Generator Modal Dialog */}
       {showAIWorkoutGenerator && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto" onClick={() => setShowAIWorkoutGenerator(false)}>
+          <div className="relative w-full max-w-2xl my-8" onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setShowAIWorkoutGenerator(false)}
               className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
@@ -2759,8 +2807,8 @@ function App() {
 
       {/* Weight Tracker Modal Dialog */}
       {showWeightTrackerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-md overflow-y-auto" onClick={() => setShowWeightTrackerModal(false)}>
+          <div className="relative w-full max-w-xl my-8" onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setShowWeightTrackerModal(false)}
               className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
@@ -2779,8 +2827,8 @@ function App() {
 
       {/* Weekend Challenge Board Modal */}
       {showChallengeBoardModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/75 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-lg bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in text-on-surface my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/75 backdrop-blur-md overflow-y-auto" onClick={() => setShowChallengeBoardModal(false)}>
+          <div className="relative w-full max-w-lg bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in text-on-surface my-8" onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setShowChallengeBoardModal(false)}
               className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"
@@ -2895,8 +2943,8 @@ function App() {
 
       {/* Run Route Details Modal */}
       {selectedRunDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/75 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-xl bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in text-on-surface my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/75 backdrop-blur-md overflow-y-auto" onClick={() => setSelectedRunDetails(null)}>
+          <div className="relative w-full max-w-xl bg-surface-container-high/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-lg animate-fade-in text-on-surface my-8" onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setSelectedRunDetails(null)}
               className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-on-surface-variant hover:text-white"

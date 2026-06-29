@@ -1,23 +1,38 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Flame,
   Heart,
   Share2,
   Award,
-  Image as ImageIcon,
-  Sparkles,
   MessageSquare,
   ChevronRight,
   X,
+  Sparkles,
+  Users,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { io } from "socket.io-client";
-import { followUser, unfollowUser, createPostAction, createCommentAction, toggleLikePostAction } from "@/lib/actions";
+import {
+  followUser,
+  unfollowUser,
+  createPostAction,
+  createCommentAction,
+  toggleLikePostAction,
+  getFeed,
+  deletePost,
+  createPostWithMedia,
+  getNotificationCount,
+} from "@/lib/actions";
+import { PostCard } from "@/components/community/PostCard";
+import { PostComposer } from "@/components/community/PostComposer";
+import { PostSkeleton } from "@/components/community/PostSkeleton";
+import { InfiniteScrollTrigger } from "@/components/community/InfiniteScrollTrigger";
+import { FeedFilters, type FeedCategory, type FeedSort, type FeedScope } from "@/components/community/FeedFilters";
 
 interface Comment {
   author: string;
@@ -33,12 +48,16 @@ interface PostItem {
   avatar: string;
   time: string;
   content: string;
+  mediaUrls?: string[];
   workoutName?: string;
   workoutMeta?: string;
+  workoutCard?: { name: string; meta: string; exercises: number };
+  achievementBadge?: { type: string; label: string };
   likesCount: number;
   commentsCount: number;
   comments: Comment[];
   isLikedByUser: boolean;
+  userId?: string;
 }
 
 interface Challenge {
@@ -54,6 +73,8 @@ interface CommunityFeedClientProps {
   initialPosts?: PostItem[];
   challenges?: Challenge[];
   initialJoinedChallengeIds?: string[];
+  initialHasMore?: boolean;
+  initialCursor?: string | null;
 }
 
 export function CommunityFeedClient({
@@ -63,6 +84,8 @@ export function CommunityFeedClient({
   initialPosts = [],
   challenges = [],
   initialJoinedChallengeIds = [],
+  initialHasMore = true,
+  initialCursor = null,
 }: CommunityFeedClientProps) {
   const displayName = user?.name || "Athlete";
   const avatarInitials = displayName
@@ -76,20 +99,30 @@ export function CommunityFeedClient({
     : "Premium Athlete";
 
   const [followingIds, setFollowingIds] = useState<string[]>(initialFollowingIds);
+  const [posts, setPosts] = useState<PostItem[]>(initialPosts);
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [joinedChallengeIds, setJoinedChallengeIds] = useState<string[]>(initialJoinedChallengeIds);
+  const [followNotification, setFollowNotification] = useState("");
+  const [showNotificationToast, setShowNotificationToast] = useState(false);
+
+  const socketRef = useRef<any>(null);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
+  const [notifCount, setNotifCount] = useState(0);
+
+  useEffect(() => {
+    getNotificationCount(user?.id).then(setNotifCount);
+  }, [user?.id]);
 
   const handleFollowToggle = async (targetUserId: string) => {
     const isCurrentlyFollowing = followingIds.includes(targetUserId);
 
     if (isCurrentlyFollowing) {
       setFollowingIds((prev) => prev.filter((id) => id !== targetUserId));
-      if (user?.id) {
-        await unfollowUser(user.id, targetUserId);
-      }
+      if (user?.id) await unfollowUser(user.id, targetUserId);
     } else {
       setFollowingIds((prev) => [...prev, targetUserId]);
-      if (user?.id) {
-        await followUser(user.id, targetUserId);
-      }
+      if (user?.id) await followUser(user.id, targetUserId);
     }
 
     if (socketRef.current) {
@@ -102,20 +135,6 @@ export function CommunityFeedClient({
     }
   };
 
-  const [posts, setPosts] = useState<PostItem[]>(initialPosts);
-
-  const [newPostContent, setNewPostContent] = useState("");
-
-  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
-  const [newCommentText, setNewCommentText] = useState<Record<string, string>>({});
-
-  const [joinedChallengeIds, setJoinedChallengeIds] = useState<string[]>(initialJoinedChallengeIds);
-
-  const [followNotification, setFollowNotification] = useState("");
-  const [showNotificationToast, setShowNotificationToast] = useState(false);
-
-  const socketRef = useRef<any>(null);
-
   useEffect(() => {
     const socketServerUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
 
@@ -127,6 +146,7 @@ export function CommunityFeedClient({
 
       socket.on("connect", () => {
         console.log("WebSocket connected to real-time feed server!");
+        socket.emit("user-online", { userId: user?.id });
       });
 
       socket.on("post-received", (post: PostItem) => {
@@ -138,12 +158,7 @@ export function CommunityFeedClient({
 
       socket.on("like-updated", (data: { postId: string; likesCount: number }) => {
         setPosts((prev) =>
-          prev.map((p) => {
-            if (p.id === data.postId) {
-              return { ...p, likesCount: data.likesCount };
-            }
-            return p;
-          })
+          prev.map((p) => (p.id === data.postId ? { ...p, likesCount: data.likesCount } : p))
         );
       });
 
@@ -151,14 +166,8 @@ export function CommunityFeedClient({
         setPosts((prev) =>
           prev.map((p) => {
             if (p.id === data.postId) {
-              if (p.comments.some((c) => c.content === data.comment.content && c.author === data.comment.author)) {
-                return p;
-              }
-              return {
-                ...p,
-                commentsCount: p.commentsCount + 1,
-                comments: [...p.comments, data.comment],
-              };
+              if (p.comments.some((c) => c.content === data.comment.content && c.author === data.comment.author)) return p;
+              return { ...p, commentsCount: p.commentsCount + 1, comments: [...p.comments, data.comment] };
             }
             return p;
           })
@@ -169,21 +178,56 @@ export function CommunityFeedClient({
         if (data.followingId === user?.id && data.isFollowing) {
           setFollowNotification(`${data.followerName} just started following your training protocol!`);
           setShowNotificationToast(true);
+          setNotifCount((c) => c + 1);
           setTimeout(() => setShowNotificationToast(false), 4500);
         }
+      });
+
+      socket.on("post-deleted", (data: { postId: string }) => {
+        setPosts((prev) => prev.filter((p) => p.id !== data.postId));
+      });
+
+      socket.on("post-updated", (data: { post: PostItem }) => {
+        setPosts((prev) => prev.map((p) => (p.id === data.post.id ? data.post : p)));
+      });
+
+      socket.on("user-status", (data: { userId: string; online: boolean }) => {
+        setOnlineUsers((prev) => {
+          const next = new Set(prev);
+          if (data.online) next.add(data.userId);
+          else next.delete(data.userId);
+          return next;
+        });
+      });
+
+      socket.on("typing-indicator", (data: { postId: string; userName: string; typing: boolean }) => {
+        setTypingUsers((prev) => {
+          const postTyping = [...(prev[data.postId] || [])];
+          if (data.typing && !postTyping.includes(data.userName)) {
+            postTyping.push(data.userName);
+          } else if (!data.typing) {
+            const idx = postTyping.indexOf(data.userName);
+            if (idx !== -1) postTyping.splice(idx, 1);
+          }
+          return { ...prev, [data.postId]: postTyping };
+        });
+      });
+
+      socket.on("notification-count", (data: { count: number }) => {
+        setNotifCount(data.count);
       });
     }
 
     return () => {
       if (socketRef.current) {
+        socketRef.current.emit("user-offline", { userId: user?.id });
         socketRef.current.disconnect();
       }
     };
   }, [user?.id]);
 
-  const handleComposePost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPostContent.trim()) return;
+  const handleComposePost = async (content: string, mediaUrls: string[]) => {
+    if (!content.trim() && mediaUrls.length === 0) return;
 
     const tempId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
     const newPost: PostItem = {
@@ -192,7 +236,8 @@ export function CommunityFeedClient({
       role: userGoal,
       avatar: avatarInitials,
       time: "Just now",
-      content: newPostContent,
+      content: content,
+      mediaUrls,
       likesCount: 0,
       commentsCount: 0,
       isLikedByUser: false,
@@ -200,15 +245,13 @@ export function CommunityFeedClient({
     };
 
     setPosts((prev) => [newPost, ...prev]);
-    const contentToPost = newPostContent;
-    setNewPostContent("");
 
     if (user?.id) {
-      const result = await createPostAction(user.id, contentToPost);
+      const result = mediaUrls.length > 0
+        ? await createPostWithMedia(user.id, content, mediaUrls)
+        : await createPostAction(user.id, content);
       if (result.success && result.post) {
-        setPosts((prev) =>
-          prev.map((p) => (p.id === tempId ? { ...p, id: result.post.id } : p))
-        );
+        setPosts((prev) => prev.map((p) => (p.id === tempId ? { ...p, id: result.post.id } : p)));
         newPost.id = result.post.id;
       }
     }
@@ -226,36 +269,22 @@ export function CommunityFeedClient({
           const isLiked = !p.isLikedByUser;
           nextLikedState = isLiked;
           const nextCount = isLiked ? p.likesCount + 1 : p.likesCount - 1;
-
           if (socketRef.current) {
-            socketRef.current.emit("toggle-like", {
-              postId,
-              likesCount: nextCount,
-            });
+            socketRef.current.emit("toggle-like", { postId, likesCount: nextCount });
           }
-
-          return {
-            ...p,
-            isLikedByUser: isLiked,
-            likesCount: nextCount,
-          };
+          return { ...p, isLikedByUser: isLiked, likesCount: nextCount };
         }
         return p;
       })
     );
-
     await toggleLikePostAction(postId, nextLikedState);
   };
 
   const handleToggleComments = (postId: string) => {
-    setExpandedComments((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
+    setExpandedComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const handleCommentSubmit = async (postId: string) => {
-    const text = newCommentText[postId] || "";
+  const handleCommentSubmit = async (postId: string, text: string) => {
     if (!text.trim()) return;
 
     const newComment: Comment = {
@@ -265,39 +294,74 @@ export function CommunityFeedClient({
       time: "Just now",
     };
 
+    if (socketRef.current) {
+      socketRef.current.emit("new-comment", { postId, comment: newComment });
+    }
+
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id === postId) {
-          if (socketRef.current) {
-            socketRef.current.emit("new-comment", {
-              postId,
-              comment: newComment,
-            });
-          }
-
-          return {
-            ...p,
-            commentsCount: p.commentsCount + 1,
-            comments: [...p.comments, newComment],
-          };
+          return { ...p, commentsCount: p.commentsCount + 1, comments: [...p.comments, newComment] };
         }
         return p;
       })
     );
-
-    setNewCommentText((prev) => ({
-      ...prev,
-      [postId]: "",
-    }));
 
     if (user?.id) {
       await createCommentAction(user.id, postId, text);
     }
   };
 
+  const handleDeletePost = async (postId: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    if (socketRef.current) {
+      socketRef.current.emit("delete-post", { postId });
+    }
+    await deletePost(postId);
+  };
+
   const handleJoinChallenge = (challengeId: string) => {
     setJoinedChallengeIds((prev) => [...prev, challengeId]);
   };
+
+  const [category, setCategory] = useState<FeedCategory>("all");
+  const [sort, setSort] = useState<FeedSort>("latest");
+  const [scope, setScope] = useState<FeedScope>("for-you");
+
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [cursor, setCursor] = useState<string | null>(initialCursor);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const result = await getFeed(user?.id, cursor || undefined, 10, {
+        category,
+        sort,
+        scope,
+      });
+      if (result.posts.length > 0) {
+        setPosts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newPosts = result.posts.filter((p: PostItem) => !existingIds.has(p.id));
+          return [...prev, ...newPosts];
+        });
+        setCursor(result.nextCursor);
+      }
+      setHasMore(result.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, cursor, user?.id, category, sort, scope]);
+
+  useEffect(() => {
+    setPosts(initialPosts);
+    setHasMore(initialHasMore);
+    setCursor(initialCursor);
+  }, [initialPosts, initialHasMore, initialCursor]);
+
+  const showNotificationToast = notifCount > 0 && followNotification;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
@@ -322,41 +386,22 @@ export function CommunityFeedClient({
       )}
 
       <div className="lg:col-span-2 space-y-6">
-        <Card className="p-6 glass border-white/5 rounded-[2rem]">
-          <form onSubmit={handleComposePost} className="flex gap-4">
-            <div className="h-12 w-12 rounded-full bg-secondary flex shrink-0 items-center justify-center font-bold text-primary shadow-lg shadow-secondary/15">
-              {avatarInitials}
-            </div>
-            <div className="flex-1 space-y-4">
-              <Input
-                placeholder="Share your hypertrophy PRs, routine reviews, or energy metrics..."
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                className="bg-white/5 border-none h-12 text-sm focus-visible:ring-secondary/40 text-white placeholder:text-muted-foreground"
-              />
-              <div className="flex justify-between items-center pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-white gap-2 font-bold hover:bg-white/5 rounded-xl"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                  Add Photo
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!newPostContent.trim()}
-                  className="bg-secondary hover:bg-secondary/90 text-primary font-bold rounded-xl px-8 h-10 shadow-lg shadow-secondary/15"
-                >
-                  Post to Feed
-                </Button>
-              </div>
-            </div>
-          </form>
-        </Card>
+        <PostComposer
+          avatarInitials={avatarInitials}
+          displayName={displayName}
+          onSubmit={handleComposePost}
+        />
 
-        {posts.length === 0 ? (
+        <FeedFilters
+          category={category}
+          sort={sort}
+          scope={scope}
+          onCategoryChange={setCategory}
+          onSortChange={setSort}
+          onScopeChange={setScope}
+        />
+
+        {posts.length === 0 && !loadingMore ? (
           <div className="text-center py-16">
             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-bold text-white">No posts yet</h3>
@@ -365,122 +410,62 @@ export function CommunityFeedClient({
             </p>
           </div>
         ) : (
-          posts.map((post) => (
-            <Card key={post.id} className="p-6 glass border-white/5 rounded-[2rem] space-y-4 shadow-xl">
-              <div className="flex justify-between items-start">
-                <div className="flex gap-3 items-center">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-secondary/30 to-accent/30 flex items-center justify-center font-bold text-white shadow-md">
-                    {post.avatar}
-                  </div>
-                  <div>
-                    <p className="font-bold text-white text-sm">{post.author}</p>
-                    <p className="text-[9px] text-muted-foreground uppercase font-mono tracking-widest mt-0.5">
-                      {post.role} &bull; {post.time}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          <>
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserInitials={avatarInitials}
+                onLike={handleLikeToggle}
+                onComment={handleCommentSubmit}
+                onDelete={handleDeletePost}
+                onToggleComments={handleToggleComments}
+                commentsExpanded={!!expandedComments[post.id]}
+                isCurrentUserPost={post.userId === user?.id}
+              />
+            ))}
 
-              <p className="text-sm leading-relaxed text-muted-foreground font-medium">{post.content}</p>
+            {loadingMore && (
+              <>
+                <PostSkeleton />
+                <PostSkeleton />
+              </>
+            )}
 
-              {post.workoutName && (
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex items-center gap-4 group cursor-pointer hover:border-secondary/20 transition-colors">
-                  <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-105 transition-transform">
-                    <Flame className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm text-white group-hover:text-secondary transition-colors">
-                      {post.workoutName}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {post.workoutMeta}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center gap-6 pt-2 border-t border-white/5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleLikeToggle(post.id)}
-                  className={`gap-2 px-0 hover:bg-transparent font-bold ${
-                    post.isLikedByUser ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-white"
-                  }`}
-                >
-                  <Heart className={`h-4 w-4 ${post.isLikedByUser ? "fill-red-500 text-red-500" : ""}`} />
-                  <span>{post.likesCount}</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleToggleComments(post.id)}
-                  className="text-muted-foreground hover:text-white gap-2 px-0 hover:bg-transparent font-bold"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  <span>{post.commentsCount}</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-white gap-2 px-0 hover:bg-transparent font-bold ml-auto"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {expandedComments[post.id] && (
-                <div className="pt-4 border-t border-white/5 space-y-4 bg-black/10 p-4 rounded-2xl">
-                  <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                    {post.comments.map((comment, cIdx) => (
-                      <div key={cIdx} className="flex gap-3 text-xs">
-                        <div className="h-7 w-7 rounded-full bg-white/5 flex shrink-0 items-center justify-center font-bold text-white">
-                          {comment.avatar}
-                        </div>
-                        <div className="flex-1 bg-white/5 border border-white/5 rounded-xl p-2.5 space-y-1">
-                          <div className="flex justify-between items-baseline">
-                            <span className="font-bold text-white">{comment.author}</span>
-                            <span className="text-[8px] text-muted-foreground font-mono">{comment.time}</span>
-                          </div>
-                          <p className="text-muted-foreground leading-normal">{comment.content}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-3">
-                    <div className="h-8 w-8 rounded-full bg-secondary flex shrink-0 items-center justify-center font-bold text-primary text-[10px]">
-                      {avatarInitials}
-                    </div>
-                    <div className="flex-1 flex gap-2">
-                      <Input
-                        placeholder="Write a comment..."
-                        value={newCommentText[post.id] || ""}
-                        onChange={(e) =>
-                          setNewCommentText((prev) => ({
-                            ...prev,
-                            [post.id]: e.target.value,
-                          }))
-                        }
-                        className="bg-white/5 h-8 border-none text-xs"
-                      />
-                      <Button
-                        onClick={() => handleCommentSubmit(post.id)}
-                        disabled={!(newCommentText[post.id] || "").trim()}
-                        className="h-8 bg-secondary text-primary font-bold text-xs rounded-lg px-4 shadow-md shadow-secondary/15"
-                      >
-                        Comment
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Card>
-          ))
+            <InfiniteScrollTrigger
+              onLoadMore={handleLoadMore}
+              hasMore={hasMore}
+              loading={loadingMore}
+            />
+          </>
         )}
       </div>
 
       <div className="space-y-6">
+        {notifCount > 0 && (
+          <Card className="p-6 glass border-white/5 rounded-[2.5rem] space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold font-heading text-lg text-white">Notifications</h2>
+              <div className="relative">
+                <Bell className="h-5 w-5 text-secondary" />
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[9px] font-bold flex items-center justify-center text-white">
+                  {notifCount > 9 ? "9+" : notifCount}
+                </span>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {onlineUsers.size > 0 && (
+          <Card className="p-6 glass border-white/5 rounded-[2.5rem] space-y-4">
+            <h2 className="font-bold font-heading text-lg text-white flex items-center gap-2">
+              <Users className="h-5 w-5 text-secondary" />
+              Online Now
+            </h2>
+            <p className="text-xs text-muted-foreground">{onlineUsers.size} athlete{onlineUsers.size !== 1 ? "s" : ""} online</p>
+          </Card>
+        )}
+
         {challenges.length > 0 && (
           <Card className="p-6 glass border-white/5 rounded-[2.5rem] space-y-6">
             <div className="flex items-center justify-between">
@@ -507,9 +492,7 @@ export function CommunityFeedClient({
                           {challenge.title}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {isJoined
-                            ? "Participating"
-                            : `Join ${challenge.participantCount} active athletes`}
+                          {isJoined ? "Participating" : `Join ${challenge.participantCount} active athletes`}
                         </p>
                       </div>
                       {isJoined && <Sparkles className="h-4 w-4 text-secondary" />}

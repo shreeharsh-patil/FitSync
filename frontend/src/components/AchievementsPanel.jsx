@@ -139,8 +139,8 @@ export default function AchievementsPanel({ activeLog, hasChattedWithAI, trigger
 
       {/* Celebratory Modal Dialog */}
       {selectedBadge && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/75 backdrop-blur-md">
-          <div className="relative w-full max-w-sm glass-card border border-primary-fixed/30 rounded-3xl p-lg text-center space-y-md shadow-2xl animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/75 backdrop-blur-md" onClick={() => setSelectedBadge(null)}>
+          <div className="relative w-full max-w-sm glass-card border border-primary-fixed/30 rounded-3xl p-lg text-center space-y-md shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
             {/* Confetti particles preview */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(195,244,0,0.1)_0%,transparent_70%)] pointer-events-none" />
 

@@ -17,6 +17,8 @@ import {
   UserCircle,
   Award,
   MessageCircle,
+  GraduationCap,
+  Store,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { motion } from "framer-motion";

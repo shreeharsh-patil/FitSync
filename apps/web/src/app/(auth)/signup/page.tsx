@@ -24,8 +24,14 @@ export default function SignupPage() {
       if (res?.error) {
         setError(res.error);
         setIsLoading(false);
+        return;
       }
-      // If successful, register action calls signIn internally which automatically redirects to /dashboard.
+      // User created — sign them in on the client side
+      await signIn("credentials", {
+        email: res.email,
+        password: res.password,
+        redirectTo: "/dashboard",
+      });
     } catch (err: any) {
       console.error("Signup submit error:", err);
       setError("An unexpected error occurred. Please try again.");

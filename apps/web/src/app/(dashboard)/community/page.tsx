@@ -16,6 +16,8 @@ export default async function CommunityPage() {
   let initialFollowingIds: string[] = [];
   let challenges: any[] = [];
   let joinedChallengeIds: string[] = [];
+  let initialHasMore = false;
+  let initialCursor: string | null = null;
 
   if (session?.user?.id) {
     user = await db.user.findUnique({
@@ -56,6 +58,8 @@ export default async function CommunityPage() {
     }));
   }
 
+  const POSTS_PER_PAGE = 10;
+
   const dbPosts = await db.post.findMany({
     include: {
       user: true,
@@ -66,23 +70,30 @@ export default async function CommunityPage() {
         orderBy: {
           createdAt: "asc",
         },
+        take: 3,
       },
     },
     orderBy: {
       createdAt: "desc",
     },
+    take: POSTS_PER_PAGE + 1,
   });
 
-  const initialPosts = dbPosts.map((p) => ({
+  const hasMore = dbPosts.length > POSTS_PER_PAGE;
+  const paginatedPosts = dbPosts.slice(0, POSTS_PER_PAGE);
+
+  const initialPosts = paginatedPosts.map((p) => ({
     id: p.id,
     author: p.user.name || "Athlete",
     role: p.user.fitnessGoal ? `${p.user.fitnessGoal.charAt(0).toUpperCase() + p.user.fitnessGoal.slice(1).toLowerCase()} Athlete` : "Standard Athlete",
     avatar: (p.user.name || "Athlete").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
     time: new Date(p.createdAt).toLocaleDateString() + " " + new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     content: p.content,
+    mediaUrls: p.mediaUrls ? JSON.parse(p.mediaUrls) : [],
     likesCount: p.likesCount,
     commentsCount: p.commentsCount,
     isLikedByUser: false,
+    userId: p.userId,
     comments: p.comments.map((c) => ({
       author: c.user.name || "Athlete",
       avatar: (c.user.name || "Athlete").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
@@ -90,6 +101,9 @@ export default async function CommunityPage() {
       time: new Date(c.createdAt).toLocaleDateString(),
     })),
   }));
+
+  initialCursor = hasMore && paginatedPosts.length > 0 ? paginatedPosts[paginatedPosts.length - 1].id : null;
+  initialHasMore = hasMore;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -112,6 +126,8 @@ export default async function CommunityPage() {
         initialPosts={initialPosts}
         challenges={challenges}
         initialJoinedChallengeIds={joinedChallengeIds}
+        initialHasMore={initialHasMore}
+        initialCursor={initialCursor}
       />
     </div>
   );
