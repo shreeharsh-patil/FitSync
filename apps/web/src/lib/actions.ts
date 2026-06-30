@@ -111,6 +111,119 @@ export async function updateProfile(
   }
 }
 
+const WORKOUT_TEMPLATES = [
+  {
+    id: "full-body-foundation",
+    name: "Full Body Foundation",
+    description: "A balanced full-body routine covering all major movement patterns.",
+    difficulty: "BEGINNER" as Difficulty,
+    daysPerWeek: 3,
+    exercises: [
+      "Push-up", "Squat", "Dumbbell Row", "Plank", "Lunges", "Dumbbell Curl",
+    ],
+  },
+  {
+    id: "upper-body-pump",
+    name: "Upper Body Pump",
+    description: "Chest, back, shoulders, and arms for upper body development.",
+    difficulty: "INTERMEDIATE" as Difficulty,
+    daysPerWeek: 4,
+    exercises: [
+      "Barbell Bench Press", "Dumbbell Row", "Overhead Press",
+      "Dumbbell Curl", "Tricep Pushdown", "Cable Fly",
+    ],
+  },
+  {
+    id: "lower-body-power",
+    name: "Lower Body Power",
+    description: "Build strength and mass in quads, glutes, hamstrings, and core.",
+    difficulty: "INTERMEDIATE" as Difficulty,
+    daysPerWeek: 4,
+    exercises: [
+      "Squat", "Deadlift", "Leg Press", "Lunges", "Plank",
+    ],
+  },
+  {
+    id: "push-pull-legs",
+    name: "Push Pull Legs",
+    description: "The classic PPL split for balanced hypertrophy and strength.",
+    difficulty: "ADVANCED" as Difficulty,
+    daysPerWeek: 5,
+    exercises: [
+      "Barbell Bench Press", "Overhead Press", "Tricep Pushdown",
+      "Pull-up", "Barbell Row", "Dumbbell Curl",
+      "Squat", "Leg Press", "Deadlift",
+    ],
+  },
+  {
+    id: "core-cardio-conditioning",
+    name: "Core & Cardio Conditioning",
+    description: "Improve cardiovascular endurance and core stability.",
+    difficulty: "BEGINNER" as Difficulty,
+    daysPerWeek: 3,
+    exercises: [
+      "Running", "Plank", "Cycling", "Jump Rope", "Yoga Flow",
+    ],
+  },
+  {
+    id: "strength-fundamentals",
+    name: "Strength Fundamentals",
+    description: "Compound lifts to build raw strength and neural adaptation.",
+    difficulty: "BEGINNER" as Difficulty,
+    daysPerWeek: 4,
+    exercises: [
+      "Barbell Bench Press", "Squat", "Barbell Row",
+      "Overhead Press", "Deadlift", "Plank",
+    ],
+  },
+];
+
+export async function getWorkoutTemplates() {
+  return WORKOUT_TEMPLATES.map(({ id, name, description, difficulty, daysPerWeek }) => ({
+    id, name, description, difficulty, daysPerWeek,
+  }));
+}
+
+export async function loadWorkoutTemplate(templateId: string) {
+  const template = WORKOUT_TEMPLATES.find((t) => t.id === templateId);
+  if (!template) return { error: "Template not found" };
+
+  try {
+    const dbExercises = await db.exercise.findMany({
+      where: { name: { in: template.exercises } },
+    });
+
+    const nameToExercise = new Map(dbExercises.map((e) => [e.name, e]));
+
+    const resolved = template.exercises
+      .map((name) => nameToExercise.get(name))
+      .filter((e): e is NonNullable<typeof e> => e != null)
+      .map((ex, idx) => ({
+        exerciseId: ex.id,
+        name: ex.name,
+        sets: 3,
+        reps: "10-12",
+        rest: 60,
+        order: idx,
+        templateExerciseName: ex.name,
+      }));
+
+    const missing = template.exercises.filter((name) => !nameToExercise.has(name));
+
+    return {
+      success: true,
+      name: template.name,
+      difficulty: template.difficulty,
+      daysPerWeek: template.daysPerWeek,
+      exercises: resolved,
+      missing,
+    };
+  } catch (error) {
+    console.error("loadWorkoutTemplate error:", error);
+    return { error: "Failed to load template" };
+  }
+}
+
 export async function searchExercises(query: string) {
   try {
     const exercises = await db.exercise.findMany({
@@ -1470,20 +1583,6 @@ export async function generateMealPlanAction(
   }
 }
 
-export async function getMealPlans(userId: string) {
-  try {
-    const plans = await db.mealPlan.findMany({
-      where: { userId },
-      include: { days: true },
-      orderBy: { createdAt: "desc" },
-    });
-    return plans;
-  } catch (error) {
-    console.error("Get meal plans error:", error);
-    return [];
-  }
-}
-
 export async function regenerateMealPlanDay(dayId: string, preferences: {
   goal: string;
   calories: number;
@@ -1670,6 +1769,211 @@ export async function getUserAchievements(userId: string) {
   } catch (error) {
     console.error("Get achievements error:", error);
     return [];
+  }
+}
+
+// ===================== WEARABLE INTEGRATIONS =====================
+
+export async function connectIntegration(userId: string, provider: string) {
+  try {
+    const { getProvider } = await import("@/lib/integrations");
+    const p = getProvider(provider);
+    if (!p) return { error: `Unknown provider: ${provider}` };
+
+    const tokens = await p.connect();
+
+    const integration = await db.userIntegration.upsert({
+      where: { userId_provider: { userId, provider } },
+      update: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        tokenExpiresAt: tokens.expiresAt,
+        isConnected: true,
+      },
+      create: {
+        userId,
+        provider,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        tokenExpiresAt: tokens.expiresAt,
+        isConnected: true,
+      },
+    });
+
+    revalidatePath("/integrations");
+    revalidatePath("/settings");
+    return { success: `${p.displayName} connected successfully`, id: integration.id };
+  } catch (error) {
+    console.error("Connect integration error:", error);
+    return { error: "Failed to connect integration" };
+  }
+}
+
+export async function disconnectIntegration(userId: string, provider: string) {
+  try {
+    const { getProvider } = await import("@/lib/integrations");
+    const p = getProvider(provider);
+    if (p) {
+      await p.disconnect().catch(() => {});
+    }
+
+    await db.userIntegration.delete({
+      where: { userId_provider: { userId, provider } },
+    });
+
+    await db.healthData.deleteMany({
+      where: { userId, source: provider },
+    });
+
+    revalidatePath("/integrations");
+    revalidatePath("/settings");
+    return { success: `${p?.displayName || provider} disconnected successfully` };
+  } catch (error) {
+    console.error("Disconnect integration error:", error);
+    return { error: "Failed to disconnect integration" };
+  }
+}
+
+export async function syncIntegration(userId: string, provider: string) {
+  try {
+    const integration = await db.userIntegration.findUnique({
+      where: { userId_provider: { userId, provider } },
+    });
+
+    if (!integration || !integration.isConnected) {
+      return { error: "Integration not connected" };
+    }
+
+    const { getProvider } = await import("@/lib/integrations");
+    const p = getProvider(provider);
+    if (!p) return { error: `Unknown provider: ${provider}` };
+
+    const since = integration.lastSyncAt || new Date(Date.now() - 7 * 86400000);
+    const dataPoints = await p.syncData(since);
+
+    for (const dp of dataPoints) {
+      await db.healthData.create({
+        data: {
+          userId,
+          source: dp.source,
+          dataType: dp.dataType,
+          value: dp.value,
+          unit: dp.unit,
+          startTime: dp.startTime,
+          endTime: dp.endTime,
+          metadata: dp.metadata ? JSON.stringify(dp.metadata) : undefined,
+        },
+      });
+    }
+
+    await db.userIntegration.update({
+      where: { id: integration.id },
+      data: { lastSyncAt: new Date() },
+    });
+
+    revalidatePath("/integrations");
+    return {
+      success: `${p.displayName} synced (${dataPoints.length} data points)`,
+      count: dataPoints.length,
+    };
+  } catch (error) {
+    console.error("Sync integration error:", error);
+    return { error: "Failed to sync integration" };
+  }
+}
+
+export async function getIntegrationStatus(userId: string) {
+  try {
+    const integrations = await db.userIntegration.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const providerNames = ["APPLE_HEALTH", "GOOGLE_FIT", "FITBIT", "GARMIN", "WHOOP"];
+
+    return providerNames.map((name) => {
+      const found = integrations.find((i) => i.provider === name);
+      return {
+        provider: name,
+        isConnected: found?.isConnected || false,
+        lastSyncAt: found?.lastSyncAt?.toISOString() || null,
+        connectedAt: found?.createdAt?.toISOString() || null,
+      };
+    });
+  } catch (error) {
+    console.error("Get integration status error:", error);
+    return [];
+  }
+}
+
+export async function getHealthData(
+  userId: string,
+  dataType?: string,
+  from?: string,
+  to?: string
+) {
+  try {
+    const where: any = { userId };
+    if (dataType) where.dataType = dataType;
+    if (from || to) {
+      where.startTime = {};
+      if (from) where.startTime.gte = new Date(from);
+      if (to) where.startTime.lte = new Date(to);
+    }
+
+    const data = await db.healthData.findMany({
+      where,
+      orderBy: { startTime: "desc" },
+      take: 100,
+    });
+
+    return data;
+  } catch (error) {
+    console.error("Get health data error:", error);
+    return [];
+  }
+}
+
+// ===================== PUSH NOTIFICATIONS =====================
+
+export async function subscribePushNotification(
+  userId: string,
+  subscription: { endpoint: string; p256dh: string; auth: string }
+) {
+  try {
+    const existing = await db.pushSubscription.findUnique({
+      where: { endpoint: subscription.endpoint },
+    });
+
+    if (existing) {
+      return { success: "Already subscribed" };
+    }
+
+    await db.pushSubscription.create({
+      data: {
+        userId,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.p256dh,
+        auth: subscription.auth,
+      },
+    });
+
+    return { success: "Push notification subscription saved" };
+  } catch (error) {
+    console.error("Subscribe push error:", error);
+    return { error: "Failed to subscribe to push notifications" };
+  }
+}
+
+export async function unsubscribePushNotification(userId: string) {
+  try {
+    await db.pushSubscription.deleteMany({
+      where: { userId },
+    });
+    return { success: "Unsubscribed from push notifications" };
+  } catch (error) {
+    console.error("Unsubscribe push error:", error);
+    return { error: "Failed to unsubscribe from push notifications" };
   }
 }
 
@@ -2310,7 +2614,7 @@ export async function updateRecipe(
 
 // === MEAL PLAN ACTIONS ===
 
-export async function createMealPlan(
+export async function createWeeklyPlan(
   userId: string,
   data: {
     name: string;
@@ -2319,7 +2623,7 @@ export async function createMealPlan(
   },
 ) {
   try {
-    const mealPlan = await db.mealPlan.create({
+    const plan = await db.weeklyPlan.create({
       data: {
         userId,
         name: data.name,
@@ -2328,16 +2632,16 @@ export async function createMealPlan(
       },
     });
     revalidatePath("/nutrition/meal-plans");
-    return { success: true, mealPlan };
+    return { success: true, plan };
   } catch (error) {
-    console.error("Create meal plan error:", error);
-    return { error: "Failed to create meal plan" };
+    console.error("Create weekly plan error:", error);
+    return { error: "Failed to create weekly plan" };
   }
 }
 
-export async function getMealPlans(userId: string) {
+export async function getWeeklyPlans(userId: string) {
   try {
-    const plans = await db.mealPlan.findMany({
+    const plans = await db.weeklyPlan.findMany({
       where: { userId },
       orderBy: { weekStart: "desc" },
     });
@@ -2346,14 +2650,14 @@ export async function getMealPlans(userId: string) {
       days: JSON.parse(p.days),
     }));
   } catch (error) {
-    console.error("Get meal plans error:", error);
+    console.error("Get weekly plans error:", error);
     return [];
   }
 }
 
-export async function getMealPlan(id: string) {
+export async function getWeeklyPlan(id: string) {
   try {
-    const plan = await db.mealPlan.findUnique({ where: { id } });
+    const plan = await db.weeklyPlan.findUnique({ where: { id } });
     if (!plan) return null;
     const days = JSON.parse(plan.days) as { date: string; meals: { mealType: MealType; recipeId: string; servings: number }[] }[];
 
@@ -2376,19 +2680,19 @@ export async function getMealPlan(id: string) {
       })),
     };
   } catch (error) {
-    console.error("Get meal plan error:", error);
+    console.error("Get weekly plan error:", error);
     return null;
   }
 }
 
-export async function deleteMealPlan(id: string) {
+export async function deleteWeeklyPlan(id: string) {
   try {
-    await db.mealPlan.delete({ where: { id } });
+    await db.weeklyPlan.delete({ where: { id } });
     revalidatePath("/nutrition/meal-plans");
     return { success: true };
   } catch (error) {
-    console.error("Delete meal plan error:", error);
-    return { error: "Failed to delete meal plan" };
+    console.error("Delete weekly plan error:", error);
+    return { error: "Failed to delete weekly plan" };
   }
 }
 

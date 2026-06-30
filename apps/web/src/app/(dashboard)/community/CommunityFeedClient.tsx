@@ -361,7 +361,7 @@ export function CommunityFeedClient({
     setCursor(initialCursor);
   }, [initialPosts, initialHasMore, initialCursor]);
 
-  const showNotificationToast = notifCount > 0 && followNotification;
+  const showNotificationToast = showNotifToast && followNotification;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">

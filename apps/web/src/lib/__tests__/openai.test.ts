@@ -3,27 +3,37 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
-const { askAICoach, generateAIWorkout } = await import("@/lib/openai");
+async function loadModule(apiKey?: string) {
+  vi.resetModules();
+  if (apiKey) {
+    vi.stubEnv("GROK_API_KEY", apiKey);
+  } else {
+    vi.stubEnv("GROK_API_KEY", "");
+  }
+  return await import("@/lib/openai");
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.stubEnv("GROK_API_KEY", "");
+  vi.unstubAllEnvs();
 });
 
 describe("askAICoach", () => {
   it("returns simulated response when no API key is set", async () => {
+    const { askAICoach } = await loadModule();
     const reply = await askAICoach("My chest hurts after bench press");
     expect(reply).toContain("Active recovery");
     expect(reply).toContain("Cat-Cow Stretch");
   });
 
   it("returns generic response for unmatched keywords", async () => {
+    const { askAICoach } = await loadModule();
     const reply = await askAICoach("What is the best way to stay fit?");
     expect(reply).toContain("great fitness question");
   });
 
   it("makes fetch call when API key is set", async () => {
-    vi.stubEnv("GROK_API_KEY", "test-key");
+    const { askAICoach } = await loadModule("test-key");
 
     mockFetch.mockResolvedValue({
       ok: true,
@@ -38,7 +48,7 @@ describe("askAICoach", () => {
   });
 
   it("returns fallback message on API error", async () => {
-    vi.stubEnv("GROK_API_KEY", "test-key");
+    const { askAICoach } = await loadModule("test-key");
 
     mockFetch.mockRejectedValue(new Error("Network error"));
 
@@ -49,6 +59,7 @@ describe("askAICoach", () => {
 
 describe("generateAIWorkout", () => {
   it("returns preset plan when no API key is set", async () => {
+    const { generateAIWorkout } = await loadModule();
     const plan = await generateAIWorkout("BEGINNER", []);
     expect(plan).toHaveLength(4);
     expect(plan[0].name).toBe("Push-up");
@@ -56,22 +67,25 @@ describe("generateAIWorkout", () => {
   });
 
   it("returns intermediate preset", async () => {
+    const { generateAIWorkout } = await loadModule();
     const plan = await generateAIWorkout("INTERMEDIATE", []);
     expect(plan[0].name).toBe("Pull-up");
   });
 
   it("returns advanced preset", async () => {
+    const { generateAIWorkout } = await loadModule();
     const plan = await generateAIWorkout("ADVANCED", []);
     expect(plan[0].name).toBe("Deadlift");
   });
 
   it("returns beginner preset for unknown difficulty", async () => {
+    const { generateAIWorkout } = await loadModule();
     const plan = await generateAIWorkout("UNKNOWN", []);
     expect(plan[0].name).toBe("Push-up");
   });
 
   it("makes API call when key is set", async () => {
-    vi.stubEnv("GROK_API_KEY", "test-key");
+    const { generateAIWorkout } = await loadModule("test-key");
 
     mockFetch.mockResolvedValue({
       ok: true,
@@ -92,7 +106,7 @@ describe("generateAIWorkout", () => {
   });
 
   it("falls back to preset on API failure", async () => {
-    vi.stubEnv("GROK_API_KEY", "test-key");
+    const { generateAIWorkout } = await loadModule("test-key");
 
     mockFetch.mockRejectedValue(new Error("API error"));
 

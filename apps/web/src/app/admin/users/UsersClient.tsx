@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +11,6 @@ import {
   ChevronRight,
   Shield,
   Trash2,
-  ArrowUpDown,
-  MoreVertical,
   UserCog,
 } from "lucide-react";
 import Link from "next/link";
@@ -34,30 +31,12 @@ interface UsersClientProps {
 }
 
 export function UsersClient({ initialData }: UsersClientProps) {
-  const router = useRouter();
   const [data, setData] = useState(initialData);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("ALL");
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(initialData.page);
 
-  const fetchUsers = useCallback(async (p: number, s: string, r: string) => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (p > 1) params.set("page", String(p));
-    if (s) params.set("search", s);
-    if (r && r !== "ALL") params.set("role", r);
-    router.push(`/admin/users?${params.toString()}`);
-
-    const res = await fetch(`/admin/api/users?${params.toString()}`);
-    const json = await res.json();
-    setData(json);
-    setPage(p);
-    setLoading(false);
-  }, [router]);
-
-  // We need an API route for client-side fetching
-  // Let's use a direct import approach instead
   const handleSearch = useCallback(async () => {
     setLoading(true);
     const res = await getUsers(1, search, role);

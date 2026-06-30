@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -17,10 +17,26 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { searchExercises, createWorkout, generateWorkoutWithAI } from "@/lib/actions";
+import { searchExercises, createWorkout, generateWorkoutWithAI, getWorkoutTemplates, loadWorkoutTemplate } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { Difficulty } from "@prisma/client";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface WorkoutBuilderProps {
   userId: string;
@@ -52,6 +68,29 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiGeneratingStep, setAiGeneratingStep] = useState(0);
+  const [templates, setTemplates] = useState<{ id: string; name: string; description: string; difficulty: string; daysPerWeek: number }[]>([]);
+  const [loadingTemplate, setLoadingTemplate] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setSelectedExercises((prev) => {
+      const oldIndex = prev.findIndex((ex) => ex.id === active.id);
+      const newIndex = prev.findIndex((ex) => ex.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      const updated = [...prev];
+      const [moved] = updated.splice(oldIndex, 1);
+      updated.splice(newIndex, 0, moved);
+      return updated.map((ex, idx) => ({ ...ex, order: idx }));
+    });
+  }, []);
 
   const handleAIGenerate = async () => {
     setIsGenerating(true);
@@ -85,6 +124,10 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
   };
 
   useEffect(() => {
+    getWorkoutTemplates().then(setTemplates);
+  }, []);
+
+  useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.length > 2) {
         setIsSearching(true);
@@ -111,6 +154,28 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
     };
     setSelectedExercises([...selectedExercises, newEx]);
     setSearchQuery("");
+  };
+
+  const handleLoadTemplate = async (templateId: string) => {
+    setLoadingTemplate(templateId);
+    const result = await loadWorkoutTemplate(templateId);
+    if (result.success) {
+      setName(result.name);
+      setDifficulty(result.difficulty as Difficulty);
+      if (result.daysPerWeek) setDaysPerWeek(result.daysPerWeek);
+      setSelectedExercises(result.exercises.map((ex: any, idx: number) => ({
+        id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
+        exerciseId: ex.exerciseId,
+        name: ex.name,
+        sets: ex.sets,
+        reps: String(ex.reps),
+        rest: ex.rest,
+        order: idx,
+      })));
+    } else {
+      alert(result.error || "Failed to load template");
+    }
+    setLoadingTemplate(null);
   };
 
   const removeExercise = (id: string) => {
@@ -261,16 +326,20 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
               </div>
 
               <div className="space-y-4 min-h-[300px]">
-                <AnimatePresence mode="popLayout">
-                  {selectedExercises.map((ex) => (
-                    <BuilderExerciseItem
-                      key={ex.id}
-                      exercise={ex}
-                      onRemove={() => removeExercise(ex.id)}
-                      onUpdate={(updates) => updateExercise(ex.id, updates)}
-                    />
-                  ))}
-                </AnimatePresence>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={selectedExercises.map((ex) => ex.id)} strategy={verticalListSortingStrategy}>
+                    <AnimatePresence mode="popLayout">
+                      {selectedExercises.map((ex) => (
+                        <SortableBuilderExerciseItem
+                          key={ex.id}
+                          exercise={ex}
+                          onRemove={() => removeExercise(ex.id)}
+                          onUpdate={(updates) => updateExercise(ex.id, updates)}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </SortableContext>
+                </DndContext>
 
                 {selectedExercises.length === 0 && (
                   <motion.div
@@ -355,6 +424,46 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
             </div>
           </Card>
 
+          {/* Templates Widget */}
+          {templates.length > 0 && (
+            <Card className="p-8 glass border-white/5 rounded-[2.5rem] space-y-6 shadow-2xl">
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold font-heading text-white">
+                  Workout Templates
+                </h2>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Start from a proven template and customize.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {templates.map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-secondary/30 hover:bg-secondary/5 group transition-all cursor-pointer"
+                    onClick={() => handleLoadTemplate(t.id)}
+                  >
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="text-sm font-bold text-white group-hover:text-secondary transition-colors truncate">{t.name}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{t.description}</p>
+                      <div className="flex gap-2 mt-1.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-secondary">{t.difficulty}</span>
+                        <span className="text-[9px] font-bold text-muted-foreground">{t.daysPerWeek}d/wk</span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={loadingTemplate === t.id}
+                      className="h-8 w-8 shrink-0 rounded-xl bg-white/5 hover:bg-secondary hover:text-primary transition-all shadow-sm"
+                    >
+                      {loadingTemplate === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
           {/* Database Search Widget */}
           <Card className="p-8 glass border-white/5 rounded-[2.5rem] space-y-6 shadow-2xl">
             <div className="space-y-2">
@@ -417,7 +526,7 @@ export function WorkoutBuilder({ userId }: WorkoutBuilderProps) {
   );
 }
 
-function BuilderExerciseItem({
+function SortableBuilderExerciseItem({
   exercise,
   onRemove,
   onUpdate,
@@ -426,8 +535,26 @@ function BuilderExerciseItem({
   onRemove: () => void;
   onUpdate: (updates: Partial<SelectedExercise>) => void;
 }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: exercise.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : "auto" as any,
+  };
+
   return (
-    <motion.div 
+    <motion.div
+      ref={setNodeRef}
+      style={style}
       layout
       initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -438,7 +565,13 @@ function BuilderExerciseItem({
       <div className="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-secondary to-accent opacity-0 group-hover:opacity-100 transition-opacity" />
       
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <GripVertical className="h-5 w-5 text-muted-foreground/30 cursor-grab active:cursor-grabbing shrink-0 hover:text-white transition-colors" />
+        <button
+          {...attributes}
+          {...listeners}
+          className="h-5 w-5 text-muted-foreground/30 cursor-grab active:cursor-grabbing shrink-0 hover:text-white transition-colors focus:outline-none"
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
         <div className="flex-1 min-w-0">
           <h4 className="font-bold text-lg font-heading text-white group-hover:text-secondary transition-colors truncate">{exercise.name}</h4>
           

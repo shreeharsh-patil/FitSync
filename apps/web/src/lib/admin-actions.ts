@@ -3,6 +3,7 @@
 import db from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/auth";
 
 export async function getAdminStats() {
   try {
@@ -19,7 +20,7 @@ export async function getAdminStats() {
       db.exercise.count(),
       db.blogPost.count(),
       db.subscription.aggregate({
-        _sum: { id: false },
+        _count: true,
         where: { status: "ACTIVE" },
       }),
       db.user.findMany({
@@ -124,6 +125,11 @@ const PostSchema = z.object({
 
 export async function createPost(data: z.infer<typeof PostSchema>) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "Unauthorized" };
+    }
+
     const validated = PostSchema.safeParse(data);
     if (!validated.success) {
       return { error: "Invalid fields: " + JSON.stringify(validated.error.flatten().fieldErrors) };
@@ -131,7 +137,7 @@ export async function createPost(data: z.infer<typeof PostSchema>) {
 
     const post = await db.blogPost.create({
       data: {
-        authorId: data.slug,
+        authorId: session.user.id,
         title: validated.data.title,
         slug: validated.data.slug,
         excerpt: validated.data.excerpt,
