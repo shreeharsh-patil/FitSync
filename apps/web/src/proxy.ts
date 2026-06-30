@@ -1,13 +1,13 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
 import { NextResponse } from "next/server";
-import db from "@/lib/db";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth(async (req) => {
+export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
+  const twoFactorEnabled = (req.auth?.user as any)?.twoFactorEnabled;
 
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
   const isPublicRoute = ["/", "/features", "/pricing", "/blog"].includes(nextUrl.pathname) || nextUrl.pathname.startsWith("/blog/");
@@ -36,18 +36,8 @@ export default auth(async (req) => {
     return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
-  if (isLoggedIn && req.auth?.user?.id) {
-    try {
-      const user = await db.user.findUnique({
-        where: { id: req.auth.user.id },
-        select: { twoFactorEnabled: true },
-      });
-      if (user?.twoFactorEnabled && !isVerify2FA) {
-        return NextResponse.redirect(new URL("/verify-2fa", nextUrl));
-      }
-    } catch {
-      // If DB query fails, allow through
-    }
+  if (isLoggedIn && twoFactorEnabled && !isVerify2FA) {
+    return NextResponse.redirect(new URL("/verify-2fa", nextUrl));
   }
 
   return NextResponse.next();

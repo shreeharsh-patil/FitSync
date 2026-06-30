@@ -12,9 +12,8 @@ import {
   Search,
   MoreVertical,
   DollarSign,
-  UserPlus,
-  Newspaper,
   Dumbbell,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -246,5 +245,3 @@ function AdminModuleCard({ icon, title, count, description, href }: {
     </Link>
   );
 }
-
-import { CreditCard } from "lucide-react";

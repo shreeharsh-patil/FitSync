@@ -103,7 +103,7 @@ export function CommunityFeedClient({
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [joinedChallengeIds, setJoinedChallengeIds] = useState<string[]>(initialJoinedChallengeIds);
   const [followNotification, setFollowNotification] = useState("");
-  const [showNotificationToast, setShowNotificationToast] = useState(false);
+  const [showNotifToast, setShowNotifToast] = useState(false);
 
   const socketRef = useRef<any>(null);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -177,9 +177,9 @@ export function CommunityFeedClient({
       socket.on("user-follow-received", (data: { followerId: string; followerName: string; followingId: string; isFollowing: boolean }) => {
         if (data.followingId === user?.id && data.isFollowing) {
           setFollowNotification(`${data.followerName} just started following your training protocol!`);
-          setShowNotificationToast(true);
+          setShowNotifToast(true);
           setNotifCount((c) => c + 1);
-          setTimeout(() => setShowNotificationToast(false), 4500);
+          setTimeout(() => setShowNotifToast(false), 4500);
         }
       });
 
@@ -376,7 +376,7 @@ export function CommunityFeedClient({
               <p className="text-xs font-semibold text-white mt-1.5 leading-normal">{followNotification}</p>
             </div>
             <button
-              onClick={() => setShowNotificationToast(false)}
+              onClick={() => setShowNotifToast(false)}
               className="text-muted-foreground hover:text-white shrink-0 ml-1 p-0.5 rounded-full hover:bg-white/5"
             >
               <X className="h-4 w-4" />

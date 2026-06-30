@@ -2470,4 +2470,136 @@ export async function getMacroTargets(userId: string) {
   }
 }
 
+// ─── Coaching Session Actions ───────────────────────────────────────────
+
+export async function createCoachingSession(trainerId: string, clientId: string, startTime: Date) {
+  try {
+    const session = await db.coachingSession.create({
+      data: {
+        trainerId,
+        clientId,
+        startTime,
+        status: "SCHEDULED",
+        sessionType: "ONE_ON_ONE",
+      },
+    });
+    revalidatePath("/coaching");
+    return { success: true, id: session.id };
+  } catch (error) {
+    console.error("Create coaching session error:", error);
+    return { error: "Failed to create session" };
+  }
+}
+
+export async function getCoachingSessions(userId: string) {
+  try {
+    const sessions = await db.coachingSession.findMany({
+      where: {
+        OR: [{ clientId: userId }, { trainerId: userId }],
+      },
+      include: {
+        trainer: { select: { id: true, name: true, image: true } },
+        client: { select: { id: true, name: true, image: true } },
+      },
+      orderBy: { startTime: "desc" },
+    });
+    return sessions;
+  } catch (error) {
+    console.error("Get coaching sessions error:", error);
+    return [];
+  }
+}
+
+export async function updateSessionStatus(sessionId: string, status: string) {
+  try {
+    await db.coachingSession.update({
+      where: { id: sessionId },
+      data: {
+        status,
+        ...(status === "IN_PROGRESS" ? {} : status === "COMPLETED" ? { endTime: new Date() } : {}),
+      },
+    });
+    revalidatePath("/coaching");
+    return { success: true };
+  } catch (error) {
+    console.error("Update session status error:", error);
+    return { error: "Failed to update session" };
+  }
+}
+
+// ─── Corporate / Organization Actions ───────────────────────────────────
+
+export async function createOrganization(name: string, slug: string, adminUserId: string) {
+  try {
+    const org = await db.organization.create({
+      data: {
+        name,
+        slug,
+        size: 1,
+        members: {
+          create: {
+            userId: adminUserId,
+            role: "ADMIN",
+          },
+        },
+      },
+    });
+    revalidatePath("/corporate");
+    return { success: true, id: org.id };
+  } catch (error) {
+    console.error("Create organization error:", error);
+    return { error: "Failed to create organization" };
+  }
+}
+
+export async function getCorporateDashboard(orgId: string) {
+  try {
+    const { getCorporateDashboard: dashboard } = await import("@/lib/corporate");
+    return await dashboard(orgId);
+  } catch (error) {
+    console.error("Corporate dashboard error:", error);
+    return null;
+  }
+}
+
+export async function getTeams(orgId: string) {
+  try {
+    const { getTeams: teams } = await import("@/lib/corporate");
+    return await teams(orgId);
+  } catch (error) {
+    console.error("Get teams error:", error);
+    return [];
+  }
+}
+
+export async function createTeam(orgId: string, name: string, description?: string) {
+  try {
+    const { createTeam: create } = await import("@/lib/corporate");
+    return await create(orgId, name, description);
+  } catch (error) {
+    console.error("Create team error:", error);
+    return { error: "Failed to create team" };
+  }
+}
+
+export async function joinTeam(teamId: string, userId: string) {
+  try {
+    const { joinTeam: join } = await import("@/lib/corporate");
+    return await join(teamId, userId);
+  } catch (error) {
+    console.error("Join team error:", error);
+    return { error: "Failed to join team" };
+  }
+}
+
+export async function getWellnessScore(userId: string) {
+  try {
+    const { getWellnessScore: score } = await import("@/lib/corporate");
+    return await score(userId);
+  } catch (error) {
+    console.error("Wellness score error:", error);
+    return null;
+  }
+}
+
 

@@ -4,15 +4,25 @@ import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User, Sparkles, Loader2 } from "lucide-react";
+import { Send, Bot, User, Sparkles, Loader2, Apple, Dumbbell, ChefHat, Activity, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { askGrokCoach } from "@/lib/actions";
+import { askGrokCoach, getWorkoutRecommendationsAction } from "@/lib/actions";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   time: string;
+  planData?: any;
+}
+
+interface WorkoutRec {
+  exerciseName: string;
+  suggestedWeight: number;
+  suggestedSets: number;
+  suggestedReps: string;
+  progressionType: string;
+  reason: string;
 }
 
 export function AICoachClient() {
@@ -25,6 +35,7 @@ export function AICoachClient() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +60,6 @@ export function AICoachClient() {
     setInput("");
     setIsLoading(true);
 
-    // Format chat history for Grok model context
     const historyPayload = messages.map((m) => ({
       role: m.role,
       content: m.content,
@@ -73,6 +83,39 @@ export function AICoachClient() {
       setMessages((prev) => [...prev, errorMsg]);
     }
     setIsLoading(false);
+  };
+
+  const handleWorkoutRecommendations = async () => {
+    setIsLoadingRecommendations(true);
+
+    const userMsg: Message = {
+      role: "user",
+      content: "Analyze my recent workout logs and give me personalized recommendations for next session.",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+
+    const result = await getWorkoutRecommendationsAction("use-client");
+
+    if (result.success && result.recommendations) {
+      const recs = result.recommendations as WorkoutRec[];
+      const coachMsg: Message = {
+        role: "assistant",
+        content: `## AI Workout Recommendations\n\n**Fatigue Score:** ${result.fatigueScore}/100 · **Recovery:** ${result.recoveryStatus}\n${result.deloadRecommended ? `\n⚠️ **Deload Recommended:** ${result.deloadReason}\n` : ""}\n\n### Recommended Next Session\n\n${recs.map((r: WorkoutRec) => `**${r.exerciseName}** — ${r.suggestedSets}×${r.suggestedReps} @ ${r.suggestedWeight}kg\n> ${r.reason}${r.substitution ? `\n> 🔄 Substitute: ${r.substitution}` : ""}`).join("\n\n")}`,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        planData: recs,
+      };
+      setMessages((prev) => [...prev, coachMsg]);
+    } else {
+      const errorMsg: Message = {
+        role: "assistant",
+        content: "I could not analyze your workout history. Make sure you have logged some workouts first!",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    }
+
+    setIsLoadingRecommendations(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -117,11 +160,37 @@ export function AICoachClient() {
                     ? "bg-white/5 border-white/10 rounded-tl-sm text-foreground"
                     : "bg-accent/10 border-accent/20 rounded-tr-sm text-white"
                 )}>
-                  {msg.content.split("\n").map((line, lIdx) => (
-                    <p key={lIdx} className={lIdx > 0 ? "mt-2" : ""}>
-                      {line}
-                    </p>
-                  ))}
+                  {msg.content.split("\n").map((line, lIdx) => {
+                    if (line.startsWith("## ")) {
+                      return <h3 key={lIdx} className="text-base font-bold text-secondary mt-3 mb-2">{line.replace("## ", "")}</h3>;
+                    }
+                    if (line.startsWith("### ")) {
+                      return <h4 key={lIdx} className="text-sm font-bold text-white mt-2 mb-1">{line.replace("### ", "")}</h4>;
+                    }
+                    if (line.startsWith("**") && line.endsWith("**")) {
+                      return <p key={lIdx} className="font-bold text-white mt-2">{line.replace(/\*\*/g, "")}</p>;
+                    }
+                    if (line.startsWith("> ")) {
+                      return (
+                        <p key={lIdx} className="text-[11px] text-muted-foreground italic pl-3 border-l-2 border-secondary/30 mt-1">
+                          {line.replace("> ", "")}
+                        </p>
+                      );
+                    }
+                    if (line.startsWith("⚠️")) {
+                      return (
+                        <p key={lIdx} className="text-[11px] text-accent font-bold mt-2 flex items-center gap-2">
+                          <Zap className="h-3 w-3" />
+                          {line.replace("⚠️ ", "")}
+                        </p>
+                      );
+                    }
+                    return (
+                      <p key={lIdx} className={lIdx > 0 ? "mt-2" : ""}>
+                        {line}
+                      </p>
+                    );
+                  })}
                 </div>
                 <p className={`text-[9px] text-muted-foreground font-mono font-bold ${msg.role === "user" ? "text-right mr-1" : "ml-1"}`}>
                   {msg.time}
@@ -156,7 +225,7 @@ export function AICoachClient() {
         <form onSubmit={handleSubmit} className="flex gap-4 items-center">
           <div className="relative flex-1 group">
             <Input
-              disabled={isLoading}
+              disabled={isLoading || isLoadingRecommendations}
               placeholder="Ask Grok Coach about progressive overload, macro ratios..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -169,7 +238,7 @@ export function AICoachClient() {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || isLoadingRecommendations || !input.trim()}
               size="icon"
               className="h-16 w-16 rounded-2xl bg-secondary hover:bg-secondary/90 text-primary shadow-xl shadow-secondary/20 shrink-0"
             >
@@ -178,18 +247,64 @@ export function AICoachClient() {
           </motion.div>
         </form>
 
-        {/* Suggestion Bubbles */}
+        {/* Quick Actions */}
         <div className="flex gap-3 mt-6 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
-          <SuggestionButton label="Suggest active recovery stretching" onClick={() => handleSuggestionClick("Give me a 10-minute active recovery stretching routine for lower back soreness")} />
-          <SuggestionButton label="Explain protein macro guidelines" onClick={() => handleSuggestionClick("How much daily protein do I need to support muscle hypertrophy?")} />
-          <SuggestionButton label="Explain bench press plateaus" onClick={() => handleSuggestionClick("How do I push past a plateau on my bench press?")} />
+          <SuggestionButton 
+            label="Suggest active recovery" 
+            icon={<Activity className="h-3.5 w-3.5 text-secondary" />}
+            onClick={() => handleSuggestionClick("Give me a 10-minute active recovery stretching routine for lower back soreness")} 
+          />
+          <SuggestionButton 
+            label="Protein macro guidelines" 
+            icon={<Apple className="h-3.5 w-3.5 text-secondary" />}
+            onClick={() => handleSuggestionClick("How much daily protein do I need to support muscle hypertrophy?")} 
+          />
+          <SuggestionButton 
+            label="Bench press plateaus" 
+            icon={<Dumbbell className="h-3.5 w-3.5 text-secondary" />}
+            onClick={() => handleSuggestionClick("How do I push past a plateau on my bench press?")} 
+          />
+          <SuggestionButton 
+            label="Meal plan for cutting" 
+            icon={<ChefHat className="h-3.5 w-3.5 text-secondary" />}
+            onClick={() => handleSuggestionClick("Suggest a one-day meal plan for cutting with 2000 calories, high protein")} 
+          />
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleWorkoutRecommendations}
+              disabled={isLoadingRecommendations}
+              className="h-9 px-4 text-xs rounded-full border-accent/30 bg-accent/5 hover:bg-accent/10 whitespace-nowrap font-bold text-accent hover:text-accent transition-all shadow-md"
+            >
+              {isLoadingRecommendations ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+              ) : (
+                <Zap className="h-3.5 w-3.5 mr-2" />
+              )}
+              Analyze My Workouts
+            </Button>
+          </motion.div>
+        </div>
+
+        {/* Suggestion Bubbles */}
+        <div className="flex gap-3 mt-3 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
+          <SuggestionButton 
+            label="Design a push/pull/legs split" 
+            onClick={() => handleSuggestionClick("Design a push/pull/legs workout split for intermediate lifters")} 
+          />
+          <SuggestionButton 
+            label="How to improve squat depth" 
+            onClick={() => handleSuggestionClick("How can I improve my squat depth and ankle mobility?")} 
+          />
         </div>
       </div>
     </Card>
   );
 }
 
-function SuggestionButton({ label, onClick }: { label: string; onClick: () => void }) {
+function SuggestionButton({ label, onClick, icon }: { label: string; onClick: () => void; icon?: React.ReactNode }) {
   return (
     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
       <Button
@@ -199,7 +314,7 @@ function SuggestionButton({ label, onClick }: { label: string; onClick: () => vo
         onClick={onClick}
         className="h-9 px-4 text-xs rounded-full border-white/10 bg-white/5 hover:bg-white/10 whitespace-nowrap font-bold text-muted-foreground hover:text-white transition-all shadow-md"
       >
-        <Sparkles className="h-3.5 w-3.5 text-secondary mr-2" />
+        {icon || <Sparkles className="h-3.5 w-3.5 text-secondary mr-2" />}
         {label}
       </Button>
     </motion.div>

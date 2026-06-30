@@ -51,7 +51,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.passwordHash,
           );
 
-          if (passwordsMatch) return user;
+          if (passwordsMatch) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              role: user.role,
+              twoFactorEnabled: user.twoFactorEnabled,
+            };
+          }
         }
 
         return null;

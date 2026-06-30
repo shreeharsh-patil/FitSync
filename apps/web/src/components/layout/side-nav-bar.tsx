@@ -17,8 +17,8 @@ import {
   UserCircle,
   Award,
   MessageCircle,
-  GraduationCap,
-  Store,
+  Trophy,
+  Target,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { motion } from "framer-motion";
@@ -30,11 +30,11 @@ const navItems = [
   { name: "Nutrition", href: "/nutrition", icon: Utensils },
   { name: "Progress", href: "/progress", icon: LineChart },
   { name: "Achievements", href: "/achievements", icon: Award },
+  { name: "Challenges", href: "/challenges", icon: Target },
+  { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
   { name: "Community", href: "/community", icon: Users },
   { name: "Messages", href: "/messages", icon: MessageCircle },
   { name: "AI Coach", href: "/ai-coach", icon: MessageSquare },
-  { name: "Trainers", href: "/trainers", icon: GraduationCap },
-  { name: "Trainer Hub", href: "/trainer/dashboard", icon: Store },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
