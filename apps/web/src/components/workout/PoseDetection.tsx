@@ -97,7 +97,7 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number>(0);
-  const sessionTimerRef = useRef<ReturnType<typeof setInterval>>();
+  const sessionTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const spotAnimRef = useRef<number>(0);
 
   const startCamera = useCallback(async () => {

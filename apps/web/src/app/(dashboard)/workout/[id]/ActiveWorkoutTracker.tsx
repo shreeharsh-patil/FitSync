@@ -24,10 +24,12 @@ import {
   Maximize2,
   Minimize2,
   Share2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logWorkoutSession } from "@/lib/actions";
+import { PoseDetection } from "@/components/workout/PoseDetection";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +77,10 @@ export function ActiveWorkoutTracker({ workout, userId }: ActiveWorkoutTrackerPr
   // Exercises logging state
   const [loggedExercises, setLoggedExercises] = useState<any[]>([]);
   const [totalVolume, setTotalVolume] = useState(0);
+
+  // Form check state
+  const [formCheckExercise, setFormCheckExercise] = useState<string | null>(null);
+  const [formCheckScores, setFormCheckScores] = useState<Record<string, number>>({});
 
   // Initialize tracking data
   useEffect(() => {
@@ -169,6 +175,13 @@ export function ActiveWorkoutTracker({ workout, userId }: ActiveWorkoutTrackerPr
     const updated = [...loggedExercises];
     updated[exIdx].sets[setIdx].reps = val;
     setLoggedExercises(updated);
+  };
+
+  const handleFormCheckComplete = (summary: { avgFormScore: number }) => {
+    if (formCheckExercise) {
+      setFormCheckScores((prev) => ({ ...prev, [formCheckExercise]: summary.avgFormScore }));
+    }
+    setFormCheckExercise(null);
   };
 
   const finishSession = async () => {
@@ -378,6 +391,17 @@ export function ActiveWorkoutTracker({ workout, userId }: ActiveWorkoutTrackerPr
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                               Rest: {ex.restSec || 60}s
                             </span>
+                            {formCheckScores[ex.name] && (
+                              <span className="text-[10px] font-bold uppercase bg-accent/20 text-accent border border-accent/30 px-2 py-0.5 rounded-lg">
+                                Form: {formCheckScores[ex.name]}%
+                              </span>
+                            )}
+                            <button
+                              onClick={() => setFormCheckExercise(ex.name)}
+                              className="text-[10px] font-bold uppercase text-accent hover:text-accent/80 underline underline-offset-4 decoration-accent/30 hover:decoration-accent/60 transition-all"
+                            >
+                              Form Check
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -651,6 +675,31 @@ export function ActiveWorkoutTracker({ workout, userId }: ActiveWorkoutTrackerPr
           </Button>
         </motion.div>
       )}
+
+      {/* Form Check Modal */}
+      <AnimatePresence>
+        {formCheckExercise && (
+          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-lg relative"
+            >
+              <button
+                onClick={() => setFormCheckExercise(null)}
+                className="absolute -top-12 right-0 text-white/60 hover:text-white z-10 p-2"
+              >
+                <X className="h-6 w-6" />
+              </button>
+              <PoseDetection
+                exerciseName={formCheckExercise}
+                onSessionComplete={handleFormCheckComplete}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -24,6 +24,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { logMeal } from "@/lib/actions";
+import { AIMealScanner } from "@/components/nutrition/AIMealScanner";
 import { MealType } from "@prisma/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -177,29 +178,17 @@ export function NutritionTrackerClient({ initialLogs, userId }: NutritionTracker
     setNotes("");
   };
 
-  const startAiScan = () => {
-    setIsScannerOpen(true);
-    setIsScanning(true);
-    setScanStep(0);
-    
-    // Simulate multi-step AI vision analysis
-    setTimeout(() => setScanStep(1), 1000); // Feature extraction
-    setTimeout(() => setScanStep(2), 2000); // Volumetric analysis
-    setTimeout(() => setScanStep(3), 3000); // Database lookup
-    
-    setTimeout(() => {
-      setIsScanning(false);
-      // Simulate detection results
-      setName("Grilled Salmon & Quinoa Power Bowl");
-      setCalories(640);
-      setProtein(42);
-      setCarbs(48);
-      setFat(22);
-      setNotes("AI Detected: Salmon (200g), Quinoa (150g), Kale, Avocado.");
-      
-      setIsScannerOpen(false);
-      setIsModalOpen(true);
-    }, 4500);
+  const startAiScan = () => setIsScannerOpen(true);
+
+  const handleScanResult = (result: { totalCalories: number; totalProtein: number; totalCarbs: number; totalFat: number; items: { name: string }[] }) => {
+    setName(result.items[0]?.name || "Scanned Meal");
+    setCalories(result.totalCalories);
+    setProtein(result.totalProtein);
+    setCarbs(result.totalCarbs);
+    setFat(result.totalFat);
+    setNotes("AI Scanned: " + result.items.map((i: any) => i.name).join(", "));
+    setIsScannerOpen(false);
+    setIsModalOpen(true);
   };
 
   const filteredLogs = logs.filter((l) => l.totalCalories > 0);
@@ -444,79 +433,23 @@ export function NutritionTrackerClient({ initialLogs, userId }: NutritionTracker
         </div>
       </div>
 
-      {/* AI Scanner Modal Simulation */}
+      {/* AI Scanner Modal */}
       <AnimatePresence>
         {isScannerOpen && (
-          <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6">
+          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-2xl aspect-square sm:aspect-video bg-black/40 rounded-[3rem] border border-white/10 relative overflow-hidden shadow-3xl"
+              className="w-full max-w-lg relative"
             >
-              {/* Viewfinder simulation */}
-              <div className="absolute inset-0 p-8 flex flex-col justify-between">
-                <div className="flex justify-between">
-                  <div className="h-12 w-12 border-t-2 border-l-2 border-secondary rounded-tl-2xl" />
-                  <div className="h-12 w-12 border-t-2 border-r-2 border-secondary rounded-tr-2xl" />
-                </div>
-                <div className="flex justify-between">
-                  <div className="h-12 w-12 border-b-2 border-l-2 border-secondary rounded-bl-2xl" />
-                  <div className="h-12 w-12 border-b-2 border-r-2 border-secondary rounded-br-2xl" />
-                </div>
-              </div>
-
-              {/* Scanning line animation */}
-              {isScanning && (
-                <motion.div 
-                  initial={{ top: "0%" }}
-                  animate={{ top: "100%" }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                  className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-secondary to-transparent z-10 shadow-[0_0_20px_var(--secondary)]"
-                />
-              )}
-
-              {/* Step indicator HUD */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center space-y-6">
-                <div className="bg-slate-950/80 backdrop-blur-md px-8 py-4 rounded-2xl border border-white/10 text-center space-y-2 shadow-2xl">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 text-secondary animate-spin" />
-                    <span className="text-xl font-bold font-heading text-white tracking-tight">AI Vision Scanning...</span>
-                  </div>
-                  <AnimatePresence mode="wait">
-                    <motion.p 
-                      key={scanStep}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="text-[10px] text-secondary font-mono font-bold uppercase tracking-[0.3em]"
-                    >
-                      {scanStep === 0 && "Initializing Hyper-Spectral Analysis"}
-                      {scanStep === 1 && "Segmenting Nutrition Modules"}
-                      {scanStep === 2 && "Calculating Macro Density Indices"}
-                      {scanStep === 3 && "Synchronizing with Global Database"}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* Mock camera image simulation */}
-              <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-secondary/5 via-black to-accent/5" />
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-12 text-center"
-            >
-              <p className="text-muted-foreground text-sm font-medium mb-4">Focus your meal within the matrix frame...</p>
-              <Button 
-                variant="ghost" 
+              <button
                 onClick={() => setIsScannerOpen(false)}
-                className="text-white font-bold h-12 px-8 rounded-xl border border-white/10 hover:bg-white/5"
+                className="absolute -top-12 right-0 text-white/60 hover:text-white z-10 p-2"
               >
-                Abort Scan
-              </Button>
+                <X className="h-6 w-6" />
+              </button>
+              <AIMealScanner onLogMeal={handleScanResult} />
             </motion.div>
           </div>
         )}

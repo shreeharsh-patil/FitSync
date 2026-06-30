@@ -1538,6 +1538,20 @@ export async function verifyEmail(token: string, email: string) {
   }
 }
 
+export async function getMealPlans(userId: string) {
+  try {
+    const plans = await db.mealPlan.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      include: { days: { orderBy: { dayOfWeek: "asc" } } },
+    });
+    return JSON.parse(JSON.stringify(plans));
+  } catch (error) {
+    console.error("getMealPlans error:", error);
+    return [];
+  }
+}
+
 export async function generateMealPlanAction(
   userId: string,
   preferences: {
