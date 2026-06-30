@@ -280,10 +280,10 @@ export function AIMealScanner({ onLogMeal }: AIMealScannerProps) {
                 exit={{ opacity: 0, y: -5 }}
                 className="text-[9px] text-secondary font-mono font-bold uppercase tracking-[0.3em]"
               >
-                {analysisStep === 0 && "Initializing Hyper-Spectral Analysis"}
-                {analysisStep === 1 && "Segmenting Nutrition Modules"}
-                {analysisStep === 2 && "Calculating Macro Density Indices"}
-                {analysisStep === 3 && "Cross-referencing Food Database"}
+                {analysisStep === 0 && "Capturing image..."}
+                {analysisStep === 1 && "Analyzing food items..."}
+                {analysisStep === 2 && "Calculating nutritional values..."}
+                {analysisStep === 3 && "Finalizing results..."}
               </motion.p>
             </AnimatePresence>
           </div>

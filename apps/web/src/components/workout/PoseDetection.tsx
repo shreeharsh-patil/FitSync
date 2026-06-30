@@ -9,17 +9,13 @@ import {
   Play,
   StopCircle,
   Activity,
-  Target,
-  Dumbbell,
   Loader2,
   RefreshCw,
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  BarChart3,
-  Sparkles,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface FormFeedback {
@@ -39,57 +35,27 @@ interface SessionSummary {
   feedbacks: FormFeedback[];
 }
 
-const FORM_FEEDBACKS: Record<string, FormFeedback[]> = {
-  squat: [
-    { type: "success", message: "Knee tracking aligned with toes — excellent" },
-    { type: "warning", message: "Chest is dropping forward — keep chest up" },
-    { type: "error", message: "Depth insufficient — break parallel for full ROM" },
-  ],
-  "bench press": [
-    { type: "success", message: "Elbow angle optimal at 75 degrees" },
-    { type: "warning", message: "Bar path drifting — keep over mid-chest" },
-    { type: "error", message: "Shoulders not retracted — pinch shoulder blades" },
-  ],
-  deadlift: [
-    { type: "success", message: "Hip hinge pattern looks solid" },
-    { type: "warning", message: "Lower back rounding — brace core harder" },
-    { type: "error", message: "Bar too far from shins — start closer" },
-  ],
-  default: [
-    { type: "success", message: "Good tempo and control" },
-    { type: "warning", message: "Range of motion could be deeper" },
-    { type: "error", message: "Rushing the eccentric — slow down" },
-  ],
-};
-
-const SAMPLE_SPOTS = [
-  { x: 50, y: 10, label: "Head" },
-  { x: 50, y: 25, label: "Shoulders" },
-  { x: 40, y: 40, label: "L Elbow" },
-  { x: 60, y: 40, label: "R Elbow" },
-  { x: 35, y: 55, label: "L Wrist" },
-  { x: 65, y: 55, label: "R Wrist" },
-  { x: 50, y: 50, label: "Hips" },
-  { x: 45, y: 65, label: "L Knee" },
-  { x: 55, y: 65, label: "R Knee" },
-  { x: 40, y: 85, label: "L Ankle" },
-  { x: 60, y: 85, label: "R Ankle" },
+const KEYPOINT_NAMES = [
+  "nose", "left_eye", "right_eye", "left_ear", "right_ear",
+  "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+  "left_wrist", "right_wrist", "left_hip", "right_hip",
+  "left_knee", "right_knee", "left_ankle", "right_ankle",
 ];
 
-const SKELETON_CONNECTIONS = [
-  [0, 1], [1, 2], [1, 3], [2, 4], [3, 5],
-  [1, 6], [6, 7], [6, 8], [7, 9], [8, 10],
-  [4, 7], [5, 8], [7, 9], [8, 10],
+const SKELETON_CONNECTIONS: [number, number][] = [
+  [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+  [5, 11], [6, 12], [11, 12], [11, 13], [13, 15],
+  [12, 14], [14, 16],
 ];
 
 export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: PoseDetectionProps) {
   const [isActive, setIsActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isTracking, setIsTracking] = useState(false);
+  const [modelLoading, setModelLoading] = useState(false);
   const [repCount, setRepCount] = useState(0);
   const [formScore, setFormScore] = useState(85);
   const [feedbacks, setFeedbacks] = useState<FormFeedback[]>([]);
-  const [isInDownPosition, setIsInDownPosition] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [summary, setSummary] = useState<SessionSummary | null>(null);
@@ -98,7 +64,12 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number>(0);
   const sessionTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
-  const spotAnimRef = useRef<number>(0);
+  const detectorRef = useRef<any>(null);
+  const repPhaseRef = useRef<"up" | "down">("up");
+  const lastRepTimeRef = useRef(0);
+  const formScoresRef = useRef<number[]>([]);
+  const feedbackLogRef = useRef<FormFeedback[]>([]);
+  const lastFeedbackTimeRef = useRef(0);
 
   const startCamera = useCallback(async () => {
     try {
@@ -122,14 +93,99 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
     }
     setIsActive(false);
     setIsTracking(false);
+    detectorRef.current = null;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    if (spotAnimRef.current) cancelAnimationFrame(spotAnimRef.current);
     if (sessionTimerRef.current) clearInterval(sessionTimerRef.current);
     setSessionTime(0);
+    repPhaseRef.current = "up";
+    formScoresRef.current = [];
+    feedbackLogRef.current = [];
   }, [stream]);
 
-  const drawSkeleton = useCallback(() => {
-    if (!canvasRef.current || !videoRef.current) return;
+  const getAngle = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) => {
+    const ab = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+    const bc = Math.sqrt((b.x - c.x) ** 2 + (b.y - c.y) ** 2);
+    const ac = Math.sqrt((c.x - a.x) ** 2 + (c.y - a.y) ** 2);
+    return Math.acos((ab * ab + bc * bc - ac * ac) / (2 * ab * bc)) * (180 / Math.PI);
+  };
+
+  const analyzeForm = useCallback((keypoints: any[]) => {
+    const kp = (name: string) => keypoints.find((k: any) => k.name === name);
+
+    const lShoulder = kp("left_shoulder");
+    const rShoulder = kp("right_shoulder");
+    const lHip = kp("left_hip");
+    const rHip = kp("right_hip");
+    const lKnee = kp("left_knee");
+    const rKnee = kp("right_knee");
+    const lAnkle = kp("left_ankle");
+    const rAnkle = kp("right_ankle");
+
+    const newFeedbacks: FormFeedback[] = [];
+    let score = 85;
+
+    if (lHip && lKnee && lAnkle && rHip && rKnee && rAnkle) {
+      const lAngle = getAngle(lHip, lKnee, lAnkle);
+      const rAngle = getAngle(rHip, rKnee, rAnkle);
+      const avgAngle = (lAngle + rAngle) / 2;
+
+      if (avgAngle < 90) {
+        newFeedbacks.push({ type: "success", message: "Great depth — full range of motion achieved" });
+        score += 5;
+      } else if (avgAngle < 120) {
+        newFeedbacks.push({ type: "warning", message: "Go deeper — aim for at least 90 degrees at the knee" });
+        score -= 3;
+      } else {
+        newFeedbacks.push({ type: "error", message: "Depth too shallow — lower until hips are below knees" });
+        score -= 8;
+      }
+    }
+
+    if (lShoulder && lHip && lKnee && rShoulder && rHip && rKnee) {
+      const lTorso = getAngle(lShoulder, lHip, lKnee);
+      const rTorso = getAngle(rShoulder, rHip, rKnee);
+
+      if (lTorso > 160 && rTorso > 160) {
+        newFeedbacks.push({ type: "success", message: "Chest upright — excellent posture" });
+        score += 3;
+      } else if (lTorso < 140 || rTorso < 140) {
+        newFeedbacks.push({ type: "error", message: "Chest dropping forward — keep torso upright" });
+        score -= 5;
+      }
+    }
+
+    if (lHip && lKnee && rHip && rKnee) {
+      const hipDiff = Math.abs(
+        getAngle({ x: lHip.x - 10, y: lHip.y }, lHip, lKnee) -
+        getAngle({ x: rHip.x - 10, y: rHip.y }, rHip, rKnee)
+      );
+      if (hipDiff > 15) {
+        newFeedbacks.push({ type: "warning", message: "Weight shifting to one side — distribute evenly" });
+        score -= 3;
+      }
+    }
+
+    if (lShoulder && rShoulder && lHip && rHip) {
+      const shoulderWidth = Math.abs(lShoulder.x - rShoulder.x);
+      const hipWidth = Math.abs(lHip.x - rHip.x);
+      if (shoulderWidth > hipWidth * 1.8) {
+        newFeedbacks.push({ type: "warning", message: "Stance too wide — bring feet closer" });
+        score -= 2;
+      }
+    }
+
+    const now = Date.now();
+    if (newFeedbacks.length > 0 && now - lastFeedbackTimeRef.current > 4000) {
+      feedbackLogRef.current = [...feedbackLogRef.current, ...newFeedbacks].slice(-6);
+      lastFeedbackTimeRef.current = now;
+    }
+
+    formScoresRef.current.push(Math.max(40, Math.min(100, score)));
+    return score;
+  }, []);
+
+  const detectPose = useCallback(async () => {
+    if (!detectorRef.current || !videoRef.current || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -139,57 +195,106 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    try {
+      const poses = await detectorRef.current.estimatePoses(video);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const time = Date.now() / 1000;
-    const animOffset = Math.sin(time * 0.5) * 0.02;
+      if (poses.length > 0 && poses[0].keypoints) {
+        const keypoints = poses[0].keypoints;
+        const visible = keypoints.filter((kp: any) => (kp.score || 0) > 0.3);
 
-    const spots = SAMPLE_SPOTS.map((spot, i) => {
-      const wobble = Math.sin(time * 2 + i) * 3;
-      const breathOffset = i === 1 || i === 6 ? Math.sin(time * 0.8) * 2 : 0;
-      return {
-        x: (spot.x / 100) * canvas.width + wobble,
-        y: (spot.y / 100) * canvas.height + breathOffset + (isTracking ? animOffset * canvas.height : 0),
-        label: spot.label,
-      };
-    });
+        ctx.strokeStyle = "rgba(0, 201, 167, 0.6)";
+        ctx.lineWidth = 3;
+        ctx.shadowColor = "rgba(0, 201, 167, 0.3)";
+        ctx.shadowBlur = 8;
 
-    ctx.strokeStyle = "rgba(0, 201, 167, 0.6)";
-    ctx.lineWidth = 3;
-    ctx.shadowColor = "rgba(0, 201, 167, 0.3)";
-    ctx.shadowBlur = 8;
+        for (const [i, j] of SKELETON_CONNECTIONS) {
+          const a = visible.find((k: any) => k.name === KEYPOINT_NAMES[i]);
+          const b = visible.find((k: any) => k.name === KEYPOINT_NAMES[j]);
+          if (a && b) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
 
-    for (const [i, j] of SKELETON_CONNECTIONS) {
-      ctx.beginPath();
-      ctx.moveTo(spots[i].x, spots[i].y);
-      ctx.lineTo(spots[j].x, spots[j].y);
-      ctx.stroke();
+        ctx.shadowBlur = 0;
+        for (const kp of visible) {
+          ctx.fillStyle = "rgba(0, 201, 167, 0.8)";
+          ctx.beginPath();
+          ctx.arc(kp.x, kp.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        if (isTracking) {
+          const score = analyzeForm(visible);
+          setFormScore(Math.round(
+            formScoresRef.current.reduce((a: number, b: number) => a + b, 0) / formScoresRef.current.length
+          ));
+          setFeedbacks([...feedbackLogRef.current]);
+
+          const lHip = keypoints.find((k: any) => k.name === "left_hip");
+          const rHip = keypoints.find((k: any) => k.name === "right_hip");
+          const lKnee = keypoints.find((k: any) => k.name === "left_knee");
+          const rKnee = keypoints.find((k: any) => k.name === "right_knee");
+
+          if (lHip && rHip && lKnee && rKnee) {
+            const avgHipY = (lHip.y + rHip.y) / 2;
+            const avgKneeY = (lKnee.y + rKnee.y) / 2;
+            const squatDepth = avgHipY - avgKneeY;
+            const now = Date.now();
+
+            if (squatDepth > 30 && repPhaseRef.current === "up" && now - lastRepTimeRef.current > 800) {
+              repPhaseRef.current = "down";
+            } else if (squatDepth < 10 && repPhaseRef.current === "down" && now - lastRepTimeRef.current > 800) {
+              repPhaseRef.current = "up";
+              setRepCount((prev) => prev + 1);
+              lastRepTimeRef.current = now;
+            }
+          }
+        }
+      } else {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+    } catch {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     }
 
-    ctx.shadowBlur = 0;
-    for (const spot of spots) {
-      ctx.fillStyle = "rgba(0, 201, 167, 0.8)";
-      ctx.beginPath();
-      ctx.arc(spot.x, spot.y, 5, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.strokeStyle = "rgba(0, 201, 167, 0.3)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-
-    if (isTracking) {
-      spotAnimRef.current = requestAnimationFrame(drawSkeleton);
-    }
-  }, [isTracking]);
+    animFrameRef.current = requestAnimationFrame(detectPose);
+  }, [isTracking, analyzeForm]);
 
   useEffect(() => {
-    if (isActive && !isTracking) {
-      drawSkeleton();
+    if (isActive && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.onloadeddata = () => {
+        detectPose();
+      };
     }
-  }, [isActive, isTracking, drawSkeleton]);
+  }, [isActive, stream, detectPose]);
 
-  const startTracking = useCallback(() => {
+  const startTracking = useCallback(async () => {
+    setModelLoading(true);
+    try {
+      const [tfjs, poseDetection] = await Promise.all([
+        import("@tensorflow/tfjs-core"),
+        import("@tensorflow-models/pose-detection"),
+        import("@tensorflow/tfjs-backend-webgl"),
+      ]);
+      await tfjs.ready();
+
+      const detector = await poseDetection.createDetector(
+        poseDetection.SupportedModels.MoveNet,
+        { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+      );
+      detectorRef.current = detector;
+    } catch {
+      setModelLoading(false);
+      alert("Failed to load pose detection model. Please try a different browser.");
+      return;
+    }
+
+    setModelLoading(false);
     setIsTracking(true);
     setRepCount(0);
     setFormScore(85);
@@ -197,59 +302,48 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
     setSessionTime(0);
     setSessionComplete(false);
     setSummary(null);
+    repPhaseRef.current = "up";
+    formScoresRef.current = [];
+    feedbackLogRef.current = [];
+    lastRepTimeRef.current = Date.now();
 
     sessionTimerRef.current = setInterval(() => {
       setSessionTime((prev) => prev + 1);
     }, 1000);
+  }, []);
 
-    setTimeout(() => {
-      setFeedbacks([...FORM_FEEDBACKS.default]);
-    }, 2000);
+  const endSession = useCallback(() => {
+    setIsTracking(false);
+    detectorRef.current = null;
+    if (sessionTimerRef.current) clearInterval(sessionTimerRef.current);
 
-    const feedbackInterval = setInterval(() => {
-      setFeedbacks((prev) => {
-        const exerciseKey = exerciseName.toLowerCase();
-        const feedbackList = FORM_FEEDBACKS[exerciseKey] || FORM_FEEDBACKS.default;
-        const shuffled = [...feedbackList].sort(() => Math.random() - 0.5);
-        return shuffled.slice(0, 2);
-      });
+    const scores = formScoresRef.current;
+    const avgScore = scores.length > 0
+      ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length)
+      : 85;
 
-      setFormScore((prev) => Math.max(40, Math.min(100, prev + (Math.random() > 0.4 ? 3 : -5))));
-    }, 3000);
+    const fb = feedbackLogRef.current;
+    const finalFeedbacks = fb.length > 0 ? fb : [
+      { type: "success" as const, message: `Completed ${repCount} reps with real-time tracking` },
+    ];
 
-    let lastRepTime = 0;
-    const repInterval = setInterval(() => {
-      const now = Date.now();
-      if (now - lastRepTime > 1800) {
-        setRepCount((prev) => prev + 1);
-        lastRepTime = now;
-        setIsInDownPosition((prev) => !prev);
-      }
-    }, 2200);
+    setSessionComplete(true);
+    setFormScore(avgScore);
+    setFeedbacks([]);
+    setSummary({
+      duration: sessionTime,
+      totalReps: repCount,
+      avgFormScore: avgScore,
+      feedbacks: finalFeedbacks,
+    });
+  }, [sessionTime, repCount]);
 
-    setTimeout(() => {
-      setIsTracking(false);
-      clearInterval(feedbackInterval);
-      clearInterval(repInterval);
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (sessionTimerRef.current) clearInterval(sessionTimerRef.current);
-
-      setSessionComplete(true);
-      setFeedbacks([]);
-
-      const finalScore = Math.round(65 + Math.random() * 25);
-      setFormScore(finalScore);
-      setSummary({
-        duration: sessionTime,
-        totalReps: repCount,
-        avgFormScore: finalScore,
-        feedbacks: [
-          { type: Math.random() > 0.5 ? "success" : "warning", message: exerciseName === "Squat" ? "Overall depth needs improvement" : "Form consistency is stable" },
-          { type: "success", message: `Completed ${repCount} reps with controlled tempo` },
-          { type: Math.random() > 0.6 ? "warning" : "success", message: "Keep core braced throughout movement" },
-        ],
-      });
-    }, 15000);
-  }, [exerciseName]);
+    };
+  }, []);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-secondary";
@@ -389,7 +483,7 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
           <div className="space-y-2">
             <h3 className="text-xl font-bold font-heading text-white">AI Pose Detection</h3>
             <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-              Real-time exercise form analysis with skeleton tracking, rep counting, and feedback.
+              Real-time exercise form analysis powered by TensorFlow.js MoveNet — no server required.
             </p>
           </div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -437,6 +531,16 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
               </div>
             </div>
 
+            {modelLoading && (
+              <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                <div className="text-center space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-secondary mx-auto" />
+                  <p className="text-sm text-white/80 font-medium">Loading AI Model...</p>
+                  <p className="text-[10px] text-muted-foreground">Downloading MoveNet pose detector</p>
+                </div>
+              </div>
+            )}
+
             {isTracking && (
               <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3">
                 <div className="grid grid-cols-3 gap-3 pointer-events-auto">
@@ -456,7 +560,7 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
 
                 {feedbacks.length > 0 && (
                   <div className="space-y-1.5">
-                    {feedbacks.map((fb, idx) => (
+                    {feedbacks.slice(-3).map((fb, idx) => (
                       <div
                         key={idx}
                         className={cn(
@@ -487,24 +591,22 @@ export function PoseDetection({ exerciseName = "Exercise", onSessionComplete }: 
                   <CameraOff className="h-5 w-5" />
                   Stop Camera
                 </Button>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    onClick={startTracking}
-                    className="bg-secondary hover:bg-secondary/90 text-primary font-bold rounded-2xl h-14 px-8 gap-2 shadow-lg shadow-secondary/20"
-                  >
-                    <Play className="h-5 w-5 fill-current" />
-                    Begin Tracking
-                  </Button>
-                </motion.div>
+                {!modelLoading && (
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      onClick={startTracking}
+                      className="bg-secondary hover:bg-secondary/90 text-primary font-bold rounded-2xl h-14 px-8 gap-2 shadow-lg shadow-secondary/20"
+                    >
+                      <Play className="h-5 w-5 fill-current" />
+                      Begin Tracking
+                    </Button>
+                  </motion.div>
+                )}
               </>
             ) : (
               <Button
                 variant="outline"
-                onClick={() => {
-                  setIsTracking(false);
-                  if (sessionTimerRef.current) clearInterval(sessionTimerRef.current);
-                  setSessionComplete(true);
-                }}
+                onClick={endSession}
                 className="border-red-500/30 hover:bg-red-500/10 font-bold rounded-2xl h-14 px-8 gap-2 text-red-400"
               >
                 <StopCircle className="h-5 w-5" />

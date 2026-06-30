@@ -19,17 +19,10 @@ beforeEach(() => {
 });
 
 describe("askAICoach", () => {
-  it("returns simulated response when no API key is set", async () => {
+  it("returns config error when no API key is set", async () => {
     const { askAICoach } = await loadModule();
     const reply = await askAICoach("My chest hurts after bench press");
-    expect(reply).toContain("Active recovery");
-    expect(reply).toContain("Cat-Cow Stretch");
-  });
-
-  it("returns generic response for unmatched keywords", async () => {
-    const { askAICoach } = await loadModule();
-    const reply = await askAICoach("What is the best way to stay fit?");
-    expect(reply).toContain("great fitness question");
+    expect(reply).toContain("GROK_API_KEY");
   });
 
   it("makes fetch call when API key is set", async () => {
@@ -58,30 +51,10 @@ describe("askAICoach", () => {
 });
 
 describe("generateAIWorkout", () => {
-  it("returns preset plan when no API key is set", async () => {
+  it("returns config error when no API key is set", async () => {
     const { generateAIWorkout } = await loadModule();
     const plan = await generateAIWorkout("BEGINNER", []);
-    expect(plan).toHaveLength(4);
-    expect(plan[0].name).toBe("Push-up");
-    expect(plan[0].sets).toBe(3);
-  });
-
-  it("returns intermediate preset", async () => {
-    const { generateAIWorkout } = await loadModule();
-    const plan = await generateAIWorkout("INTERMEDIATE", []);
-    expect(plan[0].name).toBe("Pull-up");
-  });
-
-  it("returns advanced preset", async () => {
-    const { generateAIWorkout } = await loadModule();
-    const plan = await generateAIWorkout("ADVANCED", []);
-    expect(plan[0].name).toBe("Deadlift");
-  });
-
-  it("returns beginner preset for unknown difficulty", async () => {
-    const { generateAIWorkout } = await loadModule();
-    const plan = await generateAIWorkout("UNKNOWN", []);
-    expect(plan[0].name).toBe("Push-up");
+    expect(plan).toEqual({ error: expect.stringContaining("GROK_API_KEY") });
   });
 
   it("makes API call when key is set", async () => {
@@ -105,12 +78,68 @@ describe("generateAIWorkout", () => {
     expect(plan[0].name).toBe("Custom Exercise");
   });
 
-  it("falls back to preset on API failure", async () => {
+  it("returns error on API failure", async () => {
     const { generateAIWorkout } = await loadModule("test-key");
 
     mockFetch.mockRejectedValue(new Error("API error"));
 
     const plan = await generateAIWorkout("BEGINNER", []);
-    expect(plan[0].name).toBe("Push-up");
+    expect(plan).toEqual({ error: expect.any(String) });
+  });
+});
+
+describe("generateMealPlan", () => {
+  it("returns config error when no API key is set", async () => {
+    const { generateMealPlan } = await loadModule();
+    const plan = await generateMealPlan({
+      goal: "cut",
+      calories: 2000,
+      preferences: [],
+      allergies: [],
+      dietType: "standard",
+    });
+    expect(plan).toEqual({ error: expect.stringContaining("GROK_API_KEY") });
+  });
+
+  it("makes API call when key is set", async () => {
+    const { generateMealPlan } = await loadModule("test-key");
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{
+          message: {
+            content: JSON.stringify([
+              { dayOfWeek: 0, meals: [], totalCalories: 2000 },
+            ]),
+          },
+        }],
+      }),
+    });
+
+    const plan = await generateMealPlan({
+      goal: "cut",
+      calories: 2000,
+      preferences: [],
+      allergies: [],
+      dietType: "standard",
+    });
+    expect(plan).toHaveLength(1);
+    expect(plan[0].totalCalories).toBe(2000);
+  });
+
+  it("returns error on API failure", async () => {
+    const { generateMealPlan } = await loadModule("test-key");
+
+    mockFetch.mockRejectedValue(new Error("API error"));
+
+    const plan = await generateMealPlan({
+      goal: "cut",
+      calories: 2000,
+      preferences: [],
+      allergies: [],
+      dietType: "standard",
+    });
+    expect(plan).toEqual({ error: expect.any(String) });
   });
 });

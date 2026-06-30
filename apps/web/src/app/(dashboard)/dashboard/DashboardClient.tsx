@@ -174,18 +174,7 @@ export function DashboardClient({ user, activeWorkoutId, streakDetails, metrics,
 
   // Dynamic user streak counting
   const dynamicStreak = streakDetails?.streak !== undefined ? streakDetails.streak : 12;
-  const activeDates = streakDetails?.activeDates || [];
-
-  // Fallback dates in last 30 days to populate calendar beautiful heat map if DB is completely empty
-  const fallbackActiveDates = [
-    new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-  ];
-
-  const finalActiveDates = activeDates.length > 0 ? activeDates : fallbackActiveDates;
+  const finalActiveDates = streakDetails?.activeDates || [];
 
   // Search feature quick navigation links
   const quickShortcuts = [

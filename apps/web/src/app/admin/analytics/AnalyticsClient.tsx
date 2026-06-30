@@ -101,10 +101,10 @@ export function AnalyticsClient({ data }: { data: {
             </p>
           </div>
           <div className="flex bg-muted/40 p-1 rounded-xl border border-white/5">
-            {(Object.entries(charts) as [keyof typeof charts, typeof charts[keyof charts]][]).map(([key, chart]) => (
+            {Object.entries(charts).map(([key, chart]) => (
               <button
                 key={key}
-                onClick={() => setActiveChart(key)}
+                onClick={() => setActiveChart(key as "users" | "revenue" | "workouts" | "posts")}
                 className={cn(
                   "px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                   activeChart === key

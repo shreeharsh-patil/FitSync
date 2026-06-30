@@ -969,10 +969,10 @@ export function TrainerDashboardClient({
                           const res = await updateTrainerProfile(trainer.id, {
                             bio: profileBio,
                             specialties: JSON.stringify(
-                              profileSpecialties.split(",").map((s) => s.trim()).filter(Boolean)
+                              profileSpecialties.split(",").map((s: string) => s.trim()).filter(Boolean)
                             ),
                             certifications: JSON.stringify(
-                              profileCerts.split(",").map((s) => s.trim()).filter(Boolean)
+                              profileCerts.split(",").map((s: string) => s.trim()).filter(Boolean)
                             ),
                             experience: profileExperience || undefined,
                             hourlyRate: profileRate || undefined,

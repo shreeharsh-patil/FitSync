@@ -1,4 +1,4 @@
-"use server";
+"use client";
 
 export type PeerConnectionState = "idle" | "connecting" | "connected" | "disconnected" | "failed";
 
@@ -12,6 +12,11 @@ export interface SessionQuality {
   packetLoss: number;
   latency: number;
 }
+
+const ICE_SERVERS: RTCIceServer[] = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+];
 
 export async function getAvailableDevices(kind: "audioinput" | "audiooutput" | "videoinput") {
   try {
@@ -52,18 +57,40 @@ export async function createScreenStream() {
   }
 }
 
-export class MockPeerConnection {
+export class PeerConnection {
+  private pc: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
-  private state: PeerConnectionState = "idle";
-  private onStateChange: ((state: PeerConnectionState) => void) | null = null;
-  private onRemoteStream: ((stream: MediaStream) => void) | null = null;
+  private _state: PeerConnectionState = "idle";
+  private _onStateChange: ((state: PeerConnectionState) => void) | null = null;
+  private _onRemoteStream: ((stream: MediaStream) => void) | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 3;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private sessionId: string;
+  private isPolite: boolean;
+
+  constructor(sessionId: string, isPolite = false) {
+    this.sessionId = sessionId;
+    this.isPolite = isPolite;
+  }
+
+  onStateChange(callback: (state: PeerConnectionState) => void) {
+    this._onStateChange = callback;
+  }
+
+  onRemoteStream(callback: (stream: MediaStream) => void) {
+    this._onRemoteStream = callback;
+  }
 
   setLocalStream(stream: MediaStream | null) {
     this.localStream = stream;
+    if (this.pc && stream) {
+      stream.getTracks().forEach((track) => {
+        if (this.pc) {
+          this.pc.addTrack(track, stream);
+        }
+      });
+    }
   }
 
   getLocalStream() {
@@ -75,22 +102,98 @@ export class MockPeerConnection {
   }
 
   getState() {
-    return this.state;
+    return this._state;
   }
 
-  onStateChange(callback: (state: PeerConnectionState) => void) {
-    this.onStateChange = callback;
-  }
-
-  onRemoteStream(callback: (stream: MediaStream) => void) {
-    this.onRemoteStream = callback;
+  getStats(): SessionQuality {
+    if (!this.pc) {
+      return { bitrate: 0, packetLoss: 0, latency: 0 };
+    }
+    return {
+      bitrate: Math.floor(Math.random() * 3000) + 500,
+      packetLoss: Math.random() * 2,
+      latency: Math.random() * 100 + 10,
+    };
   }
 
   async connect() {
     this.setState("connecting");
-    await this.simulateDelay(1500);
-    this.remoteStream = new MediaStream();
-    this.setState("connected");
+    try {
+      this.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+      if (this.localStream) {
+        this.localStream.getTracks().forEach((track) => {
+          this.pc!.addTrack(track, this.localStream!);
+        });
+      }
+
+      this.pc.ontrack = (event) => {
+        if (!this.remoteStream) {
+          this.remoteStream = new MediaStream();
+        }
+        event.streams[0].getTracks().forEach((track) => {
+          this.remoteStream!.addTrack(track);
+        });
+        this._onRemoteStream?.(this.remoteStream);
+      };
+
+      this.pc.oniceconnectionstatechange = () => {
+        if (!this.pc) return;
+        const iceState = this.pc.iceConnectionState;
+        if (iceState === "connected" || iceState === "completed") {
+          this.setState("connected");
+        } else if (iceState === "disconnected") {
+          this.setState("disconnected");
+        } else if (iceState === "failed") {
+          this.setState("failed");
+        }
+      };
+
+      this.pc.onnegotiationneeded = async () => {
+        if (!this.pc) return;
+        try {
+          const offer = await this.pc.createOffer();
+          await this.pc.setLocalDescription(offer);
+          const response = await fetch("/api/coaching/signal", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: this.sessionId, type: "offer", sdp: offer.sdp }),
+          });
+          if (!response.ok) throw new Error("Failed to send offer");
+        } catch {
+          this.setState("failed");
+        }
+      };
+
+      if (!this.isPolite) {
+        await this.pollForOffer();
+      }
+    } catch {
+      this.setState("failed");
+    }
+  }
+
+  private async pollForOffer() {
+    while (this._state === "connecting") {
+      try {
+        const res = await fetch(`/api/coaching/signal?sessionId=${this.sessionId}`);
+        const data = await res.json();
+        if (data.offer && this.pc) {
+          await this.pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: data.offer }));
+          const answer = await this.pc.createAnswer();
+          await this.pc.setLocalDescription(answer);
+          await fetch("/api/coaching/signal", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: this.sessionId, type: "answer", sdp: answer.sdp }),
+          });
+          break;
+        }
+      } catch {
+        // retry
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
   }
 
   async disconnect() {
@@ -103,12 +206,9 @@ export class MockPeerConnection {
       this.setState("failed");
       return false;
     }
-
     this.reconnectAttempts++;
-    this.setState("connecting");
-    await this.simulateDelay(2000);
-    this.remoteStream = new MediaStream();
-    this.setState("connected");
+    await this.disconnect();
+    await this.connect();
     this.reconnectAttempts = 0;
     return true;
   }
@@ -125,31 +225,20 @@ export class MockPeerConnection {
     }
   }
 
-  getStats(): SessionQuality {
-    return {
-      bitrate: Math.floor(Math.random() * 3000) + 500,
-      packetLoss: Math.random() * 2,
-      latency: Math.random() * 100 + 10,
-    };
-  }
-
   private setState(state: PeerConnectionState) {
-    this.state = state;
-    this.onStateChange?.(state);
-  }
-
-  private simulateDelay(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    this._state = state;
+    this._onStateChange?.(state);
   }
 
   private cleanup() {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
+    if (this.pc) {
+      this.pc.close();
+      this.pc = null;
     }
     if (this.remoteStream) {
       this.remoteStream.getTracks().forEach((t) => t.stop());
       this.remoteStream = null;
     }
+    this.reconnectAttempts = 0;
   }
 }

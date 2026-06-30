@@ -13,7 +13,7 @@ export default async function CoachingPage() {
   });
   if (!user) redirect("/login");
 
-  const sessions = await db.coachingSession.findMany({
+  const rawSessions = await db.coachingSession.findMany({
     where: {
       OR: [{ clientId: user.id }, { trainerId: user.id }],
     },
@@ -24,6 +24,18 @@ export default async function CoachingPage() {
     orderBy: { startTime: "desc" },
     take: 20,
   });
+
+  const sessions = rawSessions.map((s) => ({
+    id: s.id,
+    trainerId: s.trainerId,
+    clientId: s.clientId,
+    startTime: s.startTime.toISOString(),
+    endTime: s.endTime?.toISOString() ?? null,
+    status: s.status,
+    sessionType: s.sessionType,
+    trainer: s.trainer,
+    client: s.client,
+  }));
 
   const trainers = await db.user.findMany({
     where: { role: "TRAINER" },

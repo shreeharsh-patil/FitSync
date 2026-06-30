@@ -23,6 +23,7 @@ interface WorkoutRec {
   suggestedReps: string;
   progressionType: string;
   reason: string;
+  substitution?: string;
 }
 
 export function AICoachClient() {
@@ -97,7 +98,7 @@ export function AICoachClient() {
 
     const result = await getWorkoutRecommendationsAction("use-client");
 
-    if (result.success && result.recommendations) {
+    if ("recommendations" in result && result.recommendations) {
       const recs = result.recommendations as WorkoutRec[];
       const coachMsg: Message = {
         role: "assistant",

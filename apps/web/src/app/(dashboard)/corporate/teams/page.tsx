@@ -21,7 +21,19 @@ export default async function TeamsPage() {
 
   if (!orgMember) redirect("/corporate");
 
-  const teams = await getTeams(orgMember.orgId);
+  const rawTeams = await getTeams(orgMember.orgId);
+
+  const teams = rawTeams.map((t) => ({
+    id: t.id,
+    name: t.name,
+    description: t.description,
+    createdAt: t.createdAt.toISOString(),
+    _count: { members: t._count.members },
+    members: t.members.map((m) => ({
+      id: m.id,
+      user: m.user,
+    })),
+  }));
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">

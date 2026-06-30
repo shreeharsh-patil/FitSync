@@ -100,9 +100,8 @@ model User {
   clientSessions    CoachingSession[]  @relation("ClientSessions")
   orgMemberships    OrgMember[]
   integrations      UserIntegration[]
-  healthData        HealthData[]
-  pushSubscriptions PushSubscription[]
-  weeklyPlans       WeeklyPlan[]
+  healthData         HealthData[]
+  pushSubscriptions  PushSubscription[]
 }
 
 model Account {

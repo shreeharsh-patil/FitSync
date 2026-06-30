@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { MockPeerConnection, type PeerConnectionState } from "@/lib/webrtc";
+import { PeerConnection, type PeerConnectionState } from "@/lib/webrtc";
 import { SessionControls } from "./SessionControls";
 
 interface VideoRoomProps {
@@ -138,7 +138,7 @@ function ConnectionIndicator({ state }: { state: PeerConnectionState }) {
 }
 
 export function VideoRoom({ sessionId, onEndCall }: VideoRoomProps) {
-  const [peerConnection] = useState(() => new MockPeerConnection());
+  const [peerConnection] = useState(() => new PeerConnection(sessionId));
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [connectionState, setConnectionState] = useState<PeerConnectionState>("idle");
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);

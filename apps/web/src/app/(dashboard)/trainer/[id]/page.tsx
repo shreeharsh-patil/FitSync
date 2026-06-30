@@ -12,23 +12,24 @@ import { TrainerProfileClient } from "./TrainerProfileClient";
 export default async function TrainerProfilePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const trainer = await getTrainer(params.id);
+  const trainer = await getTrainer(id);
   if (!trainer) notFound();
 
   const isFollowing = await getUserFollowsTrainer(
     session.user.id,
-    params.id
+    id
   );
-  const publicWorkouts = await getTrainerPublicWorkouts(params.id);
+  const publicWorkouts = await getTrainerPublicWorkouts(id);
 
   // Check if user has already reviewed
   const existingReview = await db.testimonial.findFirst({
-    where: { trainerId: params.id, userId: session.user.id },
+    where: { trainerId: id, userId: session.user.id },
   });
 
   return (

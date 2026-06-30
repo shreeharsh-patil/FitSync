@@ -9,7 +9,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const coachingSession = await db.coachingSession.findUnique({
+  const rawSession = await db.coachingSession.findUnique({
     where: { id },
     include: {
       trainer: { select: { id: true, name: true, image: true } },
@@ -17,10 +17,22 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     },
   });
 
-  if (!coachingSession) notFound();
+  if (!rawSession) notFound();
 
-  const isParticipant = coachingSession.clientId === session.user.id || coachingSession.trainerId === session.user.id;
+  const isParticipant = rawSession.clientId === session.user.id || rawSession.trainerId === session.user.id;
   if (!isParticipant) redirect("/coaching");
+
+  const coachingSession = {
+    id: rawSession.id,
+    trainerId: rawSession.trainerId,
+    clientId: rawSession.clientId,
+    startTime: rawSession.startTime.toISOString(),
+    endTime: rawSession.endTime?.toISOString() ?? null,
+    status: rawSession.status,
+    sessionType: rawSession.sessionType,
+    trainer: rawSession.trainer,
+    client: rawSession.client,
+  };
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">

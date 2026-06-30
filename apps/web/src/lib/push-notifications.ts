@@ -17,7 +17,7 @@ export async function subscribeToPush(registration: ServiceWorkerRegistration): 
     const publicKey = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJLEjX9h8IHEHbw2sMk2cH8U7WqTf4EhH-YkGE";
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
+      applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
     });
 
     return subscription.toJSON() as unknown as PushSubscriptionData;

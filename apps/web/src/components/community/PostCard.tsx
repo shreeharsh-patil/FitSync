@@ -10,7 +10,6 @@ import {
   Share2,
   MessageSquare,
   Trash2,
-  Youtube,
   Play,
 } from "lucide-react";
 import { ImageLightbox } from "./ImageLightbox";

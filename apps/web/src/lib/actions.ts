@@ -441,6 +441,18 @@ export async function logWorkoutSession(
 
     revalidatePath("/workout");
     revalidatePath("/dashboard");
+
+    if (data.durationMins >= 10) {
+      const { sendPushToUser } = await import("@/lib/notification-sender");
+      sendPushToUser(userId, {
+        title: "✅ Workout Complete",
+        body: `Great session! ${data.durationMins} min, ${data.caloriesBurned} cal burned.`,
+        url: "/workout",
+        tag: "fitsync-workout-complete",
+        data: { type: "workout_complete" },
+      }).catch(() => {});
+    }
+
     return { success: "Workout logged", id: log.id };
   } catch (error) {
     console.error("Log workout session error:", error);
@@ -654,6 +666,10 @@ export async function generateWorkoutWithAI(difficulty: Difficulty) {
 
     const { generateAIWorkout } = await import("@/lib/openai");
     const aiPlan = await generateAIWorkout(difficulty, exerciseNames);
+
+    if (!Array.isArray(aiPlan)) {
+      return { error: (aiPlan as any).error || "Failed to generate AI workout." };
+    }
 
     const formattedExercises = aiPlan.map((item: any) => {
       const match = dbExercises.find(
@@ -1044,22 +1060,23 @@ export async function unfollowTrainer(userId: string, trainerId: string) {
 
 export async function getTrainerStats(trainerId: string) {
   try {
-    const [totalBookings, completedBookings, totalRevenue, clientCount] = await Promise.all([
+    const [totalBookings, completedBookings, bookingsWithPackage, clientCount] = await Promise.all([
       db.booking.count({ where: { package: { trainerId } } }),
       db.booking.count({ where: { package: { trainerId }, status: "COMPLETED" } }),
-      db.booking.aggregate({
+      db.booking.findMany({
         where: { package: { trainerId }, status: "COMPLETED" },
-        _sum: { package: { select: { price: true } } },
+        select: { package: { select: { price: true } } },
       }),
       db.booking.groupBy({
         by: ["userId"],
         where: { package: { trainerId } },
       }),
     ]);
+    const totalRevenue = bookingsWithPackage.reduce((sum, b) => sum + (b.package?.price ?? 0), 0);
     return {
       totalBookings,
       completedBookings,
-      totalRevenue: (totalRevenue as any)?._sum?.package?.price || 0,
+      totalRevenue,
       clientCount: clientCount.length,
       completionRate: totalBookings > 0 ? Math.round((completedBookings / totalBookings) * 100) : 0,
     };
@@ -1567,6 +1584,10 @@ export async function generateMealPlanAction(
     const { generateMealPlan } = await import("@/lib/openai");
     const days = await generateMealPlan(preferences);
 
+    if (!Array.isArray(days)) {
+      return { error: (days as any).error || "Failed to generate meal plan" };
+    }
+
     const planName = preferences.name || `${preferences.goal.charAt(0).toUpperCase() + preferences.goal.slice(1)} Meal Protocol`;
 
     const mealPlan = await db.mealPlan.create({
@@ -1607,6 +1628,10 @@ export async function regenerateMealPlanDay(dayId: string, preferences: {
   try {
     const { generateMealPlan } = await import("@/lib/openai");
     const days = await generateMealPlan(preferences);
+
+    if (!Array.isArray(days)) {
+      return { error: (days as any).error || "Failed to regenerate meal plan" };
+    }
 
     const existingDay = await db.mealPlanDay.findUnique({ where: { id: dayId } });
     if (!existingDay) return { error: "Day not found" };
@@ -1666,21 +1691,7 @@ export async function analyzeMealPhoto(imageData: string) {
     const GROK_BASE_URL = process.env.GROK_BASE_URL || "https://api.x.ai/v1";
 
     if (!GROK_API_KEY) {
-      await new Promise((r) => setTimeout(r, 2000));
-
-      return {
-        success: true,
-        items: [
-          { name: "Grilled Chicken Breast", confidence: 0.94, calories: 220, protein: 42, carbs: 0, fat: 5, servingSize: "170g" },
-          { name: "Steamed Broccoli", confidence: 0.88, calories: 55, protein: 4, carbs: 11, fat: 1, servingSize: "150g" },
-          { name: "Brown Rice", confidence: 0.91, calories: 216, protein: 5, carbs: 45, fat: 2, servingSize: "1 cup cooked" },
-          { name: "Olive Oil Dressing", confidence: 0.76, calories: 120, protein: 0, carbs: 0, fat: 14, servingSize: "1 tbsp" },
-        ],
-        totalCalories: 611,
-        totalProtein: 51,
-        totalCarbs: 56,
-        totalFat: 22,
-      };
+      return { error: "Meal analysis requires a GROK_API_KEY or OPENAI_API_KEY environment variable." };
     }
 
     const response = await fetch(`${GROK_BASE_URL}/chat/completions`, {
@@ -1723,20 +1734,7 @@ export async function analyzeExerciseForm(videoFrame: string) {
     const GROK_BASE_URL = process.env.GROK_BASE_URL || "https://api.x.ai/v1";
 
     if (!GROK_API_KEY) {
-      await new Promise((r) => setTimeout(r, 1500));
-
-      return {
-        success: true,
-        exercise: "Squat",
-        formScore: 72,
-        feedback: [
-          { type: "warning", message: "Chest is dropping forward — keep upper back tight and chest up" },
-          { type: "error", message: "Depth is slightly above parallel — aim to break parallel for full ROM" },
-          { type: "success", message: "Knee tracking is good — staying in line with toes" },
-        ],
-        repCount: 8,
-        suggestions: "Widen stance slightly and focus on pushing knees out. Brace core before each rep.",
-      };
+      return { error: "Form analysis requires a GROK_API_KEY or OPENAI_API_KEY environment variable." };
     }
 
     const response = await fetch(`${GROK_BASE_URL}/chat/completions`, {
@@ -1817,9 +1815,9 @@ export async function connectIntegration(userId: string, provider: string) {
     revalidatePath("/integrations");
     revalidatePath("/settings");
     return { success: `${p.displayName} connected successfully`, id: integration.id };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Connect integration error:", error);
-    return { error: "Failed to connect integration" };
+    return { error: error.message || "Failed to connect integration" };
   }
 }
 
@@ -1890,9 +1888,9 @@ export async function syncIntegration(userId: string, provider: string) {
       success: `${p.displayName} synced (${dataPoints.length} data points)`,
       count: dataPoints.length,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Sync integration error:", error);
-    return { error: "Failed to sync integration" };
+    return { error: error.message || "Failed to sync integration" };
   }
 }
 

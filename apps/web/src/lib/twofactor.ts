@@ -85,7 +85,7 @@ function dynamicTruncate(hs: Buffer): number {
 }
 
 function getTOTPToken(key: string, timestamp: number = Date.now()): string {
-  const counter = Math.floor(timestamp / 1000 / TOTP_STEP);
+  let counter = Math.floor(timestamp / 1000 / TOTP_STEP);
   const counterBuf = Buffer.alloc(8);
   for (let i = 7; i >= 0; i--) {
     counterBuf[i] = counter & 0xff;

@@ -155,7 +155,18 @@ export default function ChallengesPage() {
     fetchChallenges();
     if (selectedChallenge?.id === challengeId) {
       const updated = await getChallenge(challengeId);
-      if (updated) setSelectedChallenge(updated as ChallengeItem);
+      if (updated) {
+        const { createdAt: _, ...base } = updated;
+        setSelectedChallenge({
+          ...base,
+          durationDays: Math.ceil(
+            (new Date(updated.endDate).getTime() - new Date(updated.startDate).getTime()) / (1000 * 60 * 60 * 24)
+          ),
+          status: new Date(updated.endDate) < new Date() ? "completed" : "active",
+          type: (updated.rules as any)?.type || "custom",
+          difficulty: (updated.rules as any)?.difficulty || "BEGINNER",
+        } as ChallengeItem);
+      }
     }
   }
 
@@ -559,7 +570,7 @@ export default function ChallengesPage() {
                   const Icon = typeIcons[challenge.type] || Target;
                   const joined = isJoined(challenge.id);
                   const completed = isCompleted(challenge.id);
-                  const progress = computeProgress(challenge, userId);
+                  const progress = computeProgress(challenge, userId ?? undefined);
 
                   return (
                     <motion.div
