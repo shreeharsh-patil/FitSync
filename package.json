@@ -1,27 +1,35 @@
 {
-  "name": "fitsync",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "fitsync-rebuild",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "dev": "npm run dev --workspace=web",
-    "build": "npm run build --workspace=web",
-    "start": "npm run start --workspace=web",
-    "lint": "npm run lint --workspace=web"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
   },
-  "workspaces": [
-    "apps/*"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/shreeharsh-patil/FitSync.git"
+  "dependencies": {
+    "@prisma/client": "^7.8.0",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.23.0",
+    "mongoose": "^9.7.4",
+    "next": "16.2.10",
+    "next-auth": "^5.0.0-beta.31",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/shreeharsh-patil/FitSync/issues"
-  },
-  "homepage": "https://github.com/shreeharsh-patil/FitSync#readme"
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.19.43",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "prisma": "^7.8.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
 }
