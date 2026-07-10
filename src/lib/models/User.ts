@@ -17,6 +17,12 @@ export interface IUser extends Document {
   level: number;
   streak: number;
   longestStreak: number;
+  integrations: {
+    appleHealth: boolean;
+    googleFit: boolean;
+    fitbit: boolean;
+    strava: boolean;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +41,15 @@ const UserSchema = new Schema<IUser>(
     dateOfBirth: { type: Date },
     bio: { type: String },
     isPublic: { type: Boolean, default: true },
+    integrations: {
+      type: {
+        appleHealth: { type: Boolean, default: false },
+        googleFit: { type: Boolean, default: false },
+        fitbit: { type: Boolean, default: false },
+        strava: { type: Boolean, default: false },
+      },
+      default: { appleHealth: false, googleFit: false, fitbit: false, strava: false },
+    },
     xp: { type: Number, default: 0 },
     level: { type: Number, default: 1 },
     streak: { type: Number, default: 0 },

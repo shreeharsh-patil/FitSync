@@ -35,7 +35,7 @@ export async function PUT(req: Request) {
     await connectDB();
 
     // Prevent updating sensitive fields
-    const allowed = ["name", "fitnessGoal", "activityLevel", "height", "weight", "bio", "isPublic", "image"];
+    const allowed = ["name", "fitnessGoal", "activityLevel", "height", "weight", "bio", "isPublic", "image", "integrations"];
     const updates: Record<string, any> = {};
     for (const key of allowed) {
       if (body[key] !== undefined) updates[key] = body[key];

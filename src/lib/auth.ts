@@ -1,5 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/User";
@@ -34,8 +36,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         };
       },
     }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      // Only run on OAuth sign-in, not on every request
+      if ((account?.provider === "google" || account?.provider === "github") && user.email) {
+        await connectDB();
+        const existingUser = await User.findOne({ email: user.email });
+        if (!existingUser) {
+          await User.create({
+            name: user.name || "",
+            email: user.email,
+            image: user.image || undefined,
+            role: "user",
+          });
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

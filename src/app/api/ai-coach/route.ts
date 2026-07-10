@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { Workout } from "@/lib/models/Workout";
 import { Nutrition } from "@/lib/models/Nutrition";
+import { unstable_noStore as noStore } from "next/cache";
 
 const responses: Record<string, (name: string) => string> = {
   "workout": (name) =>
@@ -94,6 +95,8 @@ function matchIntent(message: string): string {
 
 export async function POST(req: Request) {
   try {
+    noStore(); // Don't cache AI responses
+    
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -135,9 +138,6 @@ export async function POST(req: Request) {
     if (dailyCalories > 0 && intent === "meal") {
       response += `\n\n---\n📋 **Today's Nutrition**: You've logged ${dailyCalories.toLocaleString()} kcal so far today.`;
     }
-
-    // Simulate slight delay for realism
-    await new Promise((r) => setTimeout(r, 600));
 
     return NextResponse.json({
       response,

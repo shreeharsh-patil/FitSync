@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dumbbell, Search, PlayCircle, Clock, BarChart3, Plus, Zap, Filter, Loader2, X, Check } from "lucide-react";
+import { Dumbbell, Search, PlayCircle, Clock, BarChart3, Plus, Zap, Loader2, X, Check, Sparkles } from "lucide-react";
 
 interface Workout {
   _id: string;
@@ -37,9 +37,9 @@ const templates = [
 ];
 
 const difficulties: Record<string, string> = {
-  Beginner: "bg-secondary/10 text-secondary border-secondary/20",
-  Intermediate: "bg-accent/10 text-accent border-accent/20",
-  Advanced: "bg-red-500/10 text-red-400 border-red-500/20",
+  Beginner: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Intermediate: "bg-amber-50 text-amber-700 border-amber-200",
+  Advanced: "bg-red-50 text-red-700 border-red-200",
 };
 
 export default function WorkoutPage() {
@@ -115,40 +115,44 @@ export default function WorkoutPage() {
   };
 
   return (
-    <div className="space-y-10">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div className="space-y-8">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <div className="flex items-center gap-2 text-accent text-sm font-bold mb-1"><Dumbbell className="h-4 w-4" />Workout Center</div>
-          <h1 className="text-4xl font-bold font-heading tracking-tight text-white">Build & Track</h1>
-          <p className="text-muted-foreground mt-1">Choose a template or build your own routine.</p>
+          <div className="flex items-center gap-2 text-accent-coral text-sm font-semibold mb-1">
+            <Dumbbell className="h-4 w-4" />Workout Center
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Build & Track</h1>
+          <p className="text-text-secondary text-sm mt-1">Choose a template or build your own routine.</p>
         </div>
         <button onClick={() => setShowLogForm(!showLogForm)}
-          className="flex items-center gap-2 px-6 py-3 bg-accent text-white font-bold rounded-xl hover:shadow-lg hover:shadow-accent/20 transition-all">
+          className="flex items-center gap-2 px-5 py-2.5 bg-accent-coral text-white font-bold text-sm rounded-xl hover:shadow-lg hover:shadow-accent-coral/20 transition-all">
           {showLogForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showLogForm ? "Cancel" : "Log Workout"}
         </button>
       </motion.div>
 
-      {/* Log Workout Form */}
+      {/* Log Form */}
       {showLogForm && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-[2rem] border-white/5 p-8 space-y-6">
-          <h2 className="text-xl font-bold font-heading text-white">Log a Workout</h2>
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl bg-bg-card border border-border p-6 md:p-8 space-y-6">
+          <h2 className="text-lg font-bold font-heading text-text-primary">Log a Workout</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Workout Name</label>
+              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Workout Name</label>
               <input value={logName} onChange={(e) => setLogName(e.target.value)}
-                className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-accent/40" placeholder="e.g. Upper Body Push" />
+                className="input w-full" placeholder="e.g. Upper Body Push" />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Duration (min)</label>
+              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Duration (min)</label>
               <input type="number" value={logDuration} onChange={(e) => setLogDuration(parseInt(e.target.value) || 30)}
-                className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-accent/40" />
+                className="input w-full" />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Difficulty</label>
+              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Difficulty</label>
               <select value={logDifficulty} onChange={(e) => setLogDifficulty(e.target.value)}
-                className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-accent/40">
+                className="input w-full">
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
                 <option value="advanced">Advanced</option>
@@ -158,24 +162,24 @@ export default function WorkoutPage() {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-white">Exercises</h3>
-              <button onClick={addExercise} className="text-xs font-bold text-accent hover:underline">+ Add Exercise</button>
+              <h3 className="font-semibold text-sm text-text-primary">Exercises</h3>
+              <button onClick={addExercise} className="text-xs font-semibold text-accent-coral hover:underline">+ Add Exercise</button>
             </div>
             {logExercises.map((ex, idx) => (
-              <div key={idx} className="flex gap-3 items-start p-3 rounded-xl bg-white/5 border border-white/5">
+              <div key={idx} className="flex gap-3 items-start p-3 rounded-xl bg-bg-secondary border border-border">
                 <input value={ex.name} onChange={(e) => updateExercise(idx, "name", e.target.value)}
-                  className="flex-1 h-10 bg-white/5 border border-white/10 rounded-lg px-3 text-sm text-white focus:outline-none focus:border-accent/40" placeholder="Exercise name" />
+                  className="input flex-1 text-sm" placeholder="Exercise name" />
                 <input value={ex.muscleGroup} onChange={(e) => updateExercise(idx, "muscleGroup", e.target.value)}
-                  className="w-28 h-10 bg-white/5 border border-white/10 rounded-lg px-3 text-sm text-white focus:outline-none focus:border-accent/40" placeholder="Muscle group" />
+                  className="input w-28 text-sm" placeholder="Muscle group" />
                 <input type="number" defaultValue={10}
-                  className="w-16 h-10 bg-white/5 border border-white/10 rounded-lg px-2 text-sm text-white text-center" placeholder="Reps" />
+                  className="input w-16 text-sm text-center" placeholder="Reps" />
               </div>
             ))}
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-white/5">
+          <div className="flex justify-end pt-4 border-t border-border">
             <button onClick={handleLogWorkout} disabled={saving || !logName.trim()}
-              className="px-8 py-3 bg-accent text-white font-bold rounded-xl disabled:opacity-50 transition-all flex items-center gap-2">
+              className="px-6 py-2.5 bg-accent-coral text-white font-bold text-sm rounded-xl disabled:opacity-50 transition-all flex items-center gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               {saving ? "Saving..." : "Save Workout"}
             </button>
@@ -184,64 +188,72 @@ export default function WorkoutPage() {
       )}
 
       {successMsg && (
-        <div className="p-4 bg-secondary/10 border border-secondary/20 text-secondary rounded-xl text-sm font-bold animate-fade-in">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-semibold animate-fade-in">
           {successMsg}
         </div>
       )}
 
       {/* Templates */}
       <div className="space-y-4">
-        <h2 className="text-lg font-bold font-heading text-white flex items-center gap-2"><Zap className="h-5 w-5 text-accent" />Quick Start Templates</h2>
+        <h2 className="text-base font-bold font-heading text-text-primary flex items-center gap-2">
+          <Zap className="h-4 w-4 text-accent-coral" />Quick Start Templates
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {templates.map((t, idx) => (
-            <motion.div key={t.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-              className="glass rounded-2xl border-white/5 p-5 hover:border-accent/30 transition-all group cursor-pointer"
+            <motion.div key={t.name} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }}
+              className="rounded-xl bg-bg-card border border-border p-5 hover:border-accent-coral/30 transition-all group cursor-pointer"
               onClick={() => { setLogName(t.name); setLogDuration(t.duration); setLogDifficulty(t.difficulty.toLowerCase()); setShowLogForm(true); }}>
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                <div className="h-10 w-10 rounded-xl bg-accent-coral/10 flex items-center justify-center text-accent-coral">
                   <Dumbbell className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-sm text-white group-hover:text-accent transition-colors">{t.name}</h3>
-                  <p className="text-[10px] text-muted-foreground">{t.exercises} exercises</p>
+                  <h3 className="font-semibold text-sm text-text-primary group-hover:text-accent-coral transition-colors">{t.name}</h3>
+                  <p className="text-[9px] text-text-muted">{t.exercises} exercises</p>
                 </div>
-                <PlayCircle className="h-6 w-6 text-muted-foreground group-hover:text-accent transition-colors" />
+                <PlayCircle className="h-5 w-5 text-text-muted group-hover:text-accent-coral transition-colors" />
               </div>
-              <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-3 text-[10px] text-text-muted">
                 <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.duration} min</span>
-                <span className={`px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border ${difficulties[t.difficulty]}`}>{t.difficulty}</span>
+                <span className={`px-2 py-0.5 rounded-md font-semibold uppercase tracking-wider border ${difficulties[t.difficulty]}`}>
+                  {t.difficulty}
+                </span>
               </div>
             </motion.div>
           ))}
         </div>
       </div>
 
-      {/* Recent Workouts */}
+      {/* Recent */}
       <div className="space-y-4">
-        <h2 className="text-lg font-bold font-heading text-white flex items-center gap-2"><BarChart3 className="h-5 w-5 text-secondary" />Recent Workouts</h2>
+        <h2 className="text-base font-bold font-heading text-text-primary flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-text-secondary" />Recent Workouts
+        </h2>
         {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-secondary" /></div>
+          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent-coral" /></div>
         ) : workouts.length === 0 ? (
-          <div className="glass rounded-2xl border-white/5 p-12 text-center text-muted-foreground text-sm">
+          <div className="rounded-xl bg-bg-card border border-border p-12 text-center text-text-muted text-sm">
             No workouts logged yet. Start your first session above!
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {workouts.map((w, idx) => (
-              <motion.div key={w._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.02 }}
-                className="glass rounded-xl border-white/5 p-5 hover:border-white/10 transition-all flex items-center justify-between">
+              <motion.div key={w._id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.02 }}
+                className="rounded-xl bg-bg-card border border-border p-4 hover:border-border-hover transition-all flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                  <div className="h-10 w-10 rounded-xl bg-accent-coral/10 flex items-center justify-center text-accent-coral">
                     <Dumbbell className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-white">{w.name}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {new Date(w.logDate).toLocaleDateString()} · {w.duration || "—"} min · {w.exercises?.length || 0} exercises
+                    <p className="font-semibold text-sm text-text-primary">{w.name}</p>
+                    <p className="text-[10px] text-text-muted">
+                      {new Date(w.logDate).toLocaleDateString()} · {w.duration || "\u2014"} min · {w.exercises?.length || 0} exercises
                     </p>
                   </div>
                 </div>
-                <span className={`text-[8px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border ${difficulties[w.difficulty] || difficulties.Beginner}`}>
+                <span className={`text-[8px] px-2 py-0.5 rounded-md font-semibold uppercase tracking-wider border ${
+                  difficulties[w.difficulty] || difficulties.Beginner
+                }`}>
                   {w.difficulty}
                 </span>
               </motion.div>

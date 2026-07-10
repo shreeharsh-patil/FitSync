@@ -1,15 +1,13 @@
 {
-  "name": "FitSync — AI Fitness Ecosystem",
-  "short_name": "FitSync",
+  "name": "Fitsync — AI-Powered Fitness Platform",
+  "short_name": "Fitsync",
   "description": "AI-powered fitness tracking, nutrition, and community platform.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0f1a",
-  "theme_color": "#0a0f1a",
+  "background_color": "#FFFFFF",
+  "theme_color": "#E85D3A",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
   ]
 }

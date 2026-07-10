@@ -1,329 +1,372 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRight,
-  Activity,
-  Zap,
-  Brain,
-  Trophy,
-  Smartphone,
-  ChevronRight,
-  Sparkles,
-  Dumbbell,
-  Utensils,
-  LineChart,
-  Shield,
-} from "lucide-react";
+import { ArrowRight, Brain, BarChart3, Smartphone, Trophy, Zap, Sparkles, Check, Star, Activity } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import LogoMark from "@/components/LogoMark";
+
+const features = [
+  { icon: Brain, title: "AI Coaching", desc: "Context-aware guidance that adapts to your recovery, sleep, and progress in real time." },
+  { icon: BarChart3, title: "Deep Analytics", desc: "Rich charts, predictive metrics, and trendlines that reveal patterns you'd miss." },
+  { icon: Smartphone, title: "Unified Sync", desc: "Connect Apple Health, Fitbit, Strava, and Whoop + nutrition and training." },
+  { icon: Trophy, title: "Achievements", desc: "Gamification, challenges, and leaderboards that keep you coming back." },
+];
+
+const steps = [
+  { number: "01", title: "Connect Your Data", desc: "Sync your wearables, log your meals, and track your workouts in one place." },
+  { number: "02", title: "AI Analyzes Patterns", desc: "Our engine correlates your sleep, recovery, nutrition, and training intensity." },
+  { number: "03", title: "Get Personalized Plans", desc: "Receive optimized workout splits, meal targets, and recovery protocols." },
+];
+
+const integrations = ["Apple Health", "Fitbit", "Strava", "Garmin", "Whoop", "Google Fit"];
+
+function Counter({ end, suffix = "", duration = 2 }: { end: number; suffix?: string; duration?: number }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const hasRun = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasRun.current) {
+          hasRun.current = true;
+          const startTime = Date.now();
+          const tick = () => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.floor(eased * end));
+            if (progress < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [end, duration]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+}
 
 export default function LandingPage() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  const [chatMessages, setChatMessages] = useState([
-    { role: "assistant", content: "Active recovery initialized. Your morning run logged. Let me compile your nutrition targets for today." },
-  ]);
-  const [isTyping, setIsTyping] = useState(false);
-
-  const demoQuestions = [
-    { q: "Optimize my leg day", r: "Based on your last 3 sessions, your quad development is plateauing. Try front squats (3x8) + Bulgarian split squats (3x10) + leg extensions (3x12). Increase volume by 10% this week." },
-    { q: "Meal plan for cutting", r: "Target: 1800 kcal. Protein: 180g (40%), Carbs: 135g (30%), Fat: 60g (30%). Sample: Breakfast — 3 eggs + oats; Lunch — Chicken breast + quinoa + broccoli; Dinner — Salmon + sweet potato + asparagus." },
-    { q: "Suggest recovery protocol", r: "Your HRV is down 12% from baseline. Prioritize: 1) 8+ hours sleep tonight, 2) 30min zone 2 cardio, 3) 10min mobility flow, 4) Increase water to 3L. Delay heavy lifts by 24h." },
-  ];
-
-  const handleSimulateQuestion = (index: number) => {
-    if (isTyping) return;
-    const q = demoQuestions[index].q;
-    const r = demoQuestions[index].r;
-    setChatMessages((prev) => [...prev, { role: "user", content: q }]);
-    setIsTyping(true);
-    setTimeout(() => {
-      setChatMessages((prev) => [...prev, { role: "assistant", content: r }]);
-      setIsTyping(false);
-    }, 1400);
-  };
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.4]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 60]);
 
   return (
-    <div ref={containerRef} className="flex flex-col min-h-screen bg-background overflow-hidden selection:bg-secondary/30 selection:text-white relative">
-      {/* Navigation */}
-      <header className="w-full border-b border-white/5 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-6 lg:px-12 h-20 flex items-center">
-          <Link href="/" className="flex items-center gap-3 group">
-            <motion.div whileHover={{ rotate: 180 }} transition={{ duration: 0.5, type: "spring" }} className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(0,201,167,0.1)]">
-              <Activity className="h-6 w-6" />
-            </motion.div>
-            <span className="text-2xl font-bold font-heading tracking-tighter text-white">FitSync</span>
+    <div className="flex flex-col min-h-screen bg-bg-primary selection:bg-accent-coral/15">
+      {/* ═══ Navigation ═══ */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bg-primary/80 backdrop-blur-xl border-b border-border">
+        <div className="container-wide flex items-center justify-between h-14">
+          <Link href="/" className="flex items-center gap-2.5">
+            <LogoMark size={20} />
+            <span className="text-base font-semibold tracking-tight text-text-primary">Fitsync</span>
           </Link>
-          <nav className="ml-auto hidden md:flex gap-8">
-            <Link className="text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-secondary transition-colors" href="/features">Features</Link>
-            <Link className="text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-secondary transition-colors" href="/pricing">Pricing</Link>
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="/features" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Features</Link>
+            <Link href="/pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Pricing</Link>
+            <div className="flex items-center gap-3 ml-4">
+              <Link href="/login" className="btn-ghost text-sm inline-flex items-center justify-center px-4 py-2 rounded-full font-semibold">Sign In</Link>
+              <Link href="/signup" className="btn-primary text-sm inline-flex items-center justify-center px-4 py-2 rounded-full font-semibold gap-1.5">Get Started <ArrowRight className="h-3.5 w-3.5" /></Link>
+            </div>
           </nav>
-          <div className="ml-auto md:ml-8 flex gap-4">
-            <Link href="/login"><button className="px-5 py-2 text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-white transition-colors">Login</button></Link>
-            <Link href="/signup"><button className="px-6 py-2 bg-secondary hover:bg-secondary/90 text-primary text-sm font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-secondary/20">Join Free</button></Link>
-          </div>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-text-secondary">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2.5 5h15M2.5 10h15M2.5 15h15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </button>
         </div>
+        {mobileMenuOpen && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            className="md:hidden bg-bg-card border-t border-border px-6 py-6 space-y-4">
+            <Link href="/features" className="block text-sm text-text-secondary" onClick={() => setMobileMenuOpen(false)}>Features</Link>
+            <Link href="/pricing" className="block text-sm text-text-secondary" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
+            <div className="flex flex-col gap-3 pt-4 border-t border-border">
+              <Link href="/login" className="block w-full py-2.5 text-sm border border-border rounded-full text-text-secondary text-center">Sign In</Link>
+              <Link href="/signup" className="block w-full py-2.5 text-sm bg-accent-coral text-white rounded-full text-center">Get Started</Link>
+            </div>
+          </motion.div>
+        )}
       </header>
 
-      {/* Background Effects */}
-      <div className="fixed inset-0 kinetic-grid opacity-20 pointer-events-none -z-10" />
-      <div className="fixed inset-0 bg-mesh opacity-30 pointer-events-none -z-10" />
+      <main className="flex-1">
+        {/* ═══ Hero ═══ */}
+        <section ref={heroRef} className="relative pt-28 md:pt-36 pb-20 md:pb-28 overflow-hidden">
+          {/* Subtle background glow */}
+          <div className="absolute top-[-20vh] right-[-10vw] w-[50vw] h-[50vw] rounded-full bg-accent-coral/[0.02] blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-[-10vh] left-[-5vw] w-[30vw] h-[30vw] rounded-full bg-accent-coral/[0.015] blur-[100px] pointer-events-none" />
 
-      <main className="flex-1 relative z-10">
-        {/* Hero Section */}
-        <section className="w-full min-h-[90vh] flex flex-col items-center justify-center relative overflow-hidden">
-          <motion.div animate={{ scale: [1, 1.2, 1], x: [0, 50, 0], y: [0, 30, 0] }} transition={{ duration: 20, repeat: Infinity }} className="absolute top-[10%] left-[10%] w-[40vw] h-[40vw] glow-sphere opacity-20" />
-          <motion.div animate={{ scale: [1, 1.3, 1], x: [0, -40, 0], y: [0, -50, 0] }} transition={{ duration: 25, repeat: Infinity }} className="absolute bottom-[10%] right-[10%] w-[35vw] h-[35vw] rounded-full opacity-15" style={{ background: "radial-gradient(circle, rgba(255,107,53,0.15) 0%, transparent 70%)" }} />
-
-          <div className="container mx-auto px-4 md:px-6 flex flex-col items-center text-center space-y-12 relative z-10">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="space-y-6 max-w-5xl">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-bold uppercase tracking-[0.3em] backdrop-blur-md">
-                <Zap className="h-3.5 w-3.5 fill-secondary animate-pulse" />
-                The Future of Fitness is Synchronized
-              </div>
-              <h1 className="text-6xl font-bold tracking-tight sm:text-8xl lg:text-[10rem] font-heading leading-[0.85] text-white">
-                Sync Your Body. <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary via-accent to-secondary bg-[length:200%_auto] animate-gradient">Sync Your Life.</span>
-              </h1>
-              <p className="mx-auto max-w-[800px] text-muted-foreground text-lg md:text-xl lg:text-2xl font-medium leading-relaxed mt-8">
-                The AI-powered fitness ecosystem designed to unify your tracking, nutrition, and community in one premium platform.
-              </p>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }} className="flex flex-col sm:flex-row gap-6">
-              <Link href="/signup">
-                <button className="bg-accent hover:bg-accent/90 text-white px-12 h-16 text-xl font-bold rounded-2xl shadow-2xl shadow-accent/40 transition-all hover:scale-105 active:scale-95 group relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                  <span className="relative z-10 flex items-center gap-2">Start Your Journey <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" /></span>
-                </button>
-              </Link>
-              <Link href="/features">
-                <button className="border border-white/10 hover:bg-white/5 h-16 px-12 text-xl font-bold rounded-2xl transition-all backdrop-blur-md group">
-                  Explore Ecosystem <ChevronRight className="ml-1 h-5 w-5 opacity-50 group-hover:translate-x-1 transition-transform inline" />
-                </button>
-              </Link>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="w-full max-w-5xl mt-8 relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-secondary to-accent opacity-20 blur-[80px] rounded-[3rem] group-hover:opacity-30 transition-opacity" />
-              <div className="relative glass rounded-[2.5rem] p-2 overflow-hidden shadow-3xl border-white/10 border">
-                <div className="w-full h-auto aspect-video rounded-[2rem] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center border border-white/5 relative overflow-hidden">
-                  {/* Animated Stats Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="grid grid-cols-3 gap-6 md:gap-12 px-8">
-                      {[
-                        { value: "500K+", label: "Athletes" },
-                        { value: "12M+", label: "Workouts" },
-                        { value: "98%", label: "Goal Rate" },
-                      ].map((stat, i) => (
-                        <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.2 }} className="text-center">
-                          <p className="text-2xl md:text-4xl font-bold font-heading text-white">{stat.value}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1">{stat.label}</p>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Subtle data decoration */}
-                  <div className="absolute bottom-4 left-4 right-4 flex justify-center gap-2">
-                    {["Workout", "Nutrition", "Sleep", "HRV"].map((tag) => (
-                      <span key={tag} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] text-muted-foreground font-bold uppercase tracking-wider">{tag}</span>
-                    ))}
-                  </div>
+          <motion.div style={{ opacity: heroOpacity, y: heroY }} className="container-wide relative">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+              {/* Text */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-coral/5 border border-accent-coral/15 mb-6">
+                  <Sparkles className="h-3 w-3 text-accent-coral" />
+                  <span className="caption text-accent-coral" style={{ fontSize: "0.6875rem" }}>AI-Powered Fitness Platform</span>
                 </div>
-              </div>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="pt-16 flex flex-col items-center gap-6">
-              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground flex items-center gap-3">
-                <span className="h-px w-8 bg-white/10" />Trusted by 500,000+ athletes<span className="h-px w-8 bg-white/10" />
-              </p>
-              <div className="flex -space-x-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-14 w-14 rounded-full border-4 border-background bg-gradient-to-br from-secondary/40 to-primary/40 flex items-center justify-center shadow-xl" />
-                ))}
-                <div className="h-14 w-14 rounded-full border-4 border-background bg-secondary flex items-center justify-center font-bold text-primary text-xs shadow-xl">+2k</div>
-              </div>
-            </motion.div>
-          </div>
-
-          <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }} className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
-            <span className="text-[9px] font-bold uppercase tracking-widest">Scroll</span>
-            <div className="h-10 w-px bg-gradient-to-b from-white to-transparent" />
-          </motion.div>
-        </section>
-
-        {/* Features Section */}
-        <section className="w-full py-32 md:py-48 relative overflow-hidden">
-          <div className="absolute inset-0 bg-muted/10 -skew-y-3 origin-right scale-110 backdrop-blur-3xl" />
-          <div className="container mx-auto px-4 md:px-6 relative z-10">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-24">
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="h-16 w-16 rounded-3xl bg-secondary/10 flex items-center justify-center text-secondary mb-4 border border-secondary/20 shadow-inner">
-                <Sparkles className="h-8 w-8" />
-              </motion.div>
-              <h2 className="text-5xl font-bold tracking-tight sm:text-7xl font-heading text-white">
-                Engineered for <span className="text-secondary relative">Peak Performance<div className="absolute bottom-2 left-0 w-full h-3 bg-secondary/10 -rotate-1 -z-10" /></span>
-              </h2>
-              <p className="max-w-[800px] text-muted-foreground text-xl md:text-2xl mt-4">FitSync combines elite-level data tracking with human-centric design.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <FeatureCard index={0} icon={<Brain className="h-10 w-10 text-secondary" />} title="AI Coaching" description="Context-aware guidance that adapts to your recovery and progress in real-time." />
-              <FeatureCard index={1} icon={<LineChart className="h-10 w-10 text-accent" />} title="Deep Analytics" description="Visualise your progress with rich charts and predictive performance metrics." />
-              <FeatureCard index={2} icon={<Smartphone className="h-10 w-10 text-blue-400" />} title="Unified Sync" description="Connect your wearables and nutrition in one seamless digital environment." />
-              <FeatureCard index={3} icon={<Trophy className="h-10 w-10 text-yellow-400" />} title="Achievements" description="Stay motivated with an advanced gamification system and community challenges." />
-            </div>
-          </div>
-        </section>
-
-        {/* Interactive AI Chat Simulator */}
-        <section className="w-full py-32 md:py-48 relative overflow-hidden">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-bold uppercase tracking-widest">
-                  <Brain className="h-3.5 w-3.5" /> Cognitive AI Layer
-                </div>
-                <h3 className="text-4xl sm:text-6xl font-bold font-heading text-white leading-tight">
-                  Interact with the <br /><span className="text-secondary">Fitness Matrix</span>
-                </h3>
-                <p className="text-muted-foreground text-lg leading-relaxed font-medium">
-                  Try it live. Select a command blueprint below to simulate AI calculations in real-time.
+                <h1 className="display-xl mb-5 leading-[1.04]">
+                  Sync Your Body.<br />
+                  <span className="text-accent-coral">Sync Your Life.</span>
+                </h1>
+                <p className="body-lg text-text-secondary max-w-md mb-10">
+                  The intelligent platform that unifies your training, nutrition, recovery, and community into one seamless experience.
                 </p>
-                <div className="flex flex-col gap-3 pt-2">
-                  {demoQuestions.map((item, idx) => (
-                    <motion.button key={idx} whileHover={{ scale: 1.02, x: 5 }} whileTap={{ scale: 0.98 }} onClick={() => handleSimulateQuestion(idx)} disabled={isTyping}
-                      className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-secondary/20 hover:bg-secondary/[0.02] text-left text-sm font-bold text-white transition-all cursor-pointer"
-                    >
-                      <span className="flex items-center gap-3"><Sparkles className="h-4 w-4 text-secondary shrink-0" />{item.q}</span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </motion.button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link href="/signup" className="btn-primary text-base px-8 py-3.5 group shadow-lg shadow-accent-coral/15 hover:shadow-xl hover:shadow-accent-coral/25 transition-shadow inline-flex items-center justify-center gap-2 font-semibold rounded-full">
+                    Start Your Journey
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <Link href="/features" className="btn-secondary text-base px-8 py-3.5 inline-flex items-center justify-center gap-2 font-semibold rounded-full">Learn More</Link>
+                </div>
+
+                {/* Animated Stats */}
+                <div className="flex items-center gap-10 md:gap-14 mt-16 pt-10 border-t border-border">
+                  {[
+                    { end: 500, suffix: "K+", label: "Active Athletes" },
+                    { end: 12, suffix: "M+", label: "Workouts Logged" },
+                    { end: 98, suffix: "%", label: "Goal Success" },
+                  ].map((s) => (
+                    <div key={s.label}>
+                      <p className="stat-value text-accent-coral">
+                        <Counter end={s.end} suffix={s.suffix} />
+                      </p>
+                      <p className="stat-label mt-1">{s.label}</p>
+                    </div>
                   ))}
                 </div>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative group">
-                <div className="absolute inset-0 bg-secondary/20 blur-[60px] rounded-[3rem] opacity-30 group-hover:opacity-50 transition-opacity pointer-events-none" />
-                <div className="relative glass border-white/5 rounded-[3rem] p-6 h-[480px] flex flex-col shadow-2xl overflow-hidden bg-slate-950/40">
-                  <div className="flex items-center gap-3 pb-4 border-b border-white/5">
-                    <div className="h-10 w-10 rounded-xl bg-secondary/15 text-secondary border border-secondary/20 flex items-center justify-center">
-                      <Brain className="h-5 w-5 animate-pulse" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold font-heading text-sm text-white">AI Coach</h4>
-                      <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">Online — Biometric Model Active</p>
-                    </div>
+              {/* Product Mockup - AI Chat Dashboard */}
+              <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }}
+                className="relative">
+                {/* Glow behind mockup */}
+                <div className="absolute -inset-8 bg-accent-coral/[0.03] rounded-[2rem] blur-[60px]" />
+                <div className="relative rounded-2xl border border-border overflow-hidden shadow-2xl shadow-black/[0.04] bg-white">
+                  {/* Mac-style traffic lights */}
+                  <div className="flex items-center gap-1.5 px-4 h-9 bg-bg-secondary border-b border-border">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#DD4444]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#E6A23C]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#27C840]" />
+                    <span className="ml-3 text-[11px] text-text-muted font-medium">AI Coach · Pro Plan</span>
                   </div>
-                  <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 custom-scrollbar">
-                    {chatMessages.map((msg, index) => (
-                      <div key={index} className={`flex gap-3 max-w-[85%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}>
-                        <div className={`h-8 w-8 shrink-0 rounded-lg flex items-center justify-center border mt-0.5 text-xs font-bold ${msg.role === "assistant" ? "bg-secondary/15 text-secondary border-secondary/30" : "bg-accent/15 text-accent border-accent/30"}`}>
-                          {msg.role === "assistant" ? "AI" : "U"}
-                        </div>
-                        <div className={`rounded-xl p-3 border text-xs leading-relaxed ${msg.role === "assistant" ? "bg-white/5 border-white/10 text-muted-foreground rounded-tl-sm" : "bg-accent/10 border-accent/20 text-white rounded-tr-sm"}`}>
-                          {msg.content.split("\n").map((line, iIdx) => (
-                            <p key={iIdx} className={iIdx > 0 ? "mt-1.5" : ""}>{line}</p>
-                          ))}
-                        </div>
+                  {/* Chat content */}
+                  <div className="p-5 space-y-4">
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}
+                      className="flex gap-3 max-w-[85%]">
+                      <div className="h-7 w-7 rounded-lg bg-accent-coral/10 flex items-center justify-center text-[10px] font-semibold text-accent-coral shrink-0">AI</div>
+                      <div className="bg-bg-secondary rounded-xl rounded-tl-sm p-3.5 text-sm leading-relaxed text-text-secondary">
+                        I've analyzed your last 7 days. Recovery is trending up, but sleep consistency dropped Tuesday. Want me to adjust this week's plan?
                       </div>
-                    ))}
-                    {isTyping && (
-                      <div className="flex gap-3 max-w-[85%] mr-auto">
-                        <div className="h-8 w-8 shrink-0 rounded-lg bg-secondary/15 text-secondary border border-secondary/30 flex items-center justify-center text-xs font-bold animate-pulse">AI</div>
-                        <div className="bg-white/5 border border-white/10 rounded-xl rounded-tl-sm p-3 text-[10px] font-mono text-secondary animate-pulse">Compiling biological overrides...</div>
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }}
+                      className="flex gap-3 max-w-[85%] ml-auto flex-row-reverse">
+                      <div className="h-7 w-7 rounded-lg bg-text-primary/5 flex items-center justify-center text-[10px] font-semibold text-text-primary shrink-0">U</div>
+                      <div className="bg-accent-coral/10 rounded-xl rounded-tr-sm p-3.5 text-sm leading-relaxed text-text-primary">
+                        Yes, optimize my week.
                       </div>
-                    )}
+                    </motion.div>
+                    {/* Typing indicator */}
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+                      className="flex gap-3 max-w-[85%]">
+                      <div className="h-7 w-7 rounded-lg bg-accent-coral/10 flex items-center justify-center text-[10px] font-semibold text-accent-coral shrink-0">AI</div>
+                      <div className="bg-bg-secondary rounded-xl rounded-tl-sm p-3.5 flex items-center gap-2">
+                        <span className="text-sm text-accent-coral">Adjusting your plan</span>
+                        <span className="flex gap-0.5">
+                          <motion.span className="w-1 h-1 bg-accent-coral rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} />
+                          <motion.span className="w-1 h-1 bg-accent-coral rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }} />
+                          <motion.span className="w-1 h-1 bg-accent-coral rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }} />
+                        </span>
+                      </div>
+                    </motion.div>
                   </div>
-                  <div className="pt-3 border-t border-white/5 flex gap-2 items-center">
-                    <div className="flex-1 bg-white/5 border border-white/10 rounded-xl h-10 px-3 flex items-center text-[10px] text-muted-foreground font-medium">Select a question above to chat with AI Coach.</div>
-                    <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-primary shadow-lg shadow-secondary/15">
-                      <Sparkles className="h-4 w-4" />
+                  {/* Input bar */}
+                  <div className="px-5 py-3.5 border-t border-border">
+                    <div className="flex gap-2">
+                      <div className="flex-1 h-10 rounded-lg border border-border px-4 flex items-center">
+                        <span className="text-sm text-text-muted">Ask your AI coach...</span>
+                      </div>
+                      <div className="h-10 w-10 rounded-lg bg-accent-coral flex items-center justify-center">
+                        <Zap className="h-4 w-4 text-white" />
+                      </div>
                     </div>
                   </div>
                 </div>
               </motion.div>
             </div>
+          </motion.div>
+        </section>
+
+        {/* ═══ How It Works ═══ */}
+        <section className="section bg-bg-secondary">
+          <div className="container-wide">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              className="text-center max-w-xl mx-auto mb-16">
+              <div className="caption mb-4">Simple Setup</div>
+              <h2 className="display-lg mb-4">Three steps to peak sync.</h2>
+              <p className="body-lg text-text-secondary">Get started in minutes, see results in days.</p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+              {steps.map((step, idx) => (
+                <motion.div key={step.number}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.12 }}
+                  className="relative text-center md:text-left"
+                >
+                  <div className="flex flex-col items-center md:items-start">
+                    <span className="text-[2.5rem] font-bold tracking-tight text-accent-coral/20 leading-none mb-4">{step.number}</span>
+                    <h3 className="heading-md mb-2">{step.title}</h3>
+                    <p className="body-sm text-text-secondary">{step.desc}</p>
+                  </div>
+                  {idx < steps.length - 1 && (
+                    <div className="hidden md:block absolute top-6 left-[calc(100%+0.5rem)] w-[calc(100%-2rem)] h-px bg-border" />
+                  )}
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="w-full py-32 md:py-48 border-t border-white/5 bg-gradient-to-b from-background to-primary/20 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-secondary/50 to-transparent" />
-          <div className="container mx-auto px-4 md:px-6">
-            <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="glass p-16 md:p-32 rounded-[4rem] border-white/10 flex flex-col items-center justify-center space-y-12 text-center relative overflow-hidden group shadow-3xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-transparent to-accent/10 opacity-30 group-hover:opacity-50 transition-opacity duration-1000" />
-              <div className="absolute -top-24 -left-24 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full" />
-              <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-accent/10 blur-[100px] rounded-full" />
-              <div className="relative z-10 space-y-6">
-                <h2 className="text-5xl font-bold tracking-tight sm:text-8xl font-heading leading-[0.9] text-white">
-                  Ready to Level Up Your <br /><span className="text-secondary">Fitness DNA?</span>
-                </h2>
-                <p className="max-w-[700px] mx-auto text-muted-foreground text-xl md:text-2xl leading-relaxed">
-                  Join the elite community of athletes who have found their perfect sync.
-                </p>
-                <div className="pt-10">
-                  <Link href="/signup">
-                    <button className="bg-secondary hover:bg-secondary/90 text-primary font-bold px-16 h-20 text-2xl rounded-[2rem] shadow-[0_20px_50px_rgba(0,201,167,0.3)] transition-all hover:scale-105 active:scale-95 group relative overflow-hidden">
-                      <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                      <span className="relative z-10">Create Your Free Account</span>
-                    </button>
-                  </Link>
+        {/* ═══ Features ═══ */}
+        <section className="section">
+          <div className="container-wide">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              className="max-w-xl mb-16">
+              <div className="caption mb-4">Everything You Need</div>
+              <h2 className="display-lg mb-4">Engineered for peak performance.</h2>
+              <p className="body-lg text-text-secondary">Fitsync combines elite data tracking with human-centric design.</p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border rounded-xl overflow-hidden">
+              {features.map((f, idx) => (
+                <motion.div key={f.title}
+                  initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                  transition={{ delay: idx * 0.06 }}
+                  className="bg-bg-card p-8 md:p-10 group hover:bg-bg-secondary/50 transition-colors duration-300"
+                >
+                  <div className="h-10 w-10 rounded-lg bg-accent-coral/5 flex items-center justify-center mb-5 group-hover:bg-accent-coral/10 transition-colors">
+                    <f.icon className="h-5 w-5 text-accent-coral" />
+                  </div>
+                  <h3 className="heading-md mb-2">{f.title}</h3>
+                  <p className="body-sm text-text-secondary">{f.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+              className="mt-10 text-center">              <Link href="/features" className="btn-secondary text-sm group inline-flex items-center justify-center gap-2 font-semibold rounded-full px-5 py-2.5">
+                Explore all features
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ═══ Integrations Marquee ═══ */}
+        <section className="py-12 md:py-16 bg-bg-secondary overflow-hidden">
+          <div className="text-center mb-10">
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <div className="caption mb-2">Compatible With</div>
+              <p className="body-md text-text-secondary">Syncs with the platforms you already use.</p>
+            </motion.div>
+          </div>
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+            className="flex overflow-hidden"
+          >
+            <motion.div
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+              className="flex shrink-0 gap-16 md:gap-20 px-8"
+            >
+              {[...integrations, ...integrations].map((name, i) => (
+                <div key={i} className="flex items-center gap-3 text-text-muted/50">
+                  <Activity className="h-4 w-4" />
+                  <span className="text-sm font-semibold tracking-wider whitespace-nowrap">{name}</span>
                 </div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* ═══ Social Proof / Testimonial ═══ */}
+        <section className="section">
+          <div className="container-wide">
+            <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              className="max-w-2xl mx-auto text-center"
+            >
+              {/* Rating */}
+              <div className="flex items-center justify-center gap-0.5 mb-6">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                ))}
+                <span className="ml-2 text-sm text-text-muted font-medium">4.9 avg rating</span>
+              </div>
+              <p className="display-lg mb-8 leading-snug text-text-primary">
+                &ldquo;Fitsync completely changed how I train. The AI caught patterns I never noticed in my sleep and recovery data.&rdquo;
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-accent-coral/10 flex items-center justify-center text-sm font-semibold text-accent-coral">JR</div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-text-primary">Jamie Rivers</p>
+                  <div className="flex items-center gap-2">
+                    <span className="caption mt-0.5">2-year member</span>
+                    <span className="text-text-muted/30">·</span>
+                    <span className="caption mt-0.5 text-accent-coral">12M+ XP</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ═══ CTA ═══ */}
+        <section className="section bg-bg-secondary">
+          <div className="container-wide">
+            <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              className="text-center max-w-xl mx-auto"
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-coral/5 border border-accent-coral/15 mb-6">
+                <Sparkles className="h-3 w-3 text-accent-coral" />
+                <span className="caption text-accent-coral" style={{ fontSize: "0.6875rem" }}>14-Day Free Trial</span>
+              </div>
+              <h2 className="display-lg mb-4">Ready to level up?</h2>
+              <p className="body-lg text-text-secondary mb-10">Join 500K+ athletes who have found their perfect sync. No credit card required.</p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link href="/signup" className="btn-primary text-base px-10 py-3.5 group shadow-lg shadow-accent-coral/15 inline-flex items-center justify-center gap-2 font-semibold rounded-full">
+                  Create Your Free Account
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link href="/pricing" className="btn-secondary text-base px-8 py-3.5 inline-flex items-center justify-center gap-2 font-semibold rounded-full">View Plans</Link>
+              </div>
+              <div className="flex items-center justify-center gap-6 mt-8 text-xs text-text-muted">
+                <span className="flex items-center gap-1.5"><Check className="h-3 w-3 text-accent-coral" /> No credit card</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3 w-3 text-accent-coral" /> Cancel anytime</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3 w-3 text-accent-coral" /> Full access</span>
               </div>
             </motion.div>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-20 border-t border-white/5 bg-slate-950/50 backdrop-blur-xl">
-        <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-12">
-          <div className="flex flex-col items-center md:items-start gap-6">
-            <Link href="/" className="flex items-center gap-4 group">
-              <div className="h-12 w-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary border border-secondary/20 shadow-inner group-hover:scale-110 transition-transform">
-                <Activity className="h-7 w-7" />
-              </div>
-              <span className="text-3xl font-bold font-heading tracking-tighter text-white">FitSync</span>
-            </Link>
-            <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left leading-relaxed">
-              Synchronize your body, synchronize your life. The ultimate ecosystem for the modern athlete.
-            </p>
+      {/* ═══ Footer ═══ */}
+      <footer className="border-t border-border py-8">
+        <div className="container-wide flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <LogoMark size={16} />
+            <span className="text-sm font-semibold text-text-primary">Fitsync</span>
           </div>
-          <div className="flex flex-col items-center md:items-end gap-8">
-            <nav className="flex gap-12">
-              <Link className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-secondary transition-colors" href="/legal">Terms</Link>
-              <Link className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-secondary transition-colors" href="/legal">Privacy</Link>
-              <Link className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-secondary transition-colors" href="/legal">Security</Link>
-            </nav>
-            <p className="text-[10px] text-muted-foreground/50 font-bold uppercase tracking-widest">© 2026 FitSync Platform. Engineered by Excellence.</p>
+          <div className="flex items-center gap-6">
+            <Link href="/features" className="caption hover:text-text-primary transition-colors">Features</Link>
+            <Link href="/pricing" className="caption hover:text-text-primary transition-colors">Pricing</Link>
+            <span className="caption text-text-muted/50">© 2026 Fitsync</span>
           </div>
         </div>
       </footer>
     </div>
-  );
-}
-
-function FeatureCard({ icon, title, description, index }: { icon: React.ReactNode; title: string; description: string; index: number }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }}
-      whileHover={{ y: -15, scale: 1.02 }}
-      className="glass p-10 rounded-[3rem] border-white/5 flex flex-col items-center text-center space-y-8 transition-all hover:bg-white/5 hover:border-white/10 hover:shadow-2xl group cursor-default h-full relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="h-20 w-20 rounded-3xl bg-background/50 flex items-center justify-center border border-white/5 group-hover:border-secondary/30 transition-all shadow-inner relative z-10">
-        <div className="absolute inset-0 bg-secondary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-        {icon}
-      </div>
-      <div className="space-y-3 relative z-10">
-        <h3 className="text-2xl font-bold font-heading group-hover:text-secondary transition-colors text-white">{title}</h3>
-        <p className="text-muted-foreground text-base leading-relaxed font-medium">{description}</p>
-      </div>
-      <div className="pt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="h-1 w-12 bg-secondary/30 rounded-full mx-auto" />
-      </div>
-    </motion.div>
   );
 }
