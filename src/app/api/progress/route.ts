@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { Progress } from "@/lib/models/Progress";
 import { Workout } from "@/lib/models/Workout";
 import { Nutrition } from "@/lib/models/Nutrition";
+import { User } from "@/lib/models/User";
 
 export async function GET(req: Request) {
   try {
@@ -61,6 +62,9 @@ export async function POST(req: Request) {
       userId: session.user.id,
       ...body,
     });
+
+    // Award 2 XP for logging progress
+    await User.findByIdAndUpdate(session.user.id, { $inc: { xp: 2 } });
 
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {

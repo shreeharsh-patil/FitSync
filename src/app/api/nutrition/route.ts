@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Nutrition } from "@/lib/models/Nutrition";
+import { User } from "@/lib/models/User";
 
 export async function GET(req: Request) {
   try {
@@ -80,6 +81,9 @@ export async function POST(req: Request) {
       waterMl: body.waterMl || 0,
       notes: body.notes,
     });
+
+    // Award 3 XP for logging a meal
+    await User.findByIdAndUpdate(session.user.id, { $inc: { xp: 3 } });
 
     return NextResponse.json(meal, { status: 201 });
   } catch (error) {

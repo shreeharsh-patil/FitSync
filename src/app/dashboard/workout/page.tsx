@@ -34,7 +34,7 @@ export default function WorkoutPage() {
   const [logName, setLogName] = useState("");
   const [logDuration, setLogDuration] = useState(30);
   const [logDifficulty, setLogDifficulty] = useState("beginner");
-  const [logExercises, setLogExercises] = useState([{ name: "", muscleGroup: "", sets: [{ reps: 10, weight: 0 }] }]);
+  const [logExercises, setLogExercises] = useState<{ name: string; muscleGroup: string; sets: { reps: number; weight: number }[] }[]>([{ name: "", muscleGroup: "", sets: [{ reps: 10, weight: 0 }] }]);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -51,9 +51,17 @@ export default function WorkoutPage() {
   const addExercise = () => setLogExercises([...logExercises, { name: "", muscleGroup: "", sets: [{ reps: 10, weight: 0 }] }]);
 
   const updateExercise = (idx: number, field: string, value: string) => {
-    const updated = [...logExercises];
-    (updated as any)[idx][field] = value;
-    setLogExercises(updated);
+    setLogExercises((prev) => prev.map((ex, i) => (i === idx ? { ...ex, [field]: value } : ex)));
+  };
+
+  const updateExerciseSet = (exIdx: number, field: "reps" | "weight", value: number) => {
+    setLogExercises((prev) =>
+      prev.map((ex, i) =>
+        i === exIdx
+          ? { ...ex, sets: [{ ...ex.sets[0], [field]: value }] }
+          : ex
+      )
+    );
   };
 
   const handleLogWorkout = async () => {
@@ -63,7 +71,19 @@ export default function WorkoutPage() {
       const res = await fetch("/api/workouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: logName, difficulty: logDifficulty, duration: logDuration, exercises: logExercises.filter((e) => e.name.trim()), isTemplate: false }),
+        body: JSON.stringify({
+          name: logName,
+          difficulty: logDifficulty,
+          duration: logDuration,
+          exercises: logExercises
+            .filter((e) => e.name.trim())
+            .map((e) => ({
+              name: e.name,
+              muscleGroup: e.muscleGroup || "General",
+              sets: e.sets.map((s) => ({ reps: s.reps, weight: s.weight, restSec: 60 })),
+            })),
+          isTemplate: false,
+        }),
       });
       if (res.ok) {
         setSuccessMsg("Workout logged!");
@@ -84,7 +104,7 @@ export default function WorkoutPage() {
           <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1">
             <Dumbbell className="h-3.5 w-3.5" />Workout Center
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-primary">Build & Track</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Build & Track</h1>
         </div>
         <button onClick={() => setShowLogForm(!showLogForm)}
           className="flex items-center gap-2 px-4 py-2 bg-accent text-white font-semibold text-sm rounded-lg hover:bg-accent-hover transition-colors">
@@ -124,7 +144,8 @@ export default function WorkoutPage() {
               <div key={idx} className="flex gap-2 items-center p-3 rounded-lg bg-surface-2 border border-border">
                 <input value={ex.name} onChange={(e) => updateExercise(idx, "name", e.target.value)} className="input flex-1 text-sm" placeholder="Exercise name" />
                 <input value={ex.muscleGroup} onChange={(e) => updateExercise(idx, "muscleGroup", e.target.value)} className="input w-24 text-sm" placeholder="Muscle" />
-                <input type="number" defaultValue={10} className="input w-14 text-sm text-center" placeholder="Reps" />
+                <input type="number" value={ex.sets[0]?.reps || 10} onChange={(e) => updateExerciseSet(idx, "reps", parseInt(e.target.value) || 0)} className="input w-14 text-sm text-center" placeholder="Reps" />
+                <input type="number" value={ex.sets[0]?.weight || 0} onChange={(e) => updateExerciseSet(idx, "weight", parseFloat(e.target.value) || 0)} className="input w-20 text-sm text-center" placeholder="kg" />
               </div>
             ))}
           </div>
@@ -139,7 +160,7 @@ export default function WorkoutPage() {
       )}
 
       {successMsg && (
-        <div className="p-3 bg-success/10 border border-success/20 text-success rounded-lg text-sm font-semibold animate-fade-in">
+        <div className="p-3 bg-success/10 border border-success/20 text-success rounded-lg text-sm font-semibold">
           {successMsg}
         </div>
       )}

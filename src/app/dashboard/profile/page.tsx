@@ -50,7 +50,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold font-heading text-text-primary">{user?.name || "Athlete"}</h1>
+            <h1 className="text-2xl font-bold font-[family-name:var(--font-display)] text-text-primary">{user?.name || "Athlete"}</h1>
             <p className="text-text-secondary text-sm">{user?.email}</p>
             <div className="flex items-center gap-3 mt-3 flex-wrap">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-dim border border-accent/20">
@@ -85,7 +85,7 @@ export default function ProfilePage() {
               <Sparkles className="h-7 w-7" />
             </div>
             <div>
-              <h2 className="text-lg font-bold font-heading text-text-primary">Level {user?.level || 1}</h2>
+              <h2 className="text-lg font-bold font-[family-name:var(--font-display)] text-text-primary">Level {user?.level || 1}</h2>
               <p className="text-sm text-text-muted mt-0.5">{user?.xp || 0} XP earned</p>
               <div className="mt-2 h-1.5 w-48 max-w-full rounded-full bg-surface-1 overflow-hidden">
                 <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(((user?.xp || 0) % 1000) / 10, 100)}%` }} transition={{ duration: 1 }}
@@ -94,9 +94,9 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex items-center gap-6">
-            <div className="text-center"><p className="text-xl font-extrabold font-heading text-accent">{user?.level || 1}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Level</p></div>
-            <div className="text-center"><p className="text-xl font-extrabold font-heading text-accent">{user?.xp || 0}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Total XP</p></div>
-            <div className="text-center"><p className="text-xl font-extrabold font-heading text-accent">{user?.streak || 0}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Day Streak</p></div>
+            <div className="text-center"><p className="text-xl font-extrabold font-[family-name:var(--font-display)] text-accent">{user?.level || 1}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Level</p></div>
+            <div className="text-center"><p className="text-xl font-extrabold font-[family-name:var(--font-display)] text-accent">{user?.xp || 0}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Total XP</p></div>
+            <div className="text-center"><p className="text-xl font-extrabold font-[family-name:var(--font-display)] text-accent">{user?.streak || 0}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Day Streak</p></div>
           </div>
         </div>
       </motion.div>
@@ -109,7 +109,7 @@ export default function ProfilePage() {
             <div className={`h-9 w-9 rounded-lg ${stat.bg} flex items-center justify-center ${stat.color} mx-auto mb-2`}>
               <stat.icon className="h-4 w-4" />
             </div>
-            <p className="text-lg font-extrabold font-heading text-text-primary">{stat.value}</p>
+            <p className="text-lg font-extrabold font-[family-name:var(--font-display)] text-text-primary">{stat.value}</p>
             <p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mt-0.5">{stat.label}</p>
           </motion.div>
         ))}
@@ -118,7 +118,7 @@ export default function ProfilePage() {
       {/* Profile Details */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
         className="rounded-lg bg-surface-2 border border-border p-6 md:p-8 space-y-6">
-        <h2 className="text-lg font-bold font-heading text-text-primary">Profile Details</h2>
+        <h2 className="text-lg font-bold font-[family-name:var(--font-display)] text-text-primary">Profile Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             { label: "Fitness Goal", value: user?.fitnessGoal || "Not set" },

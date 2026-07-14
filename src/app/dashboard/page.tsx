@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import {
   Dumbbell, Utensils, LineChart, Trophy, Activity, Zap, ArrowRight, Flame, Target, Loader2, Sparkles,
 } from "lucide-react";
@@ -63,12 +62,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1">
             <Zap className="h-3.5 w-3.5" />Welcome back, {data?.user?.name || "Athlete"}
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-primary">Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Dashboard</h1>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent-dim border border-accent/20">
@@ -80,15 +79,12 @@ export default function DashboardPage() {
           </div>
           <span className="text-[10px] text-text-muted font-semibold">{data?.user?.xp || 0} XP</span>
         </div>
-      </motion.div>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statCards.map((stat, idx) => (
-          <motion.div key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.04 + idx * 0.04 }}
+          <div key={stat.label}
             className="rounded-lg bg-surface-1 border border-border p-4 hover:border-border-hover transition-colors"
           >
             <div className="flex items-center justify-between mb-3">
@@ -97,9 +93,9 @@ export default function DashboardPage() {
               </div>
               <span className="text-[9px] text-text-muted font-semibold uppercase tracking-wider">{stat.sub}</span>
             </div>
-            <p className={`text-xl font-extrabold tracking-tight ${stat.color}`}>{stat.value}</p>
+            <p className={`text-xl font-bold tracking-tight ${stat.color} font-[family-name:var(--font-display)]`}>{stat.value}</p>
             <p className="text-xs text-text-muted mt-0.5">{stat.label}</p>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -108,13 +104,9 @@ export default function DashboardPage() {
         <div className="lg:col-span-1 space-y-3">
           <h2 className="text-sm font-bold text-text-primary">Quick Actions</h2>
           <div className="space-y-2">
-            {quickActions.map((action, idx) => (
+            {quickActions.map((action) => (
               <Link key={action.label} href={action.href}>
-                <motion.div
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.12 + idx * 0.03 }}
-                  className="p-3.5 rounded-lg border border-border bg-surface-1 hover:bg-surface-2 transition-colors flex items-center justify-between group cursor-pointer"
+                <div className="p-3.5 rounded-lg border border-border bg-surface-1 hover:bg-surface-2 transition-colors flex items-center justify-between group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-md bg-surface-3 flex items-center justify-center text-text-muted group-hover:text-accent transition-colors">
@@ -123,7 +115,7 @@ export default function DashboardPage() {
                     <span className="font-medium text-sm text-text-primary">{action.label}</span>
                   </div>
                   <ArrowRight className="h-3.5 w-3.5 text-text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
-                </motion.div>
+                </div>
               </Link>
             ))}
           </div>
@@ -135,10 +127,7 @@ export default function DashboardPage() {
             {data?.recentWorkouts?.length ? (
               <div className="divide-y divide-border">
                 {data.recentWorkouts.map((w, idx) => (
-                  <motion.div key={`${w.name}-${idx}`}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.12 + idx * 0.02 }}
+                  <div key={`${w.name}-${idx}`}
                     className="flex items-center justify-between px-4 py-3.5 hover:bg-surface-2 transition-colors group"
                   >
                     <div className="flex items-center gap-3">
@@ -154,7 +143,7 @@ export default function DashboardPage() {
                       <p className="text-sm font-bold text-text-primary">{w.volume ? `${(w.volume / 1000).toFixed(1)}k` : "\u2014"}</p>
                       <p className="text-[9px] text-text-muted uppercase tracking-wider">Volume</p>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -187,8 +176,7 @@ export default function DashboardPage() {
 
       {/* Get Started Banner */}
       {(!data?.stats?.totalWorkouts || data.stats.totalWorkouts === 0) && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-lg bg-accent-dim border border-accent/20 p-5 md:p-6"
+        <div className="rounded-lg bg-accent-dim border border-accent/20 p-5 md:p-6"
         >
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
@@ -204,7 +192,7 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

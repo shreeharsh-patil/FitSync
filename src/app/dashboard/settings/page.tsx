@@ -74,12 +74,12 @@ export default function SettingsPage() {
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-2 text-text-muted text-sm font-semibold mb-1"><Settings className="h-4 w-4" />Settings</div>
-        <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Preferences</h1>
+        <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-display)] tracking-tight text-text-primary">Preferences</h1>
         <p className="text-text-secondary text-sm mt-1">Manage your account, notifications, and privacy.</p>
       </motion.div>
 
       {successMsg && (
-        <div className="p-4 bg-success/10 border border-success/30 text-success rounded-lg text-sm font-semibold flex items-center gap-2 animate-fade-in">
+        <div className="p-4 bg-success/10 border border-success/30 text-success rounded-lg text-sm font-semibold flex items-center gap-2">
           <CheckCircle className="h-4 w-4" />{successMsg}
         </div>
       )}
@@ -107,7 +107,7 @@ export default function SettingsPage() {
           {activeSection === "profile" && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               <div className="rounded-lg bg-surface-2 border border-border p-6 md:p-8 space-y-6">
-                <h2 className="text-lg font-bold font-heading text-text-primary">Profile Information</h2>
+                <h2 className="text-lg font-bold font-[family-name:var(--font-display)] text-text-primary">Profile Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label htmlFor="name" className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Full Name</label>
@@ -164,7 +164,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="rounded-lg bg-surface-2 border border-border p-6 md:p-8 space-y-4">
-                <h2 className="text-lg font-bold font-heading text-text-primary">Integrations</h2>
+                <h2 className="text-lg font-bold font-[family-name:var(--font-display)] text-text-primary">Integrations</h2>
                 <p className="text-sm text-text-secondary mb-4">Connect your fitness platforms to sync data automatically.</p>
                 {[
                   { key: "appleHealth", label: "Apple Health", icon: Smartphone },
@@ -205,7 +205,7 @@ export default function SettingsPage() {
           {activeSection === "notifications" && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               className="rounded-lg bg-surface-2 border border-border p-6 md:p-8 space-y-6">
-              <h2 className="text-lg font-bold font-heading text-text-primary">Notification Preferences</h2>
+              <h2 className="text-lg font-bold font-[family-name:var(--font-display)] text-text-primary">Notification Preferences</h2>
               {(Object.entries(notifications) as [keyof NotificationPrefs, boolean][]).map(([key, value]) => {
                 const labels: Record<keyof NotificationPrefs, { label: string; desc: string }> = {
                   email: { label: "Email Notifications", desc: "Weekly progress reports and achievements" },
@@ -237,7 +237,7 @@ export default function SettingsPage() {
           {activeSection === "privacy" && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               className="rounded-lg bg-surface-2 border border-border p-6 md:p-8 space-y-6">
-              <h2 className="text-lg font-bold font-heading text-text-primary">Privacy & Security</h2>
+              <h2 className="text-lg font-bold font-[family-name:var(--font-display)] text-text-primary">Privacy & Security</h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-4 border-b border-border">
                   <div className="flex items-center gap-3">
@@ -279,7 +279,7 @@ export default function SettingsPage() {
           {activeSection === "billing" && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               className="rounded-lg bg-surface-2 border border-border p-6 md:p-8 space-y-6">
-              <h2 className="text-lg font-bold font-heading text-text-primary">Billing & Subscription</h2>
+              <h2 className="text-lg font-bold font-[family-name:var(--font-display)] text-text-primary">Billing & Subscription</h2>
               <div className="p-5 rounded-lg bg-success/10 border border-success/30 flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-success">Premium Plan</p>

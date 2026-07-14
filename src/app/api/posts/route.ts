@@ -11,6 +11,7 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .limit(50)
       .populate("userId", "name image")
+      .populate("comments.userId", "name image")
       .lean();
 
     return NextResponse.json({ posts });

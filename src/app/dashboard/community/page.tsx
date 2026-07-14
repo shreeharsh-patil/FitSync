@@ -10,7 +10,7 @@ interface PostData {
   content: string;
   likes: number;
   likedBy: string[];
-  comments: { content: string; createdAt: string }[];
+  comments: { userId: { _id: string; name: string } | string; content: string; createdAt: string }[];
   createdAt: string;
 }
 
@@ -19,6 +19,9 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState("");
   const [posting, setPosting] = useState(false);
+  const [expandedComments, setExpandedComments] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [commenting, setCommenting] = useState<string | null>(null);
 
   const fetchPosts = async (signal?: AbortSignal) => {
     try {
@@ -56,6 +59,22 @@ export default function CommunityPage() {
     } catch (e) { console.error(e); }
   };
 
+  const handleComment = async (postId: string) => {
+    if (!commentText.trim() || commenting) return;
+    setCommenting(postId);
+    try {
+      await fetch(`/api/posts/${postId}/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: commentText.trim() }),
+      });
+      setCommentText("");
+      setExpandedComments(null);
+      fetchPosts();
+    } catch (e) { console.error(e); }
+    finally { setCommenting(null); }
+  };
+
   const getAvatar = (name: string) => name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
   const timeAgo = (date: string) => {
@@ -71,7 +90,7 @@ export default function CommunityPage() {
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-2 text-text-secondary text-sm font-semibold mb-1"><Users className="h-4 w-4" />Community</div>
-        <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Feed</h1>
+        <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-display)] tracking-tight text-text-primary">Feed</h1>
         <p className="text-text-secondary text-sm mt-1">Connect with athletes and share your journey.</p>
       </motion.div>
 
@@ -113,13 +132,51 @@ export default function CommunityPage() {
                 </div>
               </div>
               <p className="text-sm text-text-primary leading-relaxed">{post.content}</p>
+
+              {/* Comments section */}
+              {expandedComments === post._id && (
+                <div className="mt-4 pt-3 border-t border-border space-y-3">
+                  {post.comments?.length > 0 && post.comments.map((c, ci) => (
+                    <div key={ci} className="flex gap-2.5">
+                      <div className="h-6 w-6 rounded-full bg-surface-3 flex items-center justify-center text-[8px] font-bold text-text-muted shrink-0">
+                        {typeof c.userId === "object" && c.userId?.name
+                          ? c.userId.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                          : "??"
+                        }
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-text-primary">
+                            {typeof c.userId === "object" ? c.userId.name : "User"}
+                          </span>
+                          <span className="text-[10px] text-text-muted">{timeAgo(c.createdAt)}</span>
+                        </div>
+                        <p className="text-xs text-text-secondary mt-0.5">{c.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 items-center">
+                    <input value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleComment(post._id)}
+                      placeholder="Write a comment..."
+                      className="flex-1 h-8 px-3 rounded-lg bg-surface-1 border border-border text-xs text-text-primary focus:outline-none focus:border-accent placeholder:text-text-muted" />
+                    <button onClick={() => handleComment(post._id)}
+                      disabled={!commentText.trim() || commenting === post._id}
+                      className="h-8 px-3 rounded-lg bg-accent text-white text-xs font-semibold disabled:opacity-50">
+                      {commenting === post._id ? "..." : "Reply"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border text-xs text-text-muted">
                 <button onClick={() => handleLike(post._id)}
                   className={`flex items-center gap-1.5 transition-colors ${post.likedBy?.length ? "text-accent" : "hover:text-accent"}`}>
                   <Heart className={`h-4 w-4 ${post.likedBy?.length ? "fill-accent" : ""}`} />
                   {post.likes || 0}
                 </button>
-                <button className="flex items-center gap-1.5 hover:text-accent transition-colors">
+                <button onClick={() => setExpandedComments(expandedComments === post._id ? null : post._id)}
+                  className={`flex items-center gap-1.5 transition-colors ${expandedComments === post._id ? "text-accent" : "hover:text-accent"}`}>
                   <MessageSquare className="h-4 w-4" />{post.comments?.length || 0}
                 </button>
                 <button className="flex items-center gap-1.5 hover:text-accent transition-colors">

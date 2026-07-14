@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Target, Flame, Trophy, Users, Clock, Loader2 } from "lucide-react";
+import { Target, Flame, Trophy, Users, Clock, Loader2, CheckCircle } from "lucide-react";
 
 interface ChallengeData {
   _id: string; name: string; description: string; startDate: string; endDate: string;
@@ -19,6 +19,8 @@ const colorMap = [
 export default function ChallengesPage() {
   const [challenges, setChallenges] = useState<ChallengeData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState<string | null>(null);
+  const [joinedMsg, setJoinedMsg] = useState("");
 
   useEffect(() => {
     fetch("/api/challenges")
@@ -29,11 +31,29 @@ export default function ChallengesPage() {
 
   const daysLeft = (endDate: string) => Math.max(1, Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000));
 
+  const handleJoin = async (challengeId: string) => {
+    setJoining(challengeId);
+    try {
+      const res = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeId }),
+      });
+      if (res.ok) {
+        setJoinedMsg(challengeId);
+        const json = await res.json();
+        setChallenges((prev) => prev.map((c) => c._id === challengeId ? json : c));
+        setTimeout(() => setJoinedMsg(""), 2000);
+      }
+    } catch (e) { console.error(e); }
+    finally { setJoining(null); }
+  };
+
   return (
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1"><Target className="h-4 w-4" />Challenges</div>
-        <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Active Challenges</h1>
+        <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-display)] tracking-tight text-text-primary">Active Challenges</h1>
         <p className="text-text-secondary text-sm mt-2">Compete and earn exclusive badges.</p>
       </motion.div>
 
@@ -60,8 +80,24 @@ export default function ChallengesPage() {
                   </div>
                 </div>
                 <p className="text-sm text-text-secondary mb-3 line-clamp-2">{c.description}</p>
-                <div className="flex items-center gap-2 text-xs text-text-muted">
-                  <Clock className="h-3 w-3" />{daysLeft(c.endDate)} days remaining
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs text-text-muted">
+                    <Clock className="h-3 w-3" />{daysLeft(c.endDate)} days remaining
+                  </div>
+                  <button
+                    onClick={() => handleJoin(c._id)}
+                    disabled={joining === c._id}
+                    className="px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {joining === c._id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : joinedMsg === c._id ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <Users className="h-3 w-3" />
+                    )}
+                    {joinedMsg === c._id ? "Joined!" : "Join"}
+                  </button>
                 </div>
               </motion.div>
             );

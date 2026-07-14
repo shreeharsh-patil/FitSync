@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/lib/providers";
 import { signOut } from "next-auth/react";
@@ -38,6 +37,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ name: string; level: number; xp: number } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data._id) setUserInfo({ name: data.name, level: data.level || 1, xp: data.xp || 0 });
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <AuthProvider>
@@ -90,14 +99,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             collapsed ? "items-center justify-center h-9 w-9 mx-auto" : "items-center gap-2.5 px-3 py-2"
           )}>
             <div className="h-7 w-7 rounded-md bg-accent-dim flex items-center justify-center font-bold text-[10px] text-accent shrink-0">
-              AT
+              {userInfo?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "U"}
             </div>
             {!collapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-text-primary truncate">Athlete</span>
+                <span className="text-sm font-semibold text-text-primary truncate">{userInfo?.name || "Athlete"}</span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[9px] text-accent font-semibold">Active</span>
-                  <span className="text-[9px] text-text-muted">Lv.8</span>
+                  <span className="text-[9px] text-text-muted">Lv.{userInfo?.level || 1}</span>
                 </div>
               </div>
             )}
@@ -138,7 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center justify-between px-5 py-5 border-b border-border">
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <LogoMark size={22} />
-            <span className="text-lg font-bold tracking-tight text-text-primary">Fitsync</span>
+            <span className="text-lg font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
           </Link>
           <button onClick={() => setMobileOpen(false)} className="p-2 rounded-lg text-text-secondary hover:bg-surface-2 transition-all">
             <X className="h-5 w-5" />
@@ -186,10 +195,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 isActive ? "text-accent" : "text-text-muted"
               }`}>
               {isActive && (
-                <motion.div layoutId="mobile-nav"
-                  className="absolute top-0 h-0.5 w-5 bg-accent rounded-full" />
+                <div className="absolute top-0 h-0.5 w-5 bg-accent rounded-full" />
               )}
-              <item.icon className={cn("h-5 w-5", isActive ? "scale-110" : "")} />
+              <item.icon className={cn("h-5 w-5", isActive && "scale-110")} />
               <span className="text-[9px] uppercase tracking-wider font-semibold">{item.name}</span>
             </Link>
           );
