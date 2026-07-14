@@ -10,10 +10,10 @@ interface ChallengeData {
 }
 
 const colorMap = [
-  { icon: Flame, color: "text-accent-coral", bg: "bg-accent-coral/10" },
-  { icon: Target, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-  { icon: Trophy, color: "text-amber-600", bg: "bg-amber-50" },
+  { icon: Flame, color: "text-accent", bg: "bg-accent-dim" },
+  { icon: Target, color: "text-success", bg: "bg-success/10" },
+  { icon: Users, color: "text-accent", bg: "bg-accent-dim" },
+  { icon: Trophy, color: "text-accent", bg: "bg-accent-dim" },
 ];
 
 export default function ChallengesPage() {
@@ -32,15 +32,15 @@ export default function ChallengesPage() {
   return (
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-2 text-accent-coral text-sm font-semibold mb-1"><Target className="h-4 w-4" />Challenges</div>
+        <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1"><Target className="h-4 w-4" />Challenges</div>
         <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Active Challenges</h1>
         <p className="text-text-secondary text-sm mt-2">Compete and earn exclusive badges.</p>
       </motion.div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-accent-coral" /></div>
+        <div className="flex items-center justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-accent" /></div>
       ) : challenges.length === 0 ? (
-        <div className="rounded-2xl bg-bg-card border border-border p-16 text-center text-text-muted text-sm">
+        <div className="rounded-lg bg-surface-2 border border-border p-16 text-center text-text-muted text-sm">
           No active challenges right now. Check back soon!
         </div>
       ) : (
@@ -49,13 +49,13 @@ export default function ChallengesPage() {
             const iconData = colorMap[idx % colorMap.length];
             return (
               <motion.div key={c._id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }}
-                className="rounded-xl bg-bg-card border border-border p-5 hover:border-border-hover transition-all group cursor-pointer">
+                className="rounded-lg bg-surface-2 border border-border p-5 hover:border-border-hover transition-all group cursor-pointer">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className={`h-11 w-11 rounded-xl ${iconData.bg} flex items-center justify-center ${iconData.color}`}>
+                  <div className={`h-11 w-11 rounded-lg ${iconData.bg} flex items-center justify-center ${iconData.color}`}>
                     <iconData.icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-sm text-text-primary group-hover:text-accent-coral transition-colors">{c.name}</h3>
+                    <h3 className="font-semibold text-sm text-text-primary group-hover:text-accent transition-colors">{c.name}</h3>
                     <p className="text-xs text-text-muted">{c.participants?.length || 0} participants</p>
                   </div>
                 </div>

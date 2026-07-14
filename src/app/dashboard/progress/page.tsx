@@ -30,7 +30,7 @@ export default function ProgressPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-accent-coral" /></div>;
+    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-accent" /></div>;
   }
 
   const weightEntries = data?.entries?.filter((e) => e.weight) || [];
@@ -41,7 +41,7 @@ export default function ProgressPage() {
   return (
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-2 text-accent-coral text-sm font-semibold mb-1"><LineChart className="h-4 w-4" />Analytics</div>
+        <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1"><LineChart className="h-4 w-4" />Analytics</div>
         <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Progress & Metrics</h1>
         <p className="text-text-secondary text-sm mt-1">Track your transformation over time.</p>
       </motion.div>
@@ -55,34 +55,34 @@ export default function ProgressPage() {
           { label: "Weight Change", value: weightChange !== "0" ? `${Number(weightChange) > 0 ? "-" : "+"}${Math.abs(Number(weightChange))} kg` : "0" },
         ].map((stat, idx) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + idx * 0.04 }}
-            className="rounded-xl bg-bg-card border border-border p-5">
-            <p className="text-[9px] text-text-muted font-semibold uppercase tracking-wider">{stat.label}</p>
-            <p className="text-2xl font-bold font-heading mt-1 text-text-primary">{stat.value}</p>
+            className="rounded-lg bg-surface-2 border border-border p-5">
+            <p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">{stat.label}</p>
+            <p className="text-2xl font-extrabold font-heading mt-1 text-text-primary">{stat.value}</p>
           </motion.div>
         ))}
       </div>
 
       {/* Weight Chart */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-        className="rounded-2xl bg-bg-card border border-border p-6 md:p-8">
+        className="rounded-lg bg-surface-2 border border-border p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-base font-bold font-heading text-text-primary flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-accent-coral" />Weight Tracking
+            <TrendingUp className="h-4 w-4 text-accent" />Weight Tracking
           </h2>
           <button onClick={() => setShowWeightForm(!showWeightForm)}
-            className="text-xs font-semibold text-accent-coral hover:underline flex items-center gap-1">
+            className="text-xs font-semibold text-accent hover:underline flex items-center gap-1">
             <Zap className="h-3 w-3" />Log Weight
           </button>
         </div>
 
         {showWeightForm && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-xl bg-bg-secondary border border-border flex items-center gap-4">
+            className="mb-6 p-4 rounded-lg bg-surface-1 border border-border flex items-center gap-4">
             <input type="number" step="0.1" value={newWeight} onChange={(e) => setNewWeight(parseFloat(e.target.value) || 0)}
               className="input w-24 text-center text-lg font-bold" />
             <span className="text-sm text-text-muted">kg</span>
             <button onClick={handleLogWeight} disabled={saving}
-              className="px-5 py-2 bg-accent-coral text-white font-bold rounded-xl text-sm">{saving ? "..." : "Save"}</button>
+              className="px-5 py-2 bg-accent text-white font-bold rounded-lg text-sm">{saving ? "..." : "Save"}</button>
           </motion.div>
         )}
 
@@ -97,7 +97,7 @@ export default function ProgressPage() {
                 <div key={entry._id} className="flex flex-col items-center flex-1 h-full justify-end">
                   <span className="text-[8px] text-text-muted mb-1">{entry.weight}</span>
                   <motion.div initial={{ height: 0 }} animate={{ height: `${h}%` }} transition={{ delay: 0.2 + idx * 0.03, duration: 0.4 }}
-                    className="w-full max-w-[28px] rounded-t-lg bg-accent-coral" />
+                    className="w-full max-w-[28px] rounded-t-lg bg-accent" />
                   <span className="text-[7px] text-text-muted mt-1">{new Date(entry.logDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
                 </div>
               );
@@ -108,7 +108,7 @@ export default function ProgressPage() {
 
       {/* Total Stats */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-        className="rounded-2xl bg-bg-card border border-border p-6 md:p-8">
+        className="rounded-lg bg-surface-2 border border-border p-6 md:p-8">
         <h2 className="text-base font-bold font-heading text-text-primary flex items-center gap-2 mb-6">
           <Activity className="h-4 w-4 text-text-secondary" />Total Stats
         </h2>
@@ -118,9 +118,9 @@ export default function ProgressPage() {
             { value: data?.stats?.totalVolume ? `${(data.stats.totalVolume / 1000).toFixed(1)}k` : "0", label: "kg Volume" },
             { value: data?.stats?.totalCalories ? `${(data.stats.totalCalories / 1000).toFixed(1)}k` : "0", label: "Calories Burned" },
           ].map((stat) => (
-            <div key={stat.label} className="text-center p-6 rounded-xl bg-bg-secondary border border-border">
-              <p className="text-3xl font-bold font-heading text-accent-coral">{stat.value}</p>
-              <p className="text-[9px] text-text-muted uppercase font-semibold tracking-wider mt-2">{stat.label}</p>
+            <div key={stat.label} className="text-center p-6 rounded-lg bg-surface-1 border border-border">
+              <p className="text-3xl font-extrabold font-heading text-accent">{stat.value}</p>
+              <p className="text-[10px] text-text-muted uppercase font-semibold tracking-wider mt-2">{stat.label}</p>
             </div>
           ))}
         </div>

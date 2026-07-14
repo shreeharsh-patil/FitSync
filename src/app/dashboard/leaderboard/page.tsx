@@ -29,27 +29,27 @@ export default function LeaderboardPage() {
   return (
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-2 text-accent-coral text-sm font-semibold mb-1"><Trophy className="h-4 w-4" />Leaderboard</div>
+        <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1"><Trophy className="h-4 w-4" />Leaderboard</div>
         <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Top Athletes</h1>
         <p className="text-text-secondary text-sm mt-1">Ranked by total XP earned.</p>
       </motion.div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-accent-coral" /></div>
+        <div className="flex items-center justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-accent" /></div>
       ) : leaders.length === 0 ? (
-        <div className="rounded-2xl bg-bg-card border border-border p-16 text-center text-text-muted text-sm">
+        <div className="rounded-lg bg-surface-2 border border-border p-16 text-center text-text-muted text-sm">
           No athletes on the leaderboard yet.
         </div>
       ) : (
-        <div className="rounded-2xl bg-bg-card border border-border overflow-hidden">
+        <div className="rounded-lg bg-surface-2 border border-border overflow-hidden">
           <div className="divide-y divide-border">
             {leaders.map((leader) => (
               <motion.div key={leader.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-4 p-5 hover:bg-bg-secondary transition-colors">
+                className="flex items-center gap-4 p-5 hover:bg-surface-1 transition-colors">
                 <span className="w-8 text-center font-bold text-lg">
                   {getBadge(leader.rank) || <span className="text-text-muted">{leader.rank}</span>}
                 </span>
-                <div className="h-10 w-10 rounded-full bg-accent-coral/15 flex items-center justify-center text-sm font-bold text-accent-coral">
+                <div className="h-10 w-10 rounded-full bg-accent-dim flex items-center justify-center text-sm font-bold text-accent">
                   {getInitials(leader.name)}
                 </div>
                 <div className="flex-1">
@@ -57,8 +57,8 @@ export default function LeaderboardPage() {
                   <p className="text-xs text-text-muted">Level {leader.level} · {leader.streak} day streak</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold font-heading text-accent-coral">{leader.xp.toLocaleString()}</p>
-                  <p className="text-[8px] text-text-muted uppercase tracking-wider">XP</p>
+                  <p className="font-extrabold font-heading text-accent">{leader.xp.toLocaleString()}</p>
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider">XP</p>
                 </div>
               </motion.div>
             ))}

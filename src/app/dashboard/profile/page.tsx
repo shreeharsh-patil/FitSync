@@ -23,29 +23,29 @@ export default function ProfilePage() {
   }, []);
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-accent-coral" /></div>;
+    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-accent" /></div>;
   }
 
   const initials = user?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2) || "AT";
 
   const stats = [
-    { label: "Level", value: user?.level?.toString() || "1", icon: Award, color: "text-accent-coral", bg: "bg-accent-coral/10" },
-    { label: "XP Earned", value: user?.xp?.toLocaleString() || "0", icon: Zap, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Streak", value: user?.streak ? `${user.streak} days` : "0", icon: Flame, color: "text-accent-coral", bg: "bg-accent-coral/10" },
-    { label: "Best Streak", value: user?.longestStreak ? `${user.longestStreak} days` : "0", icon: Target, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Level", value: user?.level?.toString() || "1", icon: Award, color: "text-accent", bg: "bg-accent-dim" },
+    { label: "XP Earned", value: user?.xp?.toLocaleString() || "0", icon: Zap, color: "text-accent", bg: "bg-accent-dim" },
+    { label: "Streak", value: user?.streak ? `${user.streak} days` : "0", icon: Flame, color: "text-accent", bg: "bg-accent-dim" },
+    { label: "Best Streak", value: user?.longestStreak ? `${user.longestStreak} days` : "0", icon: Target, color: "text-success", bg: "bg-success/10" },
   ];
 
   return (
     <div className="space-y-8">
       {/* Profile Header */}
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-bg-card border border-border p-6 md:p-8 relative overflow-hidden">
+        className="rounded-lg bg-surface-2 border border-border p-6 md:p-8 relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
           <div className="relative">
-            <div className="h-20 w-20 rounded-full bg-accent-coral/15 flex items-center justify-center text-2xl font-bold text-accent-coral">
+            <div className="h-20 w-20 rounded-full bg-accent-dim flex items-center justify-center text-2xl font-bold text-accent">
               {initials}
             </div>
-            <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-accent-coral border-4 border-white flex items-center justify-center">
+            <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-accent border-4 border-surface-2 flex items-center justify-center">
               <Zap className="h-3.5 w-3.5 text-white" />
             </div>
           </div>
@@ -53,12 +53,12 @@ export default function ProfilePage() {
             <h1 className="text-2xl font-bold font-heading text-text-primary">{user?.name || "Athlete"}</h1>
             <p className="text-text-secondary text-sm">{user?.email}</p>
             <div className="flex items-center gap-3 mt-3 flex-wrap">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-coral/10 border border-accent-coral/20">
-                <Medal className="h-3.5 w-3.5 text-accent-coral" />
-                <span className="text-sm font-semibold text-accent-coral">Level {user?.level || 1}</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-dim border border-accent/20">
+                <Medal className="h-3.5 w-3.5 text-accent" />
+                <span className="text-sm font-semibold text-accent">Level {user?.level || 1}</span>
               </div>
               {user?.fitnessGoal && (
-                <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold">
+                <span className="px-2.5 py-1 rounded-lg bg-accent-dim border border-accent/20 text-accent text-xs font-semibold">
                   {user.fitnessGoal}
                 </span>
               )}
@@ -69,7 +69,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <Link href="/dashboard/settings">
-            <button className="px-4 py-2 border border-border rounded-xl text-xs font-semibold text-text-muted hover:text-text-primary hover:bg-bg-secondary transition-all flex items-center gap-2">
+            <button className="px-4 py-2 border border-border rounded-lg text-xs font-semibold text-text-muted hover:text-text-primary hover:bg-surface-1 transition-all flex items-center gap-2">
               <Settings className="h-3.5 w-3.5" />Edit Profile
             </button>
           </Link>
@@ -78,25 +78,25 @@ export default function ProfilePage() {
 
       {/* XP Card */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="rounded-2xl bg-bg-card border border-border p-6 md:p-8">
+        className="rounded-lg bg-surface-2 border border-border p-6 md:p-8">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-accent-coral/15 flex items-center justify-center text-accent-coral">
+            <div className="h-14 w-14 rounded-xl bg-accent-dim flex items-center justify-center text-accent">
               <Sparkles className="h-7 w-7" />
             </div>
             <div>
               <h2 className="text-lg font-bold font-heading text-text-primary">Level {user?.level || 1}</h2>
               <p className="text-sm text-text-muted mt-0.5">{user?.xp || 0} XP earned</p>
-              <div className="mt-2 h-1.5 w-48 max-w-full rounded-full bg-bg-secondary overflow-hidden">
+              <div className="mt-2 h-1.5 w-48 max-w-full rounded-full bg-surface-1 overflow-hidden">
                 <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(((user?.xp || 0) % 1000) / 10, 100)}%` }} transition={{ duration: 1 }}
-                  className="h-full rounded-full bg-accent-coral" />
+                  className="h-full rounded-full bg-accent" />
               </div>
             </div>
           </div>
           <div className="flex items-center gap-6">
-            <div className="text-center"><p className="text-xl font-bold font-heading text-accent-coral">{user?.level || 1}</p><p className="text-[8px] text-text-muted font-semibold uppercase tracking-wider">Level</p></div>
-            <div className="text-center"><p className="text-xl font-bold font-heading text-amber-600">{user?.xp || 0}</p><p className="text-[8px] text-text-muted font-semibold uppercase tracking-wider">Total XP</p></div>
-            <div className="text-center"><p className="text-xl font-bold font-heading text-accent-coral">{user?.streak || 0}</p><p className="text-[8px] text-text-muted font-semibold uppercase tracking-wider">Day Streak</p></div>
+            <div className="text-center"><p className="text-xl font-extrabold font-heading text-accent">{user?.level || 1}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Level</p></div>
+            <div className="text-center"><p className="text-xl font-extrabold font-heading text-accent">{user?.xp || 0}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Total XP</p></div>
+            <div className="text-center"><p className="text-xl font-extrabold font-heading text-accent">{user?.streak || 0}</p><p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Day Streak</p></div>
           </div>
         </div>
       </motion.div>
@@ -105,19 +105,19 @@ export default function ProfilePage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat, idx) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 + idx * 0.03 }}
-            className="rounded-xl bg-bg-card border border-border p-4 text-center hover:border-border-hover transition-all">
-            <div className={`h-9 w-9 rounded-xl ${stat.bg} flex items-center justify-center ${stat.color} mx-auto mb-2`}>
+            className="rounded-lg bg-surface-2 border border-border p-4 text-center hover:border-border-hover transition-all">
+            <div className={`h-9 w-9 rounded-lg ${stat.bg} flex items-center justify-center ${stat.color} mx-auto mb-2`}>
               <stat.icon className="h-4 w-4" />
             </div>
-            <p className="text-lg font-bold font-heading text-text-primary">{stat.value}</p>
-            <p className="text-[8px] text-text-muted font-semibold uppercase tracking-wider mt-0.5">{stat.label}</p>
+            <p className="text-lg font-extrabold font-heading text-text-primary">{stat.value}</p>
+            <p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mt-0.5">{stat.label}</p>
           </motion.div>
         ))}
       </div>
 
       {/* Profile Details */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-        className="rounded-2xl bg-bg-card border border-border p-6 md:p-8 space-y-6">
+        className="rounded-lg bg-surface-2 border border-border p-6 md:p-8 space-y-6">
         <h2 className="text-lg font-bold font-heading text-text-primary">Profile Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
@@ -126,15 +126,15 @@ export default function ProfilePage() {
             { label: "Height", value: user?.height ? `${user.height} cm` : "Not set" },
             { label: "Weight", value: user?.weight ? `${user.weight} kg` : "Not set" },
           ].map((field) => (
-            <div key={field.label} className="p-4 rounded-xl bg-bg-secondary border border-border">
-              <p className="text-[8px] text-text-muted font-semibold uppercase tracking-wider">{field.label}</p>
+            <div key={field.label} className="p-4 rounded-lg bg-surface-1 border border-border">
+              <p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">{field.label}</p>
               <p className="text-sm font-semibold text-text-primary mt-1">{field.value}</p>
             </div>
           ))}
         </div>
         {user?.bio && (
-          <div className="p-4 rounded-xl bg-bg-secondary border border-border">
-            <p className="text-[8px] text-text-muted font-semibold uppercase tracking-wider">Bio</p>
+          <div className="p-4 rounded-lg bg-surface-1 border border-border">
+            <p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">Bio</p>
             <p className="text-sm text-text-primary mt-1">{user.bio}</p>
           </div>
         )}

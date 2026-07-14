@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Utensils, Apple, Coffee, Beef, Plus, Sparkles, Droplets, Zap, Loader2, CheckCircle } from "lucide-react";
+import { Utensils, Apple, Coffee, Beef, Plus, Sparkles, Droplets, Loader2, CheckCircle } from "lucide-react";
 
 interface MealType {
   _id: string;
@@ -16,11 +16,11 @@ interface MealType {
   logDate: string;
 }
 
-const mealIcons: Record<string, { icon: any; lightBg: string; iconColor: string }> = {
-  breakfast: { icon: Coffee, lightBg: "bg-orange-50", iconColor: "text-orange-600" },
-  lunch: { icon: Beef, lightBg: "bg-blue-50", iconColor: "text-blue-600" },
-  dinner: { icon: Utensils, lightBg: "bg-purple-50", iconColor: "text-purple-600" },
-  snack: { icon: Apple, lightBg: "bg-emerald-50", iconColor: "text-emerald-600" },
+const mealIcons: Record<string, { icon: any; bg: string; color: string }> = {
+  breakfast: { icon: Coffee, bg: "bg-amber-500/10", color: "text-amber-400" },
+  lunch: { icon: Beef, bg: "bg-blue-500/10", color: "text-blue-400" },
+  dinner: { icon: Utensils, bg: "bg-purple-500/10", color: "text-purple-400" },
+  snack: { icon: Apple, bg: "bg-success/10", color: "text-success" },
 };
 
 const macroGoals = { calories: 2200, protein: 160, carbs: 220, fat: 70 };
@@ -47,10 +47,7 @@ export default function NutritionPage() {
       setMeals(json.meals || []);
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
-      console.error("Failed to fetch meals", e);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -78,11 +75,7 @@ export default function NutritionPage() {
       const res = await fetch("/api/nutrition", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mealType,
-          foodItems: [{ name: foodName, calories: foodCalories, protein: foodProtein, carbs: foodCarbs, fat: foodFat }],
-          waterMl: waterAmount,
-        }),
+        body: JSON.stringify({ mealType, foodItems: [{ name: foodName, calories: foodCalories, protein: foodProtein, carbs: foodCarbs, fat: foodFat }], waterMl: waterAmount }),
       });
       if (res.ok) {
         setSuccessMsg("Meal added!");
@@ -91,11 +84,7 @@ export default function NutritionPage() {
         fetchMeals();
         setTimeout(() => setSuccessMsg(""), 3000);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setSaving(false);
-    }
+    } catch (e) { console.error(e); } finally { setSaving(false); }
   };
 
   const mealsByType = ["breakfast", "lunch", "dinner", "snack"].map((type) => {
@@ -105,72 +94,64 @@ export default function NutritionPage() {
   });
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <div className="flex items-center gap-2 text-accent-coral text-sm font-semibold mb-1">
-            <Utensils className="h-4 w-4" />Nutrition Center
+          <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1">
+            <Utensils className="h-3.5 w-3.5" />Nutrition Center
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Fuel Your Body</h1>
-          <p className="text-text-secondary text-sm mt-1">Track your macros and log your meals.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-primary">Fuel Your Body</h1>
         </div>
         <button onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-accent-coral text-white font-bold text-sm rounded-xl transition-all hover:shadow-lg hover:shadow-accent-coral/20">
+          className="flex items-center gap-2 px-4 py-2 bg-accent text-white font-semibold text-sm rounded-lg transition-colors hover:bg-accent-hover">
           {showAddForm ? null : <Plus className="h-4 w-4" />}
           {showAddForm ? "Cancel" : "Add Meal"}
         </button>
       </motion.div>
 
       {successMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-semibold animate-fade-in">
-          <CheckCircle className="h-4 w-4 inline mr-2" />{successMsg}
+        <div className="p-3 bg-success/10 border border-success/20 text-success rounded-lg text-sm font-semibold animate-fade-in flex items-center gap-2">
+          <CheckCircle className="h-4 w-4" />{successMsg}
         </div>
       )}
 
-      {/* Add Form */}
       {showAddForm && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl bg-bg-card border border-border p-6 md:p-8 space-y-6">
-          <h2 className="text-lg font-bold font-heading text-text-primary">Quick Add Meal</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Meal Type</label>
-              <select value={mealType} onChange={(e) => setMealType(e.target.value)} className="input w-full">
+          className="rounded-xl bg-surface-1 border border-border p-6 space-y-5">
+          <h2 className="text-lg font-bold text-text-primary">Quick Add Meal</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Meal Type</label>
+              <select value={mealType} onChange={(e) => setMealType(e.target.value)} className="input">
                 <option value="breakfast">Breakfast</option><option value="lunch">Lunch</option>
                 <option value="dinner">Dinner</option><option value="snack">Snack</option>
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Food Name</label>
-              <input value={foodName} onChange={(e) => setFoodName(e.target.value)}
-                className="input w-full" placeholder="e.g. Chicken breast" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Food Name</label>
+              <input value={foodName} onChange={(e) => setFoodName(e.target.value)} className="input" placeholder="e.g. Chicken breast" />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Calories</label>
-              <input type="number" value={foodCalories || ""} onChange={(e) => setFoodCalories(parseInt(e.target.value) || 0)}
-                className="input w-full" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Calories</label>
+              <input type="number" value={foodCalories || ""} onChange={(e) => setFoodCalories(parseInt(e.target.value) || 0)} className="input" />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Protein (g)</label>
-              <input type="number" value={foodProtein || ""} onChange={(e) => setFoodProtein(parseInt(e.target.value) || 0)}
-                className="input w-full" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Protein (g)</label>
+              <input type="number" value={foodProtein || ""} onChange={(e) => setFoodProtein(parseInt(e.target.value) || 0)} className="input" />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Carbs (g)</label>
-              <input type="number" value={foodCarbs || ""} onChange={(e) => setFoodCarbs(parseInt(e.target.value) || 0)}
-                className="input w-full" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Carbs (g)</label>
+              <input type="number" value={foodCarbs || ""} onChange={(e) => setFoodCarbs(parseInt(e.target.value) || 0)} className="input" />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Fat (g)</label>
-              <input type="number" value={foodFat || ""} onChange={(e) => setFoodFat(parseInt(e.target.value) || 0)}
-                className="input w-full" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Fat (g)</label>
+              <input type="number" value={foodFat || ""} onChange={(e) => setFoodFat(parseInt(e.target.value) || 0)} className="input" />
             </div>
           </div>
-          <div className="flex justify-end pt-4 border-t border-border">
+          <div className="flex justify-end pt-3 border-t border-border">
             <button onClick={handleAddMeal} disabled={saving || !foodName.trim()}
-              className="px-6 py-2.5 bg-accent-coral text-white font-bold text-sm rounded-xl disabled:opacity-50 flex items-center gap-2">
+              className="px-5 py-2 bg-accent text-white font-semibold text-sm rounded-lg disabled:opacity-50 flex items-center gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {saving ? "Saving..." : "Log Meal"}
             </button>
@@ -178,26 +159,20 @@ export default function NutritionPage() {
         </motion.div>
       )}
 
-      {/* Macro Progress */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {Object.entries(macroGoals).map(([key, target], idx) => {
           const current = (dailyTotals as any)[key] || 0;
           const pct = Math.min((current / target) * 100, 100);
-          const colorMap: Record<string, string> = {
-            calories: "bg-accent-coral",
-            protein: "bg-accent-coral",
-            carbs: "bg-orange-500",
-            fat: "bg-blue-500",
-          };
+          const colorMap: Record<string, string> = { calories: "bg-accent", protein: "bg-success", carbs: "bg-amber-400", fat: "bg-blue-400" };
           return (
-            <motion.div key={key} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }}
-              className="rounded-xl bg-bg-card border border-border p-4">
-              <p className="text-[9px] text-text-muted font-semibold uppercase tracking-wider mb-2">{key}</p>
-              <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold font-heading text-text-primary">{current}</span>
-                <span className="text-xs text-text-muted mb-0.5">/ {target}</span>
+            <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
+              className="rounded-lg bg-surface-1 border border-border p-3.5">
+              <p className="text-[9px] text-text-muted font-semibold uppercase tracking-wider mb-1.5">{key}</p>
+              <div className="flex items-end gap-1.5">
+                <span className="text-xl font-extrabold text-text-primary">{current}</span>
+                <span className="text-[11px] text-text-muted mb-0.5">/ {target}</span>
               </div>
-              <div className="mt-2 h-1 rounded-full bg-bg-secondary overflow-hidden">
+              <div className="mt-2 h-1 rounded-full bg-surface-3 overflow-hidden">
                 <div className={`h-full rounded-full ${colorMap[key]}`} style={{ width: `${pct}%` }} />
               </div>
             </motion.div>
@@ -205,43 +180,38 @@ export default function NutritionPage() {
         })}
       </div>
 
-      {/* Meal Timeline */}
-      <div className="space-y-4">
-        <h2 className="text-base font-bold font-heading text-text-primary flex items-center gap-2">
-          <Droplets className="h-4 w-4 text-text-secondary" />Today's Meals
-        </h2>
+      <div className="space-y-3">
+        <h2 className="text-sm font-bold text-text-primary">Today's Meals</h2>
         {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent-coral" /></div>
+          <div className="flex items-center justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-accent" /></div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {mealsByType.map((mealData, idx) => (
-              <motion.div key={mealData.type} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }}
-                className="rounded-xl bg-bg-card border border-border p-4 hover:border-border-hover transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-11 w-11 rounded-xl ${mealData.lightBg} flex items-center justify-center ${mealData.iconColor}`}>
-                      <mealData.icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-sm text-text-primary">{mealData.name}</h3>
-                      {mealData.meal ? (
-                        <div className="flex items-center gap-3 mt-1">
-                          {[
-                            { label: "kcal", value: mealData.meal.totalCalories, color: "text-accent-coral" },
-                            { label: "P", value: `${mealData.meal.totalProtein}g`, color: "text-emerald-700" },
-                            { label: "C", value: `${mealData.meal.totalCarbs}g`, color: "text-orange-700" },
-                            { label: "F", value: `${mealData.meal.totalFat}g`, color: "text-blue-700" },
-                          ].map((m) => (
-                            <span key={m.label} className="text-[10px] font-semibold">
-                              <span className={m.color}>{m.value}</span>
-                              <span className="text-text-muted"> {m.label}</span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-text-muted mt-1">Not logged yet</p>
-                      )}
-                    </div>
+              <motion.div key={mealData.type} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
+                className="rounded-lg bg-surface-1 border border-border p-3.5 hover:border-border-hover transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-lg ${mealData.bg} flex items-center justify-center ${mealData.color}`}>
+                    <mealData.icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm text-text-primary">{mealData.name}</h3>
+                    {mealData.meal ? (
+                      <div className="flex items-center gap-2.5 mt-0.5">
+                        {[
+                          { label: "kcal", value: mealData.meal.totalCalories, color: "text-accent" },
+                          { label: "P", value: `${mealData.meal.totalProtein}g`, color: "text-success" },
+                          { label: "C", value: `${mealData.meal.totalCarbs}g`, color: "text-amber-400" },
+                          { label: "F", value: `${mealData.meal.totalFat}g`, color: "text-blue-400" },
+                        ].map((m) => (
+                          <span key={m.label} className="text-[10px] font-semibold">
+                            <span className={m.color}>{m.value}</span>
+                            <span className="text-text-muted"> {m.label}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-text-muted mt-0.5">Not logged yet</p>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -250,22 +220,21 @@ export default function NutritionPage() {
         )}
       </div>
 
-      {/* Water */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-        className="rounded-xl bg-bg-card border border-border p-5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="h-11 w-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+        className="rounded-lg bg-surface-1 border border-border p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
             <Droplets className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-semibold text-text-primary">Water Intake</p>
-            <p className="text-xl font-bold font-heading text-blue-600">
+            <p className="text-lg font-extrabold text-blue-400">
               {(dailyTotals.waterMl / 1000).toFixed(1)}L <span className="text-xs text-text-muted font-normal">/ 2.5L</span>
             </p>
           </div>
         </div>
-        <div className="h-2 w-28 rounded-full bg-bg-secondary overflow-hidden">
-          <div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.min((dailyTotals.waterMl / 2500) * 100, 100)}%` }} />
+        <div className="h-1.5 w-24 rounded-full bg-surface-3 overflow-hidden">
+          <div className="h-full rounded-full bg-blue-400" style={{ width: `${Math.min((dailyTotals.waterMl / 2500) * 100, 100)}%` }} />
         </div>
       </motion.div>
     </div>

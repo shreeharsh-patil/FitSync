@@ -46,7 +46,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-accent-coral" />
+        <Loader2 className="h-6 w-6 animate-spin text-accent" />
       </div>
     );
   }
@@ -54,123 +54,104 @@ export default function DashboardPage() {
   const streakLabel = data?.user?.streak ? `${data.user.streak} days` : "0 days";
 
   const statCards = [
-    {
-      label: "Workouts", value: data?.stats?.totalWorkouts?.toString() || "0",
-      change: `+${data?.stats?.weeklyWorkouts || 0} this week`, icon: Dumbbell,
-    },
-    {
-      label: "Calories", value: data?.dailyNutrition?.calories ? data.dailyNutrition.calories.toLocaleString() : "0",
-      change: "Today's intake", icon: Activity,
-    },
-    {
-      label: "Streak", value: streakLabel, change: data?.user?.streak ? "Keep going!" : "Start today!",
-      icon: Flame,
-    },
-    {
-      label: "Achievements", value: (data?.stats?.totalPosts || 0).toString(),
-      change: "Community posts", icon: Trophy,
-    },
+    { label: "Workouts", value: data?.stats?.totalWorkouts?.toString() || "0", sub: `+${data?.stats?.weeklyWorkouts || 0} this week`, icon: Dumbbell, color: "text-accent" },
+    { label: "Calories", value: data?.dailyNutrition?.calories ? data.dailyNutrition.calories.toLocaleString() : "0", sub: "Today's intake", icon: Activity, color: "text-text-primary" },
+    { label: "Streak", value: streakLabel, sub: data?.user?.streak ? "Keep going!" : "Start today!", icon: Flame, color: "text-success" },
+    { label: "Posts", value: (data?.stats?.totalPosts || 0).toString(), sub: "Community posts", icon: Trophy, color: "text-text-primary" },
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <div className="flex items-center gap-2 text-accent-coral text-sm font-semibold mb-1">
-            <Zap className="h-4 w-4" />Welcome back, {data?.user?.name || "Athlete"}
+          <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1">
+            <Zap className="h-3.5 w-3.5" />Welcome back, {data?.user?.name || "Athlete"}
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-text-primary">Your Dashboard</h1>
-          <p className="text-text-secondary text-sm mt-1">Track your performance, nutrition, and goals.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-primary">Dashboard</h1>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent-coral/10 border border-accent-coral/20">
-            <Zap className="h-3.5 w-3.5 text-accent-coral" />
-            <span className="text-sm font-semibold text-accent-coral">Lv.{data?.user?.level || 1}</span>
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent-dim border border-accent/20">
+            <Zap className="h-3 w-3 text-accent" />
+            <span className="text-xs font-bold text-accent">Lv.{data?.user?.level || 1}</span>
           </div>
-          <div className="h-1.5 w-24 rounded-full bg-bg-secondary overflow-hidden">
-            <div className="h-full w-[65%] rounded-full bg-accent-coral" />
+          <div className="h-1.5 w-20 rounded-full bg-surface-3 overflow-hidden">
+            <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${Math.min(((data?.user?.xp || 0) % 1000) / 10, 100)}%` }} />
           </div>
           <span className="text-[10px] text-text-muted font-semibold">{data?.user?.xp || 0} XP</span>
         </div>
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statCards.map((stat, idx) => (
           <motion.div key={stat.label}
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 + idx * 0.05 }}
-            className="rounded-xl bg-bg-card border border-border p-5 hover:border-border-hover transition-all"
+            transition={{ delay: 0.04 + idx * 0.04 }}
+            className="rounded-lg bg-surface-1 border border-border p-4 hover:border-border-hover transition-colors"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="h-9 w-9 rounded-lg bg-accent-coral/10 flex items-center justify-center text-accent-coral">
-                <stat.icon className="h-4 w-4" />
+              <div className="h-8 w-8 rounded-md bg-surface-3 flex items-center justify-center">
+                <stat.icon className="h-4 w-4 text-text-muted" />
               </div>
-              <span className="text-[9px] text-text-muted font-semibold uppercase tracking-wider">{stat.change}</span>
+              <span className="text-[9px] text-text-muted font-semibold uppercase tracking-wider">{stat.sub}</span>
             </div>
-            <p className="stat-value text-2xl text-text-primary">{stat.value}</p>
-            <p className="text-xs text-text-secondary mt-1">{stat.label}</p>
+            <p className={`text-xl font-extrabold tracking-tight ${stat.color}`}>{stat.value}</p>
+            <p className="text-xs text-text-muted mt-0.5">{stat.label}</p>
           </motion.div>
         ))}
       </div>
 
       {/* Quick Actions + Recent */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
-        <div className="lg:col-span-1 space-y-4">
-          <h2 className="text-base font-bold font-heading text-text-primary flex items-center gap-2">
-            <Zap className="h-4 w-4 text-accent-coral" />Quick Actions
-          </h2>
-          <div className="space-y-2.5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-1 space-y-3">
+          <h2 className="text-sm font-bold text-text-primary">Quick Actions</h2>
+          <div className="space-y-2">
             {quickActions.map((action, idx) => (
               <Link key={action.label} href={action.href}>
                 <motion.div
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + idx * 0.04 }}
-                  className="p-4 rounded-xl border border-border bg-bg-primary hover:bg-bg-secondary transition-all flex items-center justify-between group cursor-pointer"
+                  transition={{ delay: 0.12 + idx * 0.03 }}
+                  className="p-3.5 rounded-lg border border-border bg-surface-1 hover:bg-surface-2 transition-colors flex items-center justify-between group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-accent-coral/10 flex items-center justify-center text-accent-coral">
+                    <div className="h-8 w-8 rounded-md bg-surface-3 flex items-center justify-center text-text-muted group-hover:text-accent transition-colors">
                       <action.icon className="h-4 w-4" />
                     </div>
-                    <span className="font-semibold text-sm text-text-primary">{action.label}</span>
+                    <span className="font-medium text-sm text-text-primary">{action.label}</span>
                   </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-text-muted group-hover:text-accent-coral group-hover:translate-x-1 transition-all" />
+                  <ArrowRight className="h-3.5 w-3.5 text-text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
                 </motion.div>
               </Link>
             ))}
           </div>
         </div>
 
-        {/* Recent Workouts */}
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-base font-bold font-heading text-text-primary flex items-center gap-2">
-            <Dumbbell className="h-4 w-4 text-accent-coral" />Recent Activity
-          </h2>
-          <div className="rounded-2xl bg-bg-card border border-border overflow-hidden">
+        <div className="lg:col-span-2 space-y-3">
+          <h2 className="text-sm font-bold text-text-primary">Recent Activity</h2>
+          <div className="rounded-lg bg-surface-1 border border-border overflow-hidden">
             {data?.recentWorkouts?.length ? (
               <div className="divide-y divide-border">
                 {data.recentWorkouts.map((w, idx) => (
                   <motion.div key={`${w.name}-${idx}`}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 + idx * 0.03 }}
-                    className="flex items-center justify-between p-5 hover:bg-bg-secondary transition-colors group"
+                    transition={{ delay: 0.12 + idx * 0.02 }}
+                    className="flex items-center justify-between px-4 py-3.5 hover:bg-surface-2 transition-colors group"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-accent-coral/10 flex items-center justify-center text-accent-coral">
-                        <Dumbbell className="h-5 w-5" />
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-lg bg-surface-3 flex items-center justify-center text-text-muted group-hover:text-accent transition-colors">
+                        <Dumbbell className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="font-semibold text-sm text-text-primary group-hover:text-accent-coral transition-colors">{w.name}</p>
-                        <p className="text-xs text-text-muted">{formatDate(w.logDate)} · {w.duration || "\u2014"} min</p>
+                        <p className="font-medium text-sm text-text-primary group-hover:text-accent transition-colors">{w.name}</p>
+                        <p className="text-[11px] text-text-muted">{formatDate(w.logDate)} · {w.duration || "\u2014"} min</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold font-heading text-text-primary">{w.volume ? `${(w.volume / 1000).toFixed(1)}k` : "\u2014"}</p>
+                      <p className="text-sm font-bold text-text-primary">{w.volume ? `${(w.volume / 1000).toFixed(1)}k` : "\u2014"}</p>
                       <p className="text-[9px] text-text-muted uppercase tracking-wider">Volume</p>
                     </div>
                   </motion.div>
@@ -182,23 +163,23 @@ export default function DashboardPage() {
           </div>
 
           {/* XP Card */}
-          <div className="rounded-xl bg-bg-card border border-border p-5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="h-11 w-11 rounded-xl bg-accent-coral/15 flex items-center justify-center text-accent-coral">
+          <div className="rounded-lg bg-surface-1 border border-border p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-accent-dim flex items-center justify-center text-accent">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-text-primary">Level {data?.user?.level || 1}</p>
-                <div className="flex items-center gap-3 mt-1.5">
-                  <div className="h-1.5 w-28 rounded-full bg-bg-secondary overflow-hidden">
-                    <div className="h-full w-[30%] rounded-full bg-accent-coral" />
+                <div className="flex items-center gap-2.5 mt-1.5">
+                  <div className="h-1 w-24 rounded-full bg-surface-3 overflow-hidden">
+                    <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${Math.min(((data?.user?.xp || 0) % 1000) / 10, 100)}%` }} />
                   </div>
                   <span className="text-[10px] text-text-muted font-semibold">{data?.user?.xp || 0} XP</span>
                 </div>
               </div>
             </div>
-            <Link href="/dashboard/profile">
-              <button className="text-xs font-semibold text-accent-coral hover:underline">View Profile</button>
+            <Link href="/dashboard/profile" className="text-xs font-semibold text-accent hover:text-accent-hover transition-colors">
+              View Profile
             </Link>
           </div>
         </div>
@@ -206,24 +187,20 @@ export default function DashboardPage() {
 
       {/* Get Started Banner */}
       {(!data?.stats?.totalWorkouts || data.stats.totalWorkouts === 0) && (
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
-          className="relative overflow-hidden rounded-2xl bg-accent-coral/5 border border-accent-coral/20 p-6 md:p-8"
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-lg bg-accent-dim border border-accent/20 p-5 md:p-6"
         >
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-bold font-heading text-text-primary">Ready to start your journey?</h3>
-              <p className="text-text-secondary text-sm mt-1">Log your first workout or track a meal.</p>
+              <h3 className="text-lg font-bold text-text-primary">Ready to start your journey?</h3>
+              <p className="text-text-secondary text-sm mt-0.5">Log your first workout or track a meal.</p>
             </div>
-            <div className="flex gap-4">
-              <Link href="/dashboard/workout">
-                <button className="px-5 py-2.5 bg-accent-coral text-white font-bold text-sm rounded-xl hover:shadow-lg hover:shadow-accent-coral/20 transition-all">
-                  Start Workout
-                </button>
+            <div className="flex gap-3">
+              <Link href="/dashboard/workout" className="px-5 py-2 bg-accent text-white font-semibold text-sm rounded-lg hover:bg-accent-hover transition-colors">
+                Start Workout
               </Link>
-              <Link href="/dashboard/nutrition">
-                <button className="px-5 py-2.5 border border-border text-text-primary font-semibold text-sm rounded-xl hover:bg-bg-secondary transition-all">
-                  Track Meal
-                </button>
+              <Link href="/dashboard/nutrition" className="px-5 py-2 border border-border text-text-secondary font-medium text-sm rounded-lg hover:bg-surface-2 transition-colors">
+                Track Meal
               </Link>
             </div>
           </div>
