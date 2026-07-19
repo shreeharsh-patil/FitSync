@@ -1,6 +1,4 @@
 {
-  "framework": "nextjs",
-  "rootDirectory": "frontend",
   "git": {
     "ignoredPaths": ["backend/**"]
   }
