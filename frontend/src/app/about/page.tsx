@@ -56,7 +56,7 @@ export default function AboutPage() {
             <Link href="/about" className="text-sm font-medium text-[#AFFF00]">About</Link>
             <div className="flex items-center gap-3 ml-4">
               <Link href="/login" className="text-sm text-[#121212]/70 hover:text-[#121212] transition-colors font-medium">Sign In</Link>
-              <Link href="/signup" className="bg-[#AFFF00] text-[#121212] px-5 py-2.5 rounded-full font-bold text-sm tracking-wide hover:shadow-lg hover:shadow-[#AFFF00]/30 transition-all">Get Started</Link>
+              <Link href="/login" className="bg-[#AFFF00] text-[#121212] px-5 py-2.5 rounded-full font-bold text-sm tracking-wide hover:shadow-lg hover:shadow-[#AFFF00]/30 transition-all">Get Started</Link>
             </div>
           </nav>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-[#121212] p-2">
@@ -70,7 +70,7 @@ export default function AboutPage() {
             <Link href="/about" className="block text-sm text-[#AFFF00]" onClick={() => setMobileMenuOpen(false)}>About</Link>
             <div className="flex flex-col gap-3 pt-4 border-t border-[#121212]/10">
               <Link href="/login" className="block w-full py-2.5 text-sm border-2 border-[#121212]/20 rounded-full text-[#121212] text-center font-medium">Sign In</Link>
-              <Link href="/signup" className="block w-full py-2.5 text-sm bg-[#AFFF00] rounded-full text-[#121212] text-center font-bold">Get Started</Link>
+              <Link href="/login" className="block w-full py-2.5 text-sm bg-[#AFFF00] rounded-full text-[#121212] text-center font-bold">Get Started</Link>
             </div>
           </motion.div>
         )}
@@ -248,7 +248,7 @@ export default function AboutPage() {
                 Start for free. No credit card. Cancel anytime.
               </p>
               <Link
-                href="/signup"
+                href="/login"
                 className="inline-flex items-center gap-2 bg-[#121212] text-white px-8 py-4 rounded-full font-bold text-sm tracking-wide hover:scale-105 transition-transform"
               >
                 Start Free Trial

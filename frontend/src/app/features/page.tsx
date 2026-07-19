@@ -65,7 +65,7 @@ export default function FeaturesPage() {
             <Link href="/pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Pricing</Link>
             <div className="flex items-center gap-3 ml-4">
               <Link href="/login" className="text-sm text-text-secondary hover:text-text-primary transition-colors font-medium">Sign In</Link>
-              <Link href="/signup" className="btn-primary text-sm">Get Started</Link>
+              <Link href="/login" className="btn-primary text-sm">Get Started</Link>
             </div>
           </nav>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-text-secondary p-2 -mr-2">
@@ -79,7 +79,7 @@ export default function FeaturesPage() {
             <Link href="/pricing" className="block text-sm text-text-secondary" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
             <div className="flex flex-col gap-3 pt-4 border-t border-border">
               <Link href="/login" className="block w-full py-2.5 text-sm border border-border-hover rounded-lg text-text-secondary text-center font-medium">Sign In</Link>
-              <Link href="/signup" className="block w-full py-2.5 text-sm bg-accent text-white rounded-lg text-center font-semibold">Get Started</Link>
+              <Link href="/login" className="block w-full py-2.5 text-sm bg-accent text-white rounded-lg text-center font-semibold">Get Started</Link>
             </div>
           </motion.div>
         )}

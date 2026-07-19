@@ -22,7 +22,7 @@ const plans = [
     bullets: ["Up to 3 workout plans", "Unlimited workout logging", "14-day nutrition history", "Basic analytics", "Read-only community"],
     featured: false,
     cta: "Get Started Free",
-    href: "/signup",
+    href: "/login",
   },
   {
     name: "Premium",
@@ -32,7 +32,7 @@ const plans = [
     bullets: ["Unlimited workout plans", "Unlimited nutrition history", "AI Coach Chatbot", "AI Workout Generation", "Advanced analytics", "Community challenges", "Ad-free ecosystem"],
     featured: true,
     cta: "Unlock Premium",
-    href: "/signup?plan=premium",
+    href: "/login?plan=premium",
   },
   {
     name: "Trainer Pro",
@@ -42,7 +42,7 @@ const plans = [
     bullets: ["All Premium features", "Manage 50 clients", "Trainer directory listing", "Direct messaging CRM", "Custom branded routines", "15% marketplace fee"],
     featured: false,
     cta: "Deploy CRM",
-    href: "/signup?plan=trainer",
+    href: "/login?plan=trainer",
   },
 ];
 
@@ -64,7 +64,7 @@ export default function PricingPage() {
             <Link href="/pricing" className="text-sm font-medium text-accent">Pricing</Link>
             <div className="flex items-center gap-3 ml-4">
               <Link href="/login" className="text-sm text-text-secondary hover:text-text-primary transition-colors font-medium">Sign In</Link>
-              <Link href="/signup" className="btn-primary text-sm">Get Started</Link>
+              <Link href="/login" className="btn-primary text-sm">Get Started</Link>
             </div>
           </nav>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-text-secondary p-2 -mr-2">
@@ -78,7 +78,7 @@ export default function PricingPage() {
             <Link href="/pricing" className="block text-sm font-medium text-accent" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
             <div className="flex flex-col gap-3 pt-4 border-t border-border">
               <Link href="/login" className="block w-full py-2.5 text-sm border border-border-hover rounded-lg text-text-secondary text-center font-medium">Sign In</Link>
-              <Link href="/signup" className="block w-full py-2.5 text-sm bg-accent text-white rounded-lg text-center font-semibold">Get Started</Link>
+              <Link href="/login" className="block w-full py-2.5 text-sm bg-accent text-white rounded-lg text-center font-semibold">Get Started</Link>
             </div>
           </motion.div>
         )}

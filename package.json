@@ -4,7 +4,7 @@
   "private": true,
   "description": "FitSync — AI-Powered Fitness Platform (Monorepo)",
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
     "build:frontend": "cd frontend && npm run build",
@@ -13,8 +13,5 @@
     "start:backend": "cd backend && npm run start",
     "lint": "cd frontend && npm run lint",
     "install:all": "cd frontend && npm install && cd ../backend && npm install"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.0"
   }
 }

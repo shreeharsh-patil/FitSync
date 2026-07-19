@@ -134,7 +134,7 @@ export function HeroSection() {
               className="flex flex-wrap gap-3 pt-2"
             >
               <Link
-                href="/signup"
+                href="/login"
                 className="btn-primary px-6 py-3 text-sm group inline-flex items-center justify-center gap-2 font-semibold rounded-lg"
               >
                 Start free trial

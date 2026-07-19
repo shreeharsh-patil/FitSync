@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
 import path from "path";
 
-// Load .env from backend root
+// Try .env.local first (standard local dev), fallback to .env
+dotenv.config({ path: path.resolve(__dirname, "../../.env.local") });
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 export const env = {

@@ -28,7 +28,7 @@ export function CTASection() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/signup"
+              href="/login"
               className="btn-primary px-8 py-3.5 text-sm font-semibold inline-flex items-center gap-2 rounded-lg"
             >
               Create your account

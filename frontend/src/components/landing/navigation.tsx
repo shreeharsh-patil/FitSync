@@ -102,7 +102,7 @@ export function Navigation() {
           </Link>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
-              href="/signup"
+              href="/login"
               className="btn-primary text-sm px-5 py-2.5 rounded-lg"
             >
               Get started
@@ -172,7 +172,7 @@ export function Navigation() {
                 <Link href="/login" className="btn-secondary text-center py-3 rounded-lg text-sm">
                   Sign in
                 </Link>
-                <Link href="/signup" className="btn-primary text-center py-3 rounded-lg text-sm">
+                <Link href="/login" className="btn-primary text-center py-3 rounded-lg text-sm">
                   Get started free
                 </Link>
               </motion.div>

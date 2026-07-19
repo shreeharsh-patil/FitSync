@@ -43,15 +43,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = localStorage.getItem("fitsync_token");
     if (stored) {
-      setToken(stored);
       setTokenCookie(stored);
       // Verify token is still valid
       authApi.me()
-        .then((data) => setUser(data))
+        .then((data) => {
+          setUser(data);
+          setToken(stored);
+        })
         .catch(() => {
           localStorage.removeItem("fitsync_token");
           removeTokenCookie();
-          setToken(null);
         })
         .finally(() => setLoading(false));
     } else {

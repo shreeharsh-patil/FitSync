@@ -29,7 +29,12 @@ export default function ChallengesPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const daysLeft = (endDate: string) => Math.max(1, Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000));
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+  const daysLeft = (endDate: string) => Math.max(1, Math.ceil((new Date(endDate).getTime() - now) / 86400000));
 
   const handleJoin = async (challengeId: string) => {
     setJoining(challengeId);
