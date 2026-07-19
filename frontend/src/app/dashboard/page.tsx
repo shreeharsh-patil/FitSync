@@ -67,7 +67,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1">
             <Zap className="h-3.5 w-3.5" />Welcome back, {data?.user?.name || "Athlete"}
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">Dashboard</h1>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent-dim border border-accent/20">
@@ -93,7 +93,7 @@ export default function DashboardPage() {
               </div>
               <span className="text-[9px] text-text-muted font-semibold uppercase tracking-wider">{stat.sub}</span>
             </div>
-            <p className={`text-xl font-bold tracking-tight ${stat.color} font-[family-name:var(--font-display)]`}>{stat.value}</p>
+            <p className={`text-xl font-black tracking-tighter ${stat.color} font-[family-name:var(--font-display)]`}>{stat.value}</p>
             <p className="text-xs text-text-muted mt-0.5">{stat.label}</p>
           </div>
         ))}

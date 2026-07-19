@@ -30,7 +30,7 @@ export default function LeaderboardPage() {
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1"><Trophy className="h-4 w-4" />Leaderboard</div>
-        <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-display)] tracking-tight text-text-primary">Top Athletes</h1>
+        <h1 className="text-3xl md:text-4xl font-black font-[family-name:var(--font-display)] tracking-tighter text-text-primary">Top Athletes</h1>
         <p className="text-text-secondary text-sm mt-1">Ranked by total XP earned.</p>
       </motion.div>
 
@@ -57,7 +57,7 @@ export default function LeaderboardPage() {
                   <p className="text-xs text-text-muted">Level {leader.level} · {leader.streak} day streak</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-extrabold font-[family-name:var(--font-display)] text-accent">{leader.xp.toLocaleString()}</p>
+                  <p className="font-black font-[family-name:var(--font-display)] text-accent">{leader.xp.toLocaleString()}</p>
                   <p className="text-[10px] text-text-muted uppercase tracking-wider">XP</p>
                 </div>
               </motion.div>

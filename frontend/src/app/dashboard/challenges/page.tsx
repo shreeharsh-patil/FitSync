@@ -58,7 +58,7 @@ export default function ChallengesPage() {
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1"><Target className="h-4 w-4" />Challenges</div>
-        <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-display)] tracking-tight text-text-primary">Active Challenges</h1>
+        <h1 className="text-3xl md:text-4xl font-black font-[family-name:var(--font-display)] tracking-tighter text-text-primary">Active Challenges</h1>
         <p className="text-text-secondary text-sm mt-2">Compete and earn exclusive badges.</p>
       </motion.div>
 

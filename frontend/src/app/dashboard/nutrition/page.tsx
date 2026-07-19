@@ -113,7 +113,7 @@ export default function NutritionPage() {
           <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1">
             <Utensils className="h-3.5 w-3.5" />Nutrition Center
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Fuel Your Body</h1>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">Fuel Your Body</h1>
         </div>
         <button onClick={() => setShowAddForm(!showAddForm)}
           className="flex items-center gap-2 px-4 py-2 bg-accent text-white font-semibold text-sm rounded-lg transition-colors hover:bg-accent-hover">

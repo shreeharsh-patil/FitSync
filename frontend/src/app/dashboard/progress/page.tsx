@@ -42,7 +42,7 @@ export default function ProgressPage() {
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1"><LineChart className="h-4 w-4" />Analytics</div>
-        <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-display)] tracking-tight text-text-primary">Progress & Metrics</h1>
+        <h1 className="text-3xl md:text-4xl font-black font-[family-name:var(--font-display)] tracking-tighter text-text-primary">Progress & Metrics</h1>
         <p className="text-text-secondary text-sm mt-1">Track your transformation over time.</p>
       </motion.div>
 
@@ -57,7 +57,7 @@ export default function ProgressPage() {
           <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + idx * 0.04 }}
             className="rounded-lg bg-surface-2 border border-border p-5">
             <p className="text-[10px] text-text-muted font-semibold uppercase tracking-wider">{stat.label}</p>
-            <p className="text-2xl font-extrabold font-[family-name:var(--font-display)] mt-1 text-text-primary">{stat.value}</p>
+            <p className="text-2xl font-black font-[family-name:var(--font-display)] mt-1 text-text-primary">{stat.value}</p>
           </motion.div>
         ))}
       </div>
@@ -66,7 +66,7 @@ export default function ProgressPage() {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="rounded-lg bg-surface-2 border border-border p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-base font-bold font-[family-name:var(--font-display)] text-text-primary flex items-center gap-2">
+          <h2 className="text-base font-black font-[family-name:var(--font-display)] text-text-primary flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-accent" />Weight Tracking
           </h2>
           <button onClick={() => setShowWeightForm(!showWeightForm)}
@@ -109,7 +109,7 @@ export default function ProgressPage() {
       {/* Total Stats */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
         className="rounded-lg bg-surface-2 border border-border p-6 md:p-8">
-        <h2 className="text-base font-bold font-[family-name:var(--font-display)] text-text-primary flex items-center gap-2 mb-6">
+        <h2 className="text-base font-black font-[family-name:var(--font-display)] text-text-primary flex items-center gap-2 mb-6">
           <Activity className="h-4 w-4 text-text-secondary" />Total Stats
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -119,7 +119,7 @@ export default function ProgressPage() {
             { value: data?.stats?.totalCalories ? `${(data.stats.totalCalories / 1000).toFixed(1)}k` : "0", label: "Calories Burned" },
           ].map((stat) => (
             <div key={stat.label} className="text-center p-6 rounded-lg bg-surface-1 border border-border">
-              <p className="text-3xl font-extrabold font-[family-name:var(--font-display)] text-accent">{stat.value}</p>
+              <p className="text-3xl font-black font-[family-name:var(--font-display)] text-accent">{stat.value}</p>
               <p className="text-[10px] text-text-muted uppercase font-semibold tracking-wider mt-2">{stat.label}</p>
             </div>
           ))}

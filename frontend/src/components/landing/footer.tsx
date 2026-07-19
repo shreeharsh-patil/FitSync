@@ -46,7 +46,7 @@ export function Footer() {
           >
             <Link href="/" className="flex items-center gap-2.5 mb-4">
               <LogoMark size={18} />
-              <span className="text-sm font-bold text-text-primary font-[family-name:var(--font-display)]">
+              <span className="text-sm font-black text-text-primary font-[family-name:var(--font-display)]">
                 Fitsync
               </span>
             </Link>

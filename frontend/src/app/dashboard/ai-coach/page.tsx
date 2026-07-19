@@ -55,7 +55,7 @@ export default function AICoachPage() {
           <Brain className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg font-bold font-[family-name:var(--font-display)] text-text-primary">AI Coach</h1>
+          <h1 className="text-lg font-black font-[family-name:var(--font-display)] text-text-primary">AI Coach</h1>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
             <span className="text-[10px] text-text-muted font-medium">Online · Context Mode Active</span>

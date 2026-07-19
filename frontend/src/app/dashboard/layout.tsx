@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className={cn("flex items-center", collapsed ? "flex-col gap-3 px-2 py-5" : "px-4 py-5 justify-between")}>
           <Link href="/dashboard" className={cn("flex items-center group", collapsed ? "justify-center" : "gap-2.5")}>
             <LogoMark size={22} />
-            {!collapsed && <span className="text-lg font-bold tracking-tight text-text-primary">Fitsync</span>}
+            {!collapsed && <span className="text-lg font-black tracking-tighter text-text-primary">Fitsync</span>}
           </Link>
           <button onClick={() => setCollapsed(!collapsed)}
             className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-surface-3 transition-all"
@@ -133,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-surface-0/95 backdrop-blur-xl border-b border-border">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <LogoMark size={20} />
-          <span className="text-base font-bold tracking-tight text-text-primary">Fitsync</span>
+          <span className="text-base font-black tracking-tighter text-text-primary">Fitsync</span>
         </Link>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg text-text-secondary hover:bg-surface-2 transition-all">
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -153,7 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center justify-between px-5 py-5 border-b border-border">
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <LogoMark size={22} />
-            <span className="text-lg font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
+            <span className="text-lg font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
           </Link>
           <button onClick={() => setMobileOpen(false)} className="p-2 rounded-lg text-text-secondary hover:bg-surface-2 transition-all">
             <X className="h-5 w-5" />

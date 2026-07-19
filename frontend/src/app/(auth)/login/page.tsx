@@ -39,11 +39,11 @@ export default function LoginPage() {
           <div className="mb-auto">
             <Link href="/" className="flex items-center gap-2.5">
               <LogoMark size={28} />
-              <span className="text-lg font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
+              <span className="text-lg font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
             </Link>
           </div>
           <div className="mt-auto">
-            <blockquote className="font-[family-name:var(--font-display)] text-2xl font-bold leading-snug text-text-primary mb-4 max-w-sm">
+            <blockquote className="font-[family-name:var(--font-display)] text-2xl font-black leading-snug text-text-primary mb-4 max-w-sm">
               &ldquo;Fitsync caught a recovery pattern I missed for months. My deadlift jumped 15kg in 6 weeks.&rdquo;
             </blockquote>
             <div className="flex items-center gap-3">
@@ -68,7 +68,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-8">
-            <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-text-primary mb-1">Welcome back</h1>
+            <h1 className="font-[family-name:var(--font-display)] text-2xl font-black text-text-primary mb-1">Welcome back</h1>
             <p className="text-sm text-text-secondary">Sign in to your account</p>
           </div>
 

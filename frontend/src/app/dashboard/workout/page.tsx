@@ -104,7 +104,7 @@ export default function WorkoutPage() {
           <div className="flex items-center gap-2 text-accent text-sm font-semibold mb-1">
             <Dumbbell className="h-3.5 w-3.5" />Workout Center
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Build & Track</h1>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">Build & Track</h1>
         </div>
         <button onClick={() => setShowLogForm(!showLogForm)}
           className="flex items-center gap-2 px-4 py-2 bg-accent text-white font-semibold text-sm rounded-lg hover:bg-accent-hover transition-colors">

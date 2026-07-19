@@ -44,11 +44,11 @@ export default function SignupPage() {
           <div>
             <Link href="/" className="flex items-center gap-2.5">
               <LogoMark size={28} />
-              <span className="text-lg font-bold tracking-tight text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
+              <span className="text-lg font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
             </Link>
           </div>
           <div className="my-auto max-w-sm">
-            <h2 className="font-[family-name:var(--font-display)] text-3xl font-bold text-text-primary leading-tight mb-4">
+            <h2 className="font-[family-name:var(--font-display)] text-3xl font-black text-text-primary leading-tight mb-4">
               Track what matters.<br />See what works.
             </h2>
             <p className="text-sm text-text-secondary leading-relaxed">
@@ -89,7 +89,7 @@ export default function SignupPage() {
           </div>
 
           <div className="mb-8">
-            <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-text-primary mb-1">Create your account</h1>
+            <h1 className="font-[family-name:var(--font-display)] text-2xl font-black text-text-primary mb-1">Create your account</h1>
             <p className="text-sm text-text-secondary">14-day free trial, no credit card</p>
           </div>
 

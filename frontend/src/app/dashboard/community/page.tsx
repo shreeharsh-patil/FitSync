@@ -96,7 +96,7 @@ export default function CommunityPage() {
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-2 text-text-secondary text-sm font-semibold mb-1"><Users className="h-4 w-4" />Community</div>
-        <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-display)] tracking-tight text-text-primary">Feed</h1>
+        <h1 className="text-3xl md:text-4xl font-black font-[family-name:var(--font-display)] tracking-tighter text-text-primary">Feed</h1>
         <p className="text-text-secondary text-sm mt-1">Connect with athletes and share your journey.</p>
       </motion.div>
 
