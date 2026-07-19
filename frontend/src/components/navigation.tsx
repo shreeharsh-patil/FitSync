@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useLenis } from "lenis/react"
-import { Menu, X } from "lucide-react"
+import { Menu, X, LogIn } from "lucide-react"
 
 const linkVariants = {
   hidden: { opacity: 0, y: -10 },
@@ -123,30 +123,33 @@ export function Navigation() {
           ))}
         </div>
 
-        <motion.button
-          className="hidden md:block bg-[#AFFF00] text-[#121212] px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        >
-          <motion.div
-            className="absolute inset-0 bg-white/30"
-            animate={{
-              boxShadow: [
-                "0 0 20px rgba(175,255,0,0.3)",
-                "0 0 40px rgba(175,255,0,0.6)",
-                "0 0 20px rgba(175,255,0,0.3)",
-              ],
-            }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full"
-            animate={{ x: ["-100%", "200%"] }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
-          />
-          <span className="relative z-10">Get Started Free</span>
-        </motion.button>
+        <Link href="/login">
+          <motion.button
+            className="hidden md:flex items-center gap-2 bg-[#AFFF00] text-[#121212] px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-white/30"
+              animate={{
+                boxShadow: [
+                  "0 0 20px rgba(175,255,0,0.3)",
+                  "0 0 40px rgba(175,255,0,0.6)",
+                  "0 0 20px rgba(175,255,0,0.3)",
+                ],
+              }}
+              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+            />
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full"
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
+            />
+            <LogIn className="w-4 h-4 relative z-10" />
+            <span className="relative z-10">Login</span>
+          </motion.button>
+        </Link>
 
         <motion.button
           className="md:hidden p-2"
@@ -201,14 +204,17 @@ export function Navigation() {
                   {item.label}
                 </motion.button>
               ))}
-              <motion.button
-                className="w-full bg-[#AFFF00] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                Get Started Free
-              </motion.button>
+              <Link href="/login">
+                <motion.button
+                  className="w-full bg-[#AFFF00] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4 flex items-center justify-center gap-2"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </motion.button>
+              </Link>
             </div>
           </motion.div>
         )}
