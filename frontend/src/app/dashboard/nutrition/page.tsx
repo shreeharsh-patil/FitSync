@@ -64,7 +64,14 @@ export default function NutritionPage() {
 
   useEffect(() => {
     const abort = new AbortController();
-    fetchMeals(abort.signal);
+    const dateStr = formatDateParam(selectedDate);
+    fetch(`/api/nutrition?date=${dateStr}`, { signal: abort.signal })
+      .then((res) => res.json())
+      .then((json) => setMeals(json.meals || []))
+      .catch((e) => {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+      })
+      .finally(() => setLoading(false));
     return () => abort.abort();
   }, [selectedDate]);
 

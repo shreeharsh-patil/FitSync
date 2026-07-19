@@ -77,7 +77,7 @@ export default function CommunityPage() {
 
   const getAvatar = (name: string) => name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(timer);
