@@ -1,0 +1,59 @@
+import mongoose, { Schema, Document } from "mongoose";
+
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password?: string;
+  image?: string;
+  role: "user" | "trainer" | "admin";
+  fitnessGoal?: string;
+  activityLevel?: string;
+  height?: number;
+  weight?: number;
+  bio?: string;
+  isPublic: boolean;
+  xp: number;
+  level: number;
+  streak: number;
+  longestStreak: number;
+  integrations: {
+    appleHealth: boolean;
+    googleFit: boolean;
+    fitbit: boolean;
+    strava: boolean;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const UserSchema = new Schema<IUser>(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
+    password: { type: String, select: false },
+    image: { type: String },
+    role: { type: String, enum: ["user", "trainer", "admin"], default: "user" },
+    fitnessGoal: { type: String },
+    activityLevel: { type: String },
+    height: { type: Number },
+    weight: { type: Number },
+    bio: { type: String },
+    isPublic: { type: Boolean, default: true },
+    integrations: {
+      type: {
+        appleHealth: { type: Boolean, default: false },
+        googleFit: { type: Boolean, default: false },
+        fitbit: { type: Boolean, default: false },
+        strava: { type: Boolean, default: false },
+      },
+      default: { appleHealth: false, googleFit: false, fitbit: false, strava: false },
+    },
+    xp: { type: Number, default: 0 },
+    level: { type: Number, default: 1 },
+    streak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+export const User = mongoose.model<IUser>("User", UserSchema);
