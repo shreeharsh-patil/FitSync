@@ -59,10 +59,9 @@ export function Navigation() {
       }`}
     >
       <div className="container-wide flex items-center justify-between h-16">
-        <Link href="/" className="flex items-center gap-2.5">
-          <LogoMark size={22} />
+        <Link href="/" className="flex items-center">
           <span className="text-[15px] font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">
-            Fitsync
+            Fit<span className="text-accent">Sync</span>
           </span>
         </Link>
 

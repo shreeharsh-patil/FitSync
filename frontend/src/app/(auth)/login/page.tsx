@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Loader2, AlertCircle, Eye, EyeOff, ArrowRight } from "lucide-react";
-import LogoMark from "@/components/LogoMark";
+import AuthVisualLogin from "@/components/auth-visual-login";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,36 +34,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left — visual panel */}
-      <div className="hidden lg:flex lg:w-1/2 auth-visual relative overflow-hidden">
-        <div className="relative z-10 flex flex-col justify-end p-12 w-full">
-          <div className="mb-auto">
-            <Link href="/" className="flex items-center gap-2.5">
-              <LogoMark size={28} />
-              <span className="text-lg font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
-            </Link>
-          </div>
-          <div className="mt-auto">
-            <blockquote className="font-[family-name:var(--font-display)] text-2xl font-black leading-snug text-text-primary mb-4 max-w-sm">
-              &ldquo;Fitsync caught a recovery pattern I missed for months. My deadlift jumped 15kg in 6 weeks.&rdquo;
-            </blockquote>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-accent">JR</div>
-              <div>
-                <p className="text-sm font-semibold text-text-primary">Jamie Rivers</p>
-                <p className="text-xs text-text-muted">2-year member</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AuthVisualLogin />
 
       {/* Right — form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-surface-0">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-10">
-            <Link href="/" className="flex items-center gap-2.5">
-              <LogoMark size={22} />
-              <span className="text-base font-bold text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
+            <Link href="/" className="flex items-center">
+              <span className="text-base font-bold text-text-primary font-[family-name:var(--font-display)]">
+                Fit<span className="text-accent">Sync</span>
+              </span>
             </Link>
           </div>
 

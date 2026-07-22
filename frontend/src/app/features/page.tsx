@@ -56,9 +56,10 @@ export default function FeaturesPage() {
     <div className="flex flex-col min-h-screen bg-surface-0">
       <header className="fixed top-0 left-0 right-0 z-50 bg-surface-0/80 backdrop-blur-xl border-b border-border">
         <div className="container-wide flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2.5">
-            <LogoMark size={22} />
-            <span className="text-base font-bold tracking-tight text-text-primary">Fitsync</span>
+          <Link href="/" className="flex items-center">
+            <span className="text-base font-bold tracking-tight text-text-primary">
+              Fit<span className="text-accent">Sync</span>
+            </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link href="/features" className="text-sm font-medium text-accent">Features</Link>
@@ -178,9 +179,10 @@ export default function FeaturesPage() {
 
       <footer className="border-t border-border py-10">
         <div className="container-wide flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2.5">
-            <LogoMark size={18} />
-            <span className="text-sm font-bold text-text-primary">Fitsync</span>
+          <div className="flex items-center">
+            <span className="text-sm font-bold text-text-primary">
+              Fit<span className="text-accent">Sync</span>
+            </span>
           </div>
           <div className="flex items-center gap-6 md:gap-8">
             <Link href="/features" className="text-sm text-text-muted hover:text-text-primary transition-colors">Features</Link>

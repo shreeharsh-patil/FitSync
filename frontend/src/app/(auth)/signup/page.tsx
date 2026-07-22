@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff, ArrowRight, Dumbbell, Flame, Activity } from "lucide-react";
-import LogoMark from "@/components/LogoMark";
+import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff, ArrowRight } from "lucide-react";
+import AuthVisualSignup from "@/components/auth-visual-signup";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -39,52 +39,16 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left — visual panel */}
-      <div className="hidden lg:flex lg:w-1/2 auth-visual relative overflow-hidden">
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <div>
-            <Link href="/" className="flex items-center gap-2.5">
-              <LogoMark size={28} />
-              <span className="text-lg font-black tracking-tighter text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
-            </Link>
-          </div>
-          <div className="my-auto max-w-sm">
-            <h2 className="font-[family-name:var(--font-display)] text-3xl font-black text-text-primary leading-tight mb-4">
-              Track what matters.<br />See what works.
-            </h2>
-            <p className="text-sm text-text-secondary leading-relaxed">
-              Connect your training, nutrition, and recovery data. Fitsync finds the patterns your body is telling you.
-            </p>
-          </div>
-          <div className="flex items-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-surface-3 flex items-center justify-center">
-                <Dumbbell className="h-4 w-4 text-text-muted" />
-              </div>
-              <span className="text-text-muted">Workouts</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-surface-3 flex items-center justify-center">
-                <Flame className="h-4 w-4 text-text-muted" />
-              </div>
-              <span className="text-text-muted">Nutrition</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-surface-3 flex items-center justify-center">
-                <Activity className="h-4 w-4 text-text-muted" />
-              </div>
-              <span className="text-text-muted">Recovery</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AuthVisualSignup />
 
       {/* Right — form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-surface-0">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-10">
-            <Link href="/" className="flex items-center gap-2.5">
-              <LogoMark size={22} />
-              <span className="text-base font-bold text-text-primary font-[family-name:var(--font-display)]">Fitsync</span>
+            <Link href="/" className="flex items-center">
+              <span className="text-base font-bold text-text-primary font-[family-name:var(--font-display)]">
+                Fit<span className="text-accent">Sync</span>
+              </span>
             </Link>
           </div>
 

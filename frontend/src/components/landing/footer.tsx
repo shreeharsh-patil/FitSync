@@ -44,10 +44,9 @@ export function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <LogoMark size={18} />
+            <Link href="/" className="flex items-center mb-4">
               <span className="text-sm font-black text-text-primary font-[family-name:var(--font-display)]">
-                Fitsync
+                Fit<span className="text-accent">Sync</span>
               </span>
             </Link>
             <p className="text-xs text-text-muted leading-relaxed max-w-[200px]">
@@ -83,9 +82,8 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-6 border-t border-border gap-3">
-          <div className="flex items-center gap-2.5">
-            <LogoMark size={14} />
-            <span className="text-xs text-text-muted font-[family-name:var(--font-display)] font-bold">Fitsync</span>
+          <div className="flex items-center">
+            <span className="text-xs text-text-muted font-[family-name:var(--font-display)] font-bold">Fit<span className="text-accent">Sync</span></span>
           </div>
           <p className="text-xs text-text-muted/50">&copy; 2026 Fitsync. All rights reserved.</p>
         </div>

@@ -53,16 +53,15 @@ app.use(errorHandler);
 async function start() {
   try {
     await connectDB();
-    app.listen(env.PORT, () => {
-      console.log(`\n🚀 FitSync API Server`);
-      console.log(`   URL: http://localhost:${env.PORT}`);
-      console.log(`   Health: http://localhost:${env.PORT}/api/health`);
-      console.log(`   Environment: ${env.NODE_ENV}\n`);
-    });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
-    process.exit(1);
+    console.error("⚠️  MongoDB connection failed, starting without database:", error);
   }
+  app.listen(env.PORT, () => {
+    console.log(`\n🚀 FitSync API Server`);
+    console.log(`   URL: http://localhost:${env.PORT}`);
+    console.log(`   Health: http://localhost:${env.PORT}/api/health`);
+    console.log(`   Environment: ${env.NODE_ENV}\n`);
+  });
 }
 
 start();
