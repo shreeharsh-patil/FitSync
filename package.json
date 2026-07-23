@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "FitSync — AI-Powered Fitness Platform (Monorepo)",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
     "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",

@@ -27,7 +27,25 @@ async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T
   }
 
   const res = await fetch(`${API_BASE}${endpoint}`, config);
-  const json = await res.json();
+
+  const contentType = res.headers.get("content-type");
+  let json: any = {};
+  
+  if (contentType && contentType.includes("application/json")) {
+    try {
+      json = await res.json();
+    } catch {
+      json = {};
+    }
+  } else {
+    const text = await res.text();
+    if (!res.ok) {
+      if (res.status === 404) {
+        throw new Error("Backend API endpoint not found (404). Please ensure the backend server is running and NEXT_PUBLIC_API_URL is configured in Vercel environment variables.");
+      }
+      throw new Error(`Server returned non-JSON response (${res.status}): ${text.slice(0, 100)}`);
+    }
+  }
 
   if (!res.ok) {
     if (res.status === 401 && typeof window !== "undefined") {
